@@ -114,6 +114,7 @@ services:
       CELERY_ENABLED: "1"
       # FEM workdir shared with fem service (Q3-3; Mo-有限元 fills solver tasks)
       MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
+      MO_OPT_WORKDIR: ${MO_OPT_WORKDIR:-/var/mo/fem}
     volumes:
       - mo_femdata:/var/mo/fem
     depends_on:
