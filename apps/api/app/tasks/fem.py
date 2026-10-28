@@ -1,13 +1,14 @@
-"""FEM job Celery task (stub manifest; Q3). Never runs Elmer/GetDP in-process."""
+"""FEM job Celery task. Gates on MO_FEM_DRY_RUN; never runs Elmer/GetDP in-process."""
 
 from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from app.celery_app import celery_app
 from app.jobs_store import job_update
@@ -58,9 +59,45 @@ def maybe_write_local_manifest(job_id: str, manifest: dict[str, Any]) -> None:
         pass
 
 
-def _complete_fem_job(job_id: str, payload: dict[str, Any] | None) -> dict[str, Any]:
-    job_update(job_id, status="running")
-    time.sleep(0.05)
+def _fem_dry_run_enabled() -> bool:
+    """True unless MO_FEM_DRY_RUN is literally '0' (aligned with solver-fem CLI)."""
+    return os.environ.get("MO_FEM_DRY_RUN", "1") != "0"
+
+
+def _work_root() -> Path:
+    """Prefer MO_FEM_WORKDIR; else /tmp/mo-fem (same default as solver-fem CLI)."""
+    root = os.environ.get("MO_FEM_WORKDIR")
+    if root:
+        return Path(root)
+    return Path("/tmp/mo-fem")
+
+
+def _import_run_job() -> Callable[..., dict[str, Any]]:
+    """Import packages/solver-fem.run_job via SOLVER_FEM_PATH or repo-relative path."""
+    solver_path = os.environ.get("SOLVER_FEM_PATH")
+    if not solver_path:
+        # apps/api/app/tasks/fem.py → repo root = parents[4]
+        repo_root = Path(__file__).resolve().parents[4]
+        solver_path = str(repo_root / "packages" / "solver-fem")
+    sp = Path(solver_path).resolve()
+    if not (sp / "run_job.py").is_file():
+        raise FileNotFoundError(f"solver-fem run_job.py not found under {sp}")
+    sp_s = str(sp)
+    if sp_s not in sys.path:
+        sys.path.insert(0, sp_s)
+    from run_job import run_job  # type: ignore[import-not-found]
+
+    return run_job
+
+
+def _fail_fem_job(job_id: str, code: str, message: str) -> dict[str, Any]:
+    err = {"code": code, "message": message}
+    job_update(job_id, status="failed", error=err)
+    return {"jobId": job_id, "status": "failed", "error": err}
+
+
+def _complete_fem_stub(job_id: str, payload: dict[str, Any] | None) -> dict[str, Any]:
+    """MO_FEM_DRY_RUN!=0: existing stub/succeeded path (default, matches Dockerfile/compose)."""
     manifest = build_stub_manifest(job_id, payload)
     maybe_write_local_manifest(job_id, manifest)
     ref = result_ref_for(job_id)
@@ -70,7 +107,58 @@ def _complete_fem_job(job_id: str, payload: dict[str, Any] | None) -> dict[str, 
     return {"jobId": job_id, "status": "succeeded", "resultRef": ref, "manifest": manifest}
 
 
+def _complete_fem_via_run_job(job_id: str, payload: dict[str, Any] | None) -> dict[str, Any]:
+    """MO_FEM_DRY_RUN=0: call solver-fem.run_job; fail the job on errors (no silent stub)."""
+    try:
+        run_job = _import_run_job()
+        result = run_job(job_id, payload, _work_root(), dry_run=False)
+    except Exception as exc:  # noqa: BLE001 — surface to job.error
+        return _fail_fem_job(job_id, "fem_run_job_failed", str(exc))
+
+    ref = str(result.get("resultRef") or result_ref_for(job_id))
+    manifest: dict[str, Any] | None = result.get("manifest")
+    if not isinstance(manifest, dict):
+        man_path = result.get("manifestPath")
+        if not man_path:
+            return _fail_fem_job(job_id, "fem_manifest_missing", "run_job returned no manifest")
+        try:
+            manifest = json.loads(Path(str(man_path)).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return _fail_fem_job(job_id, "fem_manifest_unreadable", str(exc))
+
+    maybe_write_local_manifest(job_id, manifest)
+    update_payload: dict[str, Any] = {
+        "input": payload or {},
+        "manifest": manifest,
+        "run_job": {
+            "jobDir": result.get("jobDir"),
+            "dryRun": result.get("dryRun"),
+            "resultRef": result.get("resultRef"),
+            "manifestPath": result.get("manifestPath"),
+            "elmerExit": result.get("elmerExit"),
+        },
+    }
+    job_update(job_id, payload=update_payload)
+    job_update(job_id, status="succeeded", resultRef=ref, error=None)
+    return {
+        "jobId": job_id,
+        "status": "succeeded",
+        "resultRef": ref,
+        "manifest": manifest,
+        "run_job": result,
+    }
+
+
+def _complete_fem_job(job_id: str, payload: dict[str, Any] | None) -> dict[str, Any]:
+    """Shared by Celery fem queue and job_dispatch in-process degrade."""
+    job_update(job_id, status="running")
+    time.sleep(0.05)
+    if _fem_dry_run_enabled():
+        return _complete_fem_stub(job_id, payload)
+    return _complete_fem_via_run_job(job_id, payload)
+
+
 @celery_app.task(name="app.tasks.fem.run_fem_job", bind=True, queue="fem")
 def run_fem_job(self, job_id: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    """queued → running → succeeded. Stub only — no Elmer in API/worker Python path."""
+    """queued → running → succeeded|failed. dry=1 stub; dry=0 → solver-fem.run_job."""
     return _complete_fem_job(job_id, payload)

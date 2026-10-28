@@ -37,7 +37,7 @@ def _in_process_analytic(job_id: UUID, payload: dict[str, Any] | None) -> None:
 
 
 def _in_process_fem(job_id: UUID, payload: dict[str, Any] | None) -> None:
-    """Fake async FEM: same status transitions; stub manifest + mems-relative resultRef."""
+    """Fake async FEM: same status transitions via _complete_fem_job (MO_FEM_DRY_RUN gate)."""
 
     def _run() -> None:
         try:
@@ -83,8 +83,9 @@ def try_enqueue_fem(job_id: UUID, payload: dict[str, Any] | None) -> str:
     """
     Enqueue FEM on Celery queue `fem` (ops worker-fem). Returns "celery" | "in_process".
 
-    Same CELERY_ENABLED + Redis gate as analytic; degrade to daemon thread stub
-    (no Elmer). resultRef contract: solver/fem/jobs/{jobId}/manifest.json
+    Same CELERY_ENABLED + Redis gate as analytic; degrade to daemon thread
+    (_complete_fem_job: stub unless MO_FEM_DRY_RUN=0 → solver-fem.run_job).
+    resultRef contract: solver/fem/jobs/{jobId}/manifest.json
     """
     from app.config import get_settings
 
