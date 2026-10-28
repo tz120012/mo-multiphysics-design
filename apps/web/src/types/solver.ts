@@ -32,9 +32,18 @@ export interface GeometrySummary {
   bar_area_m2?: number
   winding_factor?: number
   carter_factor?: number
-  /** AF multi-plane count */
+  /** AF concentric ring count; default 4 */
   n_planes?: number
+  /** AF disk axial thickness; equals stack_length_m for AF-PMSM */
   disk_thickness_m?: number
+  /** AF disk count */
+  disk_count?: number
+  /** AF outer radius (preferred over rotor_od_m / 2) */
+  outer_radius_m?: number
+  /** AF inner radius (preferred over stator_id_m / 2) */
+  inner_radius_m?: number
+  /** Optional magnet arc ratio = magnetSectorAngle / 180 when in (0, 1] */
+  magnet_arc_ratio?: number
 }
 
 export interface Materials {

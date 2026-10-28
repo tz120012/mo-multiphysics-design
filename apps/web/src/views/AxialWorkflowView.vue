@@ -204,6 +204,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import Viewport3D from '@/components/Viewport3D.vue'
 import {
+  AF_DEFAULT_N_PLANES,
   buildFemEntryHintLocal,
   summarizeAxialPmsmLocal,
   type AxialGeometryParams,
@@ -362,7 +363,7 @@ function buildSolveRequest() {
     machine_type: 'PMSM' as const,
     geometry: {
       ...summary,
-      n_planes: 4,
+      n_planes: summary.n_planes ?? AF_DEFAULT_N_PLANES,
       magnet_thickness_m: summary.magnet_thickness_m ?? 0.004,
       turns_per_phase: 36,
     },
