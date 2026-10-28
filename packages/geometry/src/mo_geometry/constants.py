@@ -34,6 +34,9 @@ def pole_pairs_from_pole_count(pole_count: int) -> int:
     return pole_count // 2
 
 
+# AF multi-plane：与 packages/solver-analytic/axial_planes/geometry.py DEFAULT_N_PLANES 对齐
+DEFAULT_N_PLANES: Final[int] = 4
+
 # 解析 SolveRequest schema_version（只读对齐；本包不实现求解）
 SOLVE_SCHEMA_VERSION: Final[str] = "0.0.0-gate0"
 

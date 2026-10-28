@@ -1,6 +1,6 @@
-# packages/geometry — Mo-几何（Q1 + Q3-2 入口）
+# packages/geometry — Mo-几何（Q1 + Q3 入口 + Q4+ live）
 
-参数化电机几何（径向 RF / 轴向 AF-PMSM）与 **Three.js 协作网格描述**，以及 Q3-2 **解析 GeometrySummary / AF 全流程入口**。  
+参数化电机几何（径向 RF / 轴向 AF-PMSM）与 **Three.js 协作网格描述**，以及 **解析 GeometrySummary / AF 全流程入口 / live 重建**。  
 维护：Mo-几何 · 仅 `/workspace/mo-platform`。
 
 | Schema | 值 |
@@ -21,8 +21,9 @@
 | Three.js mesh descriptor JSON | ✅ | — | — |
 | `export_geometry_summary` | — | 契约钉表 | ✅ |
 | `export_axial_pipeline_entry` | — | — | ✅ AF 串联 |
-| STEP / DXF（CadQuery/OCC） | ❌ | ✅ 必交可演示 | — |
-| Wasm / FEM 求解 | ❌ | 分属解析 / 有限元 | ❌ 仅 hint |
+| `rebuild_live_geometry` | — | — | ✅ Q4+ live |
+| STEP / DXF（CadQuery/OCC） | ❌ | 曾要求可演示 | **Q4+ 明确降级**（见降级短文） |
+| Wasm / FEM 求解 | ❌ | 分属解析 / 有限元 | ❌ 仅 hint；AF Wasm 未交付 |
 
 几何参数 JSON → **前端 / 后端 / `.mems`**；**不进 Wasm**。本包**不写**解析求解 / FEM 求解。
 
@@ -60,6 +61,7 @@ from mo_geometry import (
     build_axial_mesh_descriptor,
     export_geometry_summary,
     export_axial_pipeline_entry,
+    rebuild_live_geometry,
 )
 ```
 
@@ -68,20 +70,26 @@ from mo_geometry import (
 - `build_*_mesh_descriptor` → 前端可转 Three.js `BufferGeometry` 的图元 JSON
 - `export_geometry_summary(params)` → 解析 `GeometrySummary`（snake_case + SI 米）；非法则 `ValueError`
 - `export_axial_pipeline_entry(params)` → AF-PMSM 串联包：`geometryParams` / `geometrySummary` / `meshDescriptor` / `analyticSolveStub` / `femEntryHint`
+- `rebuild_live_geometry(params)` → `{params, meshDescriptor, geometrySummary[, pipelineEntry]}`（AF-PMSM 附 pipeline）
 
-### AF `stack_length_m` 约定
+### AF `stack_length_m` / 扩展字段约定
 
 盘式无径向叠长时，有效磁路轴向长度钉为**单有效盘厚**：
 
 ```text
-stack_length_m = pmsm.diskThickness / 1000   # units.length=mm
+stack_length_m = disk_thickness_m = pmsm.diskThickness / 1000   # units.length=mm
+outer_radius_m = outerDiameter/2 → m
+inner_radius_m = innerDiameter/2 → m
+disk_count = pmsm.diskCount
+n_planes = 4  # 默认；与 axial_planes.DEFAULT_N_PLANES 一致；params.nPlanes 可覆盖
+magnet_arc_ratio = magnetSectorAngle/180  # 可选，∈ (0,1]
 ```
 
-不按 `diskCount` 累乘。AF 盘数/构型见 `femEntryHint`，不污染 GeometrySummary。
+不按 `diskCount` 累乘。构型等仍见 `femEntryHint`。对齐说明：`docs/drafts/几何-Q4plus-live与降级.md`。
 
 ## 样例 JSON（免 Python）
 
-见 [`examples/`](examples/)：径向 PMSM/ACIM、轴向 AF-PMSM 的 `params` + `mesh` + Q3-2 `geometry_summary` / `pipeline_entry`。
+见 [`examples/`](examples/)：径向 PMSM/ACIM、轴向 AF-PMSM 的 `params` + `mesh` + `geometry_summary` / `pipeline_entry`。用 `python -m mo_geometry.rebuild_examples` 从 defaults live 重写。FE `public/geometry` 静态拷贝 ≠ 本包 live（见 examples README）。
 
 字段对照：[`docs/drafts/geometry-mems-字段对照.md`](../../docs/drafts/geometry-mems-字段对照.md)。
 
@@ -137,5 +145,6 @@ params (AF-PMSM)
 | Q1-5 | `axial.py` + `build_axial_mesh_descriptor`（非 PMSM 仅枚举预留） |
 | Q1-7 | `acim.py` 可选块，`machineType=ACIM` 时必填 |
 | Q3-2 | `summary.py`：`export_geometry_summary` + `export_axial_pipeline_entry` |
+| Q4+-4 | AF summary 对齐 axial_planes；`rebuild_live_geometry`；STEP/DXF 降级短文 |
 
-范围草案：`docs/drafts/几何范围.md`。
+范围草案：`docs/drafts/几何范围.md`；降级：`docs/drafts/几何-Q4plus-live与降级.md`。

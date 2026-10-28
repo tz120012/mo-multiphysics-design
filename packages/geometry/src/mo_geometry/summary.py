@@ -1,17 +1,20 @@
-"""Q3-2：GeometrySummary 导出 + 轴向 AF 全流程入口（几何侧）。
+"""GeometrySummary 导出 + 轴向 AF 全流程入口 + live 一次重建（几何侧）。
 
 将本包 camelCase（默认 mm）参数映射为解析契约
 ``packages/solver-analytic/api/solve.schema.json`` ``$defs.GeometrySummary``
 （snake_case + SI 米）。
 
-**AF stack_length_m 约定（钉死、可测）：**
+**AF stack_length_m / disk_thickness_m 约定（钉死、可测）：**
 盘式无径向「叠长」时，用单有效盘厚作为有效磁路轴向长度：
 
-    stack_length_m = pmsm.diskThickness / 1000   # length unit = mm
+    stack_length_m = disk_thickness_m = pmsm.diskThickness → m
 
-若 ``units.length == "m"``，则不做 /1000。不按 diskCount 累乘，避免多气隙构型歧义。
-AF 特有盘数/构型等放在 ``export_axial_pipeline_entry`` 的 ``femEntryHint``，
-**不**写入 GeometrySummary（schema 无 meta）。
+不按 diskCount 累乘，避免多气隙构型歧义。
+
+**AF 扩展字段（对齐 axial_planes / solve.schema）：**
+``outer_radius_m`` / ``inner_radius_m``、``disk_count``、``n_planes``（默认 4）、
+可选 ``magnet_arc_ratio``。构型等仍见 ``export_axial_pipeline_entry`` 的
+``femEntryHint``；**禁止**双写 polePairs。
 """
 
 from __future__ import annotations
@@ -24,8 +27,16 @@ from mo_geometry.axial import (
     to_mems_geometry_fragment as to_mems_axial_fragment,
     validate_axial,
 )
-from mo_geometry.constants import FEM_ENTRY_HINT_SCHEMA_VERSION, SOLVE_SCHEMA_VERSION
-from mo_geometry.radial import validate_radial
+from mo_geometry.constants import (
+    DEFAULT_N_PLANES,
+    FEM_ENTRY_HINT_SCHEMA_VERSION,
+    SOLVE_SCHEMA_VERSION,
+)
+from mo_geometry.radial import (
+    build_radial_mesh_descriptor,
+    to_mems_geometry_fragment as to_mems_radial_fragment,
+    validate_radial,
+)
 
 _GEOMETRY_SUMMARY_REQUIRED = (
     "poles",
@@ -78,6 +89,30 @@ def _to_mm(value: float, *, length_unit: str) -> float:
     if length_unit == "m":
         return float(value) * 1000.0
     raise ValueError(f"units.length: unsupported {length_unit!r}")
+
+
+def _resolve_n_planes(params: dict[str, Any], pmsm: dict[str, Any] | None = None) -> int:
+    """n_planes：与 axial_planes.DEFAULT_N_PLANES(=4) 对齐。
+
+    覆盖优先级（若存在且为正整数）：``params.nPlanes`` / ``params.n_planes`` /
+    ``pmsm.nPlanes`` / ``pmsm.n_planes``；否则固定默认 4。
+    """
+    candidates: list[Any] = [
+        params.get("nPlanes"),
+        params.get("n_planes"),
+    ]
+    if isinstance(pmsm, dict):
+        candidates.extend([pmsm.get("nPlanes"), pmsm.get("n_planes")])
+    for raw in candidates:
+        if raw is None:
+            continue
+        try:
+            n = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if n >= 1:
+            return n
+    return DEFAULT_N_PLANES
 
 
 def _export_rf_summary(params: dict[str, Any]) -> dict[str, Any]:
@@ -146,20 +181,29 @@ def _export_af_summary(params: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("export_geometry_summary(AF): pmsm object required")
 
     lu = _length_unit_of(params)
-    # 钉死：有效磁路轴向长度 = 单盘厚（不乘 diskCount）
+    od_m = _length_to_m(
+        pmsm["outerDiameter"], length_unit=lu, field="pmsm.outerDiameter"
+    )
+    id_m = _length_to_m(
+        pmsm["innerDiameter"], length_unit=lu, field="pmsm.innerDiameter"
+    )
+    disk_t_m = _length_to_m(
+        pmsm["diskThickness"], length_unit=lu, field="pmsm.diskThickness"
+    )
+
+    # 钉死：有效磁路轴向长度 = 单盘厚（不乘 diskCount）；disk_thickness_m 同值
     summary: dict[str, Any] = {
         "poles": int(pmsm["poleCount"]),
         "slots": int(pmsm["slotCount"]),
-        "stack_length_m": _length_to_m(
-            pmsm["diskThickness"], length_unit=lu, field="pmsm.diskThickness"
-        ),
+        "stack_length_m": disk_t_m,
         "airgap_m": _length_to_m(pmsm["airgap"], length_unit=lu, field="pmsm.airgap"),
-        "rotor_od_m": _length_to_m(
-            pmsm["outerDiameter"], length_unit=lu, field="pmsm.outerDiameter"
-        ),
-        "stator_id_m": _length_to_m(
-            pmsm["innerDiameter"], length_unit=lu, field="pmsm.innerDiameter"
-        ),
+        "rotor_od_m": od_m,
+        "stator_id_m": id_m,
+        "outer_radius_m": od_m / 2.0,
+        "inner_radius_m": id_m / 2.0,
+        "disk_thickness_m": disk_t_m,
+        "disk_count": int(pmsm["diskCount"]),
+        "n_planes": _resolve_n_planes(params, pmsm),
     }
 
     mag_th = pmsm.get("magnetThickness")
@@ -167,6 +211,13 @@ def _export_af_summary(params: dict[str, Any]) -> dict[str, Any]:
         summary["magnet_thickness_m"] = _length_to_m(
             mag_th, length_unit=lu, field="pmsm.magnetThickness"
         )
+
+    # magnetSectorAngle 校验单位为 deg、(0, 180]；ratio = angle/180 ∈ (0, 1]
+    mag_ang = pmsm.get("magnetSectorAngle")
+    if isinstance(mag_ang, (int, float)) and not isinstance(mag_ang, bool):
+        ratio = float(mag_ang) / 180.0
+        if 0.0 < ratio <= 1.0:
+            summary["magnet_arc_ratio"] = ratio
 
     return summary
 
@@ -185,7 +236,12 @@ def export_geometry_summary(params: dict[str, Any]) -> dict[str, Any]:
     - AF-PMSM: ``poles←pmsm.poleCount``，``slots←pmsm.slotCount``，
       ``airgap_m←pmsm.airgap``，``rotor_od_m←pmsm.outerDiameter``，
       ``stator_id_m←pmsm.innerDiameter``，
-      ``stack_length_m←pmsm.diskThickness``（单有效盘厚；见模块 docstring）。
+      ``stack_length_m = disk_thickness_m ← pmsm.diskThickness``（单有效盘厚），
+      ``outer_radius_m = outerDiameter/2``，``inner_radius_m = innerDiameter/2``，
+      ``disk_count←pmsm.diskCount``，
+      ``n_planes`` 默认 **4**（与 ``axial_planes.DEFAULT_N_PLANES`` 一致；
+      若 params/pmsm 将来有 ``nPlanes``/``n_planes`` 可覆盖），
+      可选 ``magnet_arc_ratio = magnetSectorAngle/180``（仅当 ∈ (0, 1]）。
 
     **禁止**往 params/mems 双写 polePairs；``poles`` 即为极数（=poleCount）。
     """
@@ -208,9 +264,10 @@ def export_axial_pipeline_entry(params: dict[str, Any]) -> dict[str, Any]:
     返回稳定 JSON，供 Mo-前端 / 后端串联：
 
     - ``geometryParams``：mems 几何片段
-    - ``geometrySummary``：``export_geometry_summary`` 结果
+    - ``geometrySummary``：``export_geometry_summary`` 结果（含 AF 扩展字段）
     - ``meshDescriptor``：``build_axial_mesh_descriptor``（Three.js 协作）
-    - ``analyticSolveStub``：可直接 POST 的 SolveRequest 骨架（材料/工况占位）
+    - ``analyticSolveStub``：可直接 POST 的 SolveRequest 骨架（材料/工况占位；
+      ``geometry`` 与 ``geometrySummary`` 同内容）
     - ``femEntryHint``：给 Mo-有限元的最小几何 hint（不做 FEM 网格；
       ``schemaVersion`` = ``0.1.0-q3-hint``）
 
@@ -276,7 +333,44 @@ def export_axial_pipeline_entry(params: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def rebuild_live_geometry(params: dict[str, Any]) -> dict[str, Any]:
+    """一次 live 重建：``{params, meshDescriptor, geometrySummary[, pipelineEntry]}``。
+
+    - RF：径向 mesh + GeometrySummary（``params`` 为 mems 径向片段拷贝）
+    - AF：轴向 mesh + GeometrySummary；AF-PMSM 另附 ``pipelineEntry``
+      （= ``export_axial_pipeline_entry``）
+
+    证明「参数 → 可演示导出」的 live 路径；不改 FE ``public/geometry`` 静态拷贝。
+    非法 params → ``ValueError``。
+    """
+    if not isinstance(params, dict):
+        raise ValueError("rebuild_live_geometry: params must be a dict")
+
+    topology = params.get("topology")
+    if topology == "RF":
+        _raise_if_invalid("rebuild_live_geometry(RF)", validate_radial(params))
+        return {
+            "params": to_mems_radial_fragment(params),  # type: ignore[arg-type]
+            "meshDescriptor": build_radial_mesh_descriptor(params),  # type: ignore[arg-type]
+            "geometrySummary": export_geometry_summary(params),
+        }
+    if topology == "AF":
+        _raise_if_invalid("rebuild_live_geometry(AF)", validate_axial(params))
+        out: dict[str, Any] = {
+            "params": to_mems_axial_fragment(params),  # type: ignore[arg-type]
+            "meshDescriptor": build_axial_mesh_descriptor(params),  # type: ignore[arg-type]
+            "geometrySummary": export_geometry_summary(params),
+        }
+        if params.get("machineType") == "PMSM":
+            out["pipelineEntry"] = export_axial_pipeline_entry(params)
+        return out
+    raise ValueError(
+        f"rebuild_live_geometry: unsupported topology {topology!r} (expected 'RF' or 'AF')"
+    )
+
+
 __all__ = [
     "export_geometry_summary",
     "export_axial_pipeline_entry",
+    "rebuild_live_geometry",
 ]

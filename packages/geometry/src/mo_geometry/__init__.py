@@ -1,6 +1,7 @@
-"""Mo-几何：参数化电机几何 + Three.js 协作网格描述 + Q3 解析/FEM 入口导出。
+"""Mo-几何：参数化电机几何 + Three.js 协作网格描述 + 解析/FEM 入口导出 + live 重建。
 
-不含 STEP/DXF（Q2）、不含 Wasm / 解析求解 / FEM 求解。参数以 JSON 供 FE/BE/.mems 消费。
+不含 STEP/DXF（本阶段降级，见 docs/drafts/几何-Q4plus-live与降级.md）、
+不含 Wasm / 解析求解 / FEM 求解。参数以 JSON 供 FE/BE/.mems 消费。
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from mo_geometry.axial import (
     validate_axial,
 )
 from mo_geometry.constants import (
+    DEFAULT_N_PLANES,
     FEM_ENTRY_HINT_SCHEMA_VERSION,
     GEOMETRY_SCHEMA_VERSION,
     MESH_SCHEMA_VERSION,
@@ -28,13 +30,18 @@ from mo_geometry.radial import (
     to_mems_geometry_fragment as to_mems_radial_fragment,
     validate_radial,
 )
-from mo_geometry.summary import export_axial_pipeline_entry, export_geometry_summary
+from mo_geometry.summary import (
+    export_axial_pipeline_entry,
+    export_geometry_summary,
+    rebuild_live_geometry,
+)
 
 __all__ = [
     "GEOMETRY_SCHEMA_VERSION",
     "MESH_SCHEMA_VERSION",
     "SOLVE_SCHEMA_VERSION",
     "FEM_ENTRY_HINT_SCHEMA_VERSION",
+    "DEFAULT_N_PLANES",
     "pole_pairs_from_pole_count",
     "AxialParams",
     "RadialParams",
@@ -50,6 +57,7 @@ __all__ = [
     "validate_radial",
     "export_geometry_summary",
     "export_axial_pipeline_entry",
+    "rebuild_live_geometry",
 ]
 
 __version__ = "0.1.0"
