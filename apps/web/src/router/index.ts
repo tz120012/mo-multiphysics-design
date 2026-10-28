@@ -47,6 +47,11 @@ const routes: RouteRecordRaw[] = [
         name: 'drive',
         component: () => import('@/views/DriveView.vue'),
       },
+      {
+        path: 'compare',
+        name: 'compare',
+        component: () => import('@/views/DriveCompareView.vue'),
+      },
     ],
   },
   {
