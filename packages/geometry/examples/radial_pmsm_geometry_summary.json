@@ -1,0 +1,8 @@
+{
+  "poles": 6,
+  "slots": 18,
+  "stack_length_m": 0.025,
+  "airgap_m": 0.0005,
+  "rotor_od_m": 0.05,
+  "stator_id_m": 0.051
+}

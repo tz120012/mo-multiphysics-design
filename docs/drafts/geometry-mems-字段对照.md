@@ -144,4 +144,42 @@
 
 ---
 
+## 8. GeometrySummary / AF pipeline entry（Q3-2）
+
+所有权：Mo-几何提供导出；Mo-解析 / Mo-有限元消费。对照 `packages/solver-analytic/api/solve.schema.json` `$defs.GeometrySummary` 与 `docs/drafts/Q2-材料与解析边界.md` 附录 A。
+
+### 8.1 API
+
+| API | 输入 | 输出 |
+| --- | --- | --- |
+| `export_geometry_summary(params)` | RF 或 AF params（camelCase；默认 mm） | GeometrySummary（snake_case + SI 米）；非法 → `ValueError` |
+| `export_axial_pipeline_entry(params)` | **仅** AF-PMSM | 见下表键 |
+
+### 8.2 必填映射
+
+| GeometrySummary | RF 源 | AF-PMSM 源 |
+| --- | --- | --- |
+| `poles` | `rotor.poleCount`（极数） | `pmsm.poleCount` |
+| `slots` | `stator.slotCount` | `pmsm.slotCount` |
+| `stack_length_m` | `stator.stackLength` 或 `axialActiveLength`（÷1000） | **`pmsm.diskThickness`（÷1000；单有效盘厚，不乘 diskCount）** |
+| `airgap_m` | `airgap` | `pmsm.airgap` |
+| `rotor_od_m` | `rotor.outerDiameter` | `pmsm.outerDiameter` |
+| `stator_id_m` | `stator.innerDiameter` | `pmsm.innerDiameter` |
+
+可选：`magnet_thickness_m`（若 params 有 `magnetThickness`）、ACIM `rotor_bars` / `bar_area_m2`。**不**写 `meta` 进 Summary。
+
+### 8.3 `export_axial_pipeline_entry` 键
+
+| 键 | 说明 |
+| --- | --- |
+| `geometryParams` | `to_mems_axial_fragment` |
+| `geometrySummary` | 上节结果 |
+| `meshDescriptor` | `build_axial_mesh_descriptor` |
+| `analyticSolveStub` | SolveRequest 骨架（`schema_version=0.0.0-gate0`；materials / operating_point 占位） |
+| `femEntryHint` | Mo-FEM 最小 hint：`schemaVersion=0.1.0-q3-hint`；topology/machineType/config；内外径/盘数/气隙/盘厚/slotCount/poleCount；units mm；**不做网格** |
+
+几何参数 schema 仍可保持 `0.1.0-q1`；pipeline hint 独立版本。
+
+---
+
 *短文结束。无 CAD。修订经 Motor / Mo-架构。*
