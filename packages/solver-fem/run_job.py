@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from postprocess_ms import postprocess_magnetostatic_job
 from thinning import write_result_artifacts
 
 PKG = Path(__file__).resolve().parent
@@ -18,7 +19,7 @@ TEMPLATES = {
     ("AF", "PMSM", "3d"): "af_pmsm_3d",
 }
 
-# Magnetostatic skeleton template (≠ heat-proxy af_pmsm_3d)
+# Magnetostatic true-path template (≠ heat-proxy af_pmsm_3d)
 MAGNETOSTATIC_TEMPLATE_IDS = frozenset({"af_pmsm_3d_ms"})
 
 
@@ -57,6 +58,17 @@ def resolve_equation_mode(payload: dict[str, Any], *, dry_run: bool) -> str:
     if dry_run:
         return "heat_proxy"  # dry-run default; shell may override via payload
     return "heat_proxy"
+
+
+def _template_path_ready(tid: str) -> bool:
+    meta = PKG / "templates" / tid / "template.json"
+    if not meta.is_file():
+        return False
+    try:
+        data = json.loads(meta.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    return bool(data.get("magnetostaticPathReady"))
 
 
 def prepare_job_dir(job_dir: Path, payload: dict[str, Any]) -> Path:
@@ -147,8 +159,11 @@ def run_job(
     equation_mode = resolve_equation_mode(payload, dry_run=dry_run)
     payload.setdefault("equationMode", equation_mode)
     if equation_mode == "magnetostatic":
-        payload.setdefault("magnetostaticPathReady", False)
         payload.setdefault("templateId", "af_pmsm_3d_ms")
+        tid = str(payload.get("templateId") or "af_pmsm_3d_ms")
+        path_ready = _template_path_ready(tid)
+        payload["magnetostaticPathReady"] = path_ready
+        payload.setdefault("postprocess", "maxwell")
 
     job_dir = prepare_job_dir(work_root / "jobs" / job_id, payload)
     topology = str(payload.get("topology", "RF"))
@@ -162,24 +177,63 @@ def run_job(
 
     if not dry_run:
         if equation_mode == "magnetostatic":
-            # Skeleton only: do not run HeatEquation or a fake MS success path.
-            raise FemSolveError(
-                "magnetostatic real Elmer path not ready "
-                "(magnetostaticPathReady=false); use dry-run / "
-                "smoke/run_magnetostatic_shell.py, or equationMode=heat_proxy "
-                "for Q3 E2E scheduling only — do NOT claim FEM ≤3%"
+            if not payload.get("magnetostaticPathReady"):
+                raise FemSolveError(
+                    "magnetostatic real Elmer path not ready "
+                    "(magnetostaticPathReady=false); use dry-run / "
+                    "smoke/run_magnetostatic_truepath.py --dry-run, or "
+                    "equationMode=heat_proxy for Q3 E2E scheduling only — "
+                    "do NOT claim FEM ≤3%"
+                )
+            if kernel == "getdp":
+                raise FemSolveError(
+                    "GetDP magnetostatic not wired; use elmer WhitneyAV path"
+                )
+            # AF MS template is 3d regardless of payload dim default
+            if str(payload.get("templateId")) in MAGNETOSTATIC_TEMPLATE_IDS:
+                dim = str(payload.get("dim") or "3d")
+                topology = str(payload.get("topology") or "AF")
+                machine_type = str(payload.get("machineType") or "PMSM")
+            elmer_exit = run_elmer_pipeline(job_dir, dim)
+            pp = postprocess_magnetostatic_job(job_dir / "solve")
+            payload["axialForceN"] = pp.get("axialForceN")
+            payload["bearingLoadN"] = pp.get("axialForceN")
+            payload["postprocess"] = pp.get("postprocess") or "maxwell"
+            if pp.get("magneticEnergyJ") is not None:
+                payload["magneticEnergyJ"] = pp["magneticEnergyJ"]
+            if pp.get("forceXN") is not None:
+                payload["forceXN"] = pp["forceXN"]
+            if pp.get("forceYN") is not None:
+                payload["forceYN"] = pp["forceYN"]
+            # Mirror SaveScalars into published results for artifacts consumers
+            src_dat = job_dir / "solve" / "scalars.dat"
+            if src_dat.is_file():
+                pub = work_root / "results" / "fem" / job_id
+                pub.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_dat, pub / "elmer_scalars.dat")
+                names = Path(str(src_dat) + ".names")
+                if names.is_file():
+                    shutil.copy2(names, pub / "elmer_scalars.dat.names")
+            notes = (
+                "ElmerSolver OK (magnetostatic WhitneyAV + Maxwell/nodal force); "
+                "equationMode=magnetostatic; magnetostaticPathReady=true; "
+                "pending_calibration — do NOT claim FEM ≤3% "
+                f"(postprocess={payload.get('postprocess')}; "
+                f"axialForceN={payload.get('axialForceN')})"
             )
-        if kernel == "getdp":
+        elif kernel == "getdp":
             raise FemSolveError("GetDP real solve not wired yet (F2 stub); use elmer")
-        elmer_exit = run_elmer_pipeline(job_dir, dim)
-        notes = (
-            "ElmerSolver OK (heat-proxy Q3 E2E); equationMode=heat_proxy; "
-            "pending_calibration — do NOT claim FEM ≤3% "
-            "(≠ magnetostatic motor solve)"
-        )
+        else:
+            elmer_exit = run_elmer_pipeline(job_dir, dim)
+            notes = (
+                "ElmerSolver OK (heat-proxy Q3 E2E); equationMode=heat_proxy; "
+                "pending_calibration — do NOT claim FEM ≤3% "
+                "(≠ magnetostatic motor solve)"
+            )
     elif equation_mode == "magnetostatic":
         notes = (
-            "dry-run magnetostatic skeleton; magnetostaticPathReady=false; "
+            "dry-run magnetostatic; magnetostaticPathReady="
+            f"{payload.get('magnetostaticPathReady')}; "
             "pending_calibration — do NOT claim FEM ≤3%"
         )
 
@@ -215,6 +269,9 @@ def run_job(
         "jobDir": str(job_dir),
         "dryRun": dry_run,
         "equationMode": equation_mode,
+        "magnetostaticPathReady": payload.get("magnetostaticPathReady"),
+        "postprocess": payload.get("postprocess"),
+        "axialForceN": payload.get("axialForceN"),
         "resultRef": published["resultRef"],
         "manifestPath": published["manifestPath"],
         "manifest": published["manifest"],

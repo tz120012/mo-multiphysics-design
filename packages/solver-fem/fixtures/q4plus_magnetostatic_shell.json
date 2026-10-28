@@ -2,19 +2,19 @@
   "schemaVersion": "magnetostatic-shell-v0",
   "equationMode": "magnetostatic",
   "pending_calibration": true,
-  "magnetostaticPathReady": false,
+  "magnetostaticPathReady": true,
   "dryRun": true,
   "torqueNm": null,
   "axialForceN": null,
   "bearingLoadN": null,
   "deflectionHintMm": null,
   "lossesW": {},
-  "axialForceNotes": "magnetostatic true-path shell; Maxwell/virtual-work postprocess not closed — axialForceN stays null; do NOT claim FEM ≤3%",
+  "axialForceNotes": "shell does not run Elmer; axialForceN stays null here. True path: run_magnetostatic_truepath.py (Maxwell). do NOT claim FEM ≤3%",
   "templateId": "af_pmsm_3d_ms",
   "topology": "AF",
   "machineType": "PMSM",
   "dim": "3d",
   "jobId": "00000000-0000-4000-8000-0000000000q4p5",
   "resultRef": "solver/fem/jobs/00000000-0000-4000-8000-0000000000q4p5/manifest.json",
-  "notes": "Q4+-5 magnetostatic shell; heat-proxy ≠ magnetostatic; pending_calibration"
+  "notes": "magnetostatic shell; heat-proxy ≠ magnetostatic; true path Q5-2; pending_calibration"
 }

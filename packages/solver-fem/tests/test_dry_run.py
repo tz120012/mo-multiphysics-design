@@ -44,6 +44,31 @@ class DryRunTests(unittest.TestCase):
             self.assertIn("scalars", roles)
             self.assertIn("slice", roles)
 
+    def test_magnetostatic_dry_run(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            out = run_job(
+                "22222222-2222-4222-8222-222222222222",
+                {
+                    "templateId": "af_pmsm_3d_ms",
+                    "equationMode": "magnetostatic",
+                    "topology": "AF",
+                    "machineType": "PMSM",
+                    "dim": "3d",
+                    "solverKernel": "elmer",
+                },
+                Path(td),
+                dry_run=True,
+            )
+            self.assertTrue(out["dryRun"])
+            self.assertEqual(out["equationMode"], "magnetostatic")
+            self.assertTrue(out.get("magnetostaticPathReady"))
+            man = Path(out["manifestPath"])
+            data = json.loads(man.read_text(encoding="utf-8"))
+            sc = data["scalars"]
+            self.assertEqual(sc.get("equationMode"), "magnetostatic")
+            self.assertTrue(sc.get("pending_calibration"))
+            self.assertTrue(sc.get("magnetostaticPathReady"))
+
 
 if __name__ == "__main__":
     unittest.main()

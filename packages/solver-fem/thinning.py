@@ -52,6 +52,7 @@ def write_result_artifacts(
     magnetostatic_ready = pl.get("magnetostaticPathReady")
     if equation_mode == "magnetostatic" and magnetostatic_ready is None:
         magnetostatic_ready = False
+    postprocess = pl.get("postprocess")
 
     scalars: dict[str, Any] = {
         "schemaVersion": "fem-scalars-v0",
@@ -77,6 +78,14 @@ def write_result_artifacts(
         scalars["equationMode"] = equation_mode
     if magnetostatic_ready is not None:
         scalars["magnetostaticPathReady"] = magnetostatic_ready
+    if postprocess is not None:
+        scalars["postprocess"] = postprocess
+    if pl.get("magneticEnergyJ") is not None:
+        scalars["magneticEnergyJ"] = pl["magneticEnergyJ"]
+    if pl.get("forceXN") is not None:
+        scalars["forceXN"] = pl["forceXN"]
+    if pl.get("forceYN") is not None:
+        scalars["forceYN"] = pl["forceYN"]
     if "operatingPoint" in pl and isinstance(pl["operatingPoint"], dict):
         scalars["operatingPoint"] = pl["operatingPoint"]
     if "source" in pl:
@@ -120,6 +129,16 @@ def write_result_artifacts(
             "bytes": png_dst.stat().st_size,
         },
     ]
+    elmer_dat = job_results / "elmer_scalars.dat"
+    if elmer_dat.is_file():
+        artifacts.append(
+            {
+                "path": f"results/fem/{job_id}/elmer_scalars.dat",
+                "role": "elmer_scalars",
+                "format": "dat",
+                "bytes": elmer_dat.stat().st_size,
+            }
+        )
     ts = _now()
     manifest = {
         "jobId": job_id,
@@ -146,6 +165,10 @@ def write_result_artifacts(
         manifest["scalars"]["equationMode"] = equation_mode
     if magnetostatic_ready is not None:
         manifest["scalars"]["magnetostaticPathReady"] = magnetostatic_ready
+    if postprocess is not None:
+        manifest["scalars"]["postprocess"] = postprocess
+    if scalars.get("magneticEnergyJ") is not None:
+        manifest["scalars"]["magneticEnergyJ"] = scalars["magneticEnergyJ"]
     if elmer_exit is not None:
         manifest["scalars"]["elmerExit"] = elmer_exit
     man_path = job_solver / "manifest.json"

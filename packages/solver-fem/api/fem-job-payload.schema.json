@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mo.local/schemas/solver-fem/fem-job-payload-v0.json",
   "title": "Mo FemJobPayload v0 (Q3)",
-  "description": "POST /jobs payload when jobType=fem. Align with docs/drafts/Q3-轴向与FEM边界.md and openapi-v1.yaml.",
+  "description": "POST /jobs payload when jobType=fem. Align with docs/drafts/Q3-调度与FEM边界.md, Q4plus-5-磁静力学与轴向真值.md, and openapi-v1.yaml. Q5-2: equationMode heat_proxy|magnetostatic; heat-proxy ≠ magnetostatic.",
   "type": "object",
   "required": [
     "topology",
@@ -19,10 +19,31 @@
       "format": "uuid",
       "description": "Optional echo of Job.projectId for worker-side checks"
     },
-    "topology": { "enum": ["RF", "AF"] },
-    "machineType": { "enum": ["BLDC", "PMSM", "ACIM"] },
-    "dim": { "enum": ["2d", "3d"] },
-    "solverKernel": { "enum": ["elmer", "getdp"] },
+    "topology": {
+      "enum": [
+        "RF",
+        "AF"
+      ]
+    },
+    "machineType": {
+      "enum": [
+        "BLDC",
+        "PMSM",
+        "ACIM"
+      ]
+    },
+    "dim": {
+      "enum": [
+        "2d",
+        "3d"
+      ]
+    },
+    "solverKernel": {
+      "enum": [
+        "elmer",
+        "getdp"
+      ]
+    },
     "meshProfile": {
       "type": "string",
       "minLength": 1,
@@ -35,12 +56,27 @@
     },
     "materials": {
       "description": "Material refs aligned with Q2 materials API / .mems materials/",
-      "type": ["object", "array"],
+      "type": [
+        "object",
+        "array"
+      ],
       "additionalProperties": true
     },
     "templateId": {
       "type": "string",
-      "description": "Optional id under packages/solver-fem/templates/"
+      "description": "Optional id under packages/solver-fem/templates/. af_pmsm_3d_ms implies equationMode=magnetostatic when equationMode omitted."
+    },
+    "equationMode": {
+      "type": "string",
+      "enum": [
+        "heat_proxy",
+        "magnetostatic"
+      ],
+      "description": "Q5-2 equation mode. Missing + dryRun=false → heat_proxy compat. templateId af_pmsm_3d_ms implies magnetostatic when omitted."
+    },
+    "dryRun": {
+      "type": "boolean",
+      "description": "Optional dry-run flag; worker gate remains MO_FEM_DRY_RUN."
     }
   },
   "additionalProperties": true

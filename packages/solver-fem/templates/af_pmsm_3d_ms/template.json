@@ -7,6 +7,7 @@
   "solverKernel": "elmer",
   "meshProfile": "af_pmsm_3d_ms_min",
   "pending_calibration": true,
-  "magnetostaticPathReady": false,
-  "notes": "Magnetostatic skeleton only; heat-proxy templates unchanged; do NOT claim FEM ≤3%. Real Elmer magnetostatic + Maxwell/virtual-work postprocess deferred."
+  "magnetostaticPathReady": true,
+  "postprocess": "maxwell",
+  "notes": "Q5-2 magnetostatic true path: WhitneyAV + MagnetoDynamicsCalcFields nodal/Maxwell force → axialForceN. NOT heat-proxy. pending_calibration — do NOT claim FEM ≤3%."
 }
