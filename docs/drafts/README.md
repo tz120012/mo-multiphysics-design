@@ -17,6 +17,7 @@
 | [裁决-geometry-mems-poleCount.md](./裁决-geometry-mems-poleCount.md) | Mo-架构裁决：`poleCount` + 双轨版本 KEEP |
 | [openapi-v1.yaml](./openapi-v1.yaml) | Mo Platform API OpenAPI 3.1 **v1 草案**（`1.0.0-draft`） |
 | [history-契约-q1-6.md](./history-契约-q1-6.md) | Q1-6 Undo/Redo **最小契约**（客户端权威线性栈 + `history/stack.json`） |
+| [裁决-Q2-材料typed-curves与Motor采纳.md](./裁决-Q2-材料typed-curves与Motor采纳.md) | Motor 采纳 `3c34f1c`；typed curves 目标 + meta 过渡追认 |
 | [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) | **Q2 锁定**：Materials API CRUD + Wasm/analytic 双轨部署边界 |
 
 其他范围笔记（几何 / 解析 / FEM / 驱动后处理等）可并存于本目录，**均不替代** 01/02。
