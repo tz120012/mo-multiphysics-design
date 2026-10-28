@@ -7,6 +7,10 @@ from typing import Callable
 
 from .materials import MU0, mu_steel, pm_mu_r
 
+# Fixed iteration controls — deterministic; do not randomize or adapt per call.
+MEC_TOL = 1e-4
+MEC_MAX_ITER = 80
+
 
 def reluctance_linear(length_m: float, area_m2: float, mu: float) -> float:
     """R = ℓ / (μ A). Guards against zero area."""
@@ -59,8 +63,8 @@ def solve_series_mec(
     mmf_a: float,
     *,
     mu_fn: Callable[[float], float] = mu_steel,
-    tol: float = 1e-4,
-    max_iter: int = 80,
+    tol: float = MEC_TOL,
+    max_iter: int = MEC_MAX_ITER,
     flux0: float | None = None,
 ) -> MecSolution:
     """Iterate Φ = F / ΣR(B) until relative flux change < tol.
