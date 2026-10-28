@@ -126,16 +126,47 @@ make up && make health
 | 目标 | 命令 | 说明 |
 | --- | --- | --- |
 | 仅 analytic Celery | `make up-worker` | profile `worker`（api 镜像）；`CELERY_ENABLED=1` |
-| FEM 栈 | `make up-fem` | profiles `worker` + `fem`：`fem` 工具链 stub + `worker-fem`（队列 `fem`） |
+| FEM 栈 | `make up-fem` | profiles `worker` + `fem`：真 Elmer 工具链 + `worker-fem`（队列 `fem`） |
+| FEM 栈（box） | `make up-fem-box` | 同上 + `docker-compose.box.yml`（`host.docker.internal`） |
 
 | 服务 | 镜像 | 说明 |
 | --- | --- | --- |
 | `worker` | api 镜像 | analytic 队列（Q2-6） |
-| `fem` | `apps/fem/Dockerfile` | Elmer(+Gmsh) 工具链；GetDP 可后置 stub |
+| `fem` | `apps/fem/Dockerfile` | Q3-L2：ElmerSolver / Gmsh / GetDP（宿主机禁止安装） |
 | `worker-fem` | `apps/fem/Dockerfile.worker` | Celery `-Q fem`；共享 `/var/mo/fem` |
 
 - 工作目录：`MO_FEM_WORKDIR=/var/mo/fem`（卷 `mo_femdata`）
 - 模板/schema：`packages/solver-fem`（Mo-有限元）；Jobs `jobType=fem`（Mo-后端入队）
+- 默认 **`MO_FEM_DRY_RUN=1`**（compose / `.env.example`）；真 Elmer 端到端见下节。
+
+### Q3-L2 真 Elmer 联调（临时关 dry-run）
+
+默认保持 dry-run，避免无 fixture 时误跑重求解。测试端到端时：
+
+```bash
+# box（本机 Bot）—— 只 recreate worker-fem
+MO_FEM_DRY_RUN=0 CELERY_ENABLED=1 sudo docker compose \
+  -f docker-compose.yml -f docker-compose.box.yml \
+  --env-file .env --profile worker --profile fem \
+  up -d --force-recreate --no-deps worker-fem
+
+# 正常 Docker 主机（无 box overlay）
+MO_FEM_DRY_RUN=0 CELERY_ENABLED=1 docker compose \
+  --env-file .env --profile worker --profile fem \
+  up -d --force-recreate --no-deps worker-fem
+
+# 核对
+docker exec mo-worker-fem printenv MO_FEM_DRY_RUN   # 期望 0
+docker exec mo-fem ElmerSolver                      # 无 case 时缺 STARTINFO、exit 1 属预期
+
+# 测完改回默认 dry-run
+MO_FEM_DRY_RUN=1 CELERY_ENABLED=1 sudo docker compose \
+  -f docker-compose.yml -f docker-compose.box.yml \
+  --env-file .env --profile worker --profile fem \
+  up -d --force-recreate --no-deps worker-fem
+```
+
+未改 `.env` 时，命令行 `MO_FEM_DRY_RUN=0` 仅作用于本次 recreate；默认仍是 `1`。
 
 ### Q2-L7 抽检（开 Q3 前）
 

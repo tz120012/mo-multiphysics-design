@@ -1,15 +1,16 @@
-.PHONY: help up up-box up-worker up-fem down down-box logs ps restart smoke health health-box build
+.PHONY: help up up-box up-worker up-fem up-fem-box down down-box logs ps restart smoke health health-box build
 
 COMPOSE ?= docker compose
 ENV_FILE ?= .env
 COMPOSE_BOX := $(COMPOSE) -f docker-compose.yml -f docker-compose.box.yml
 
 help:
-	@echo "Targets: up up-box up-worker up-fem build down down-box logs ps restart smoke health health-box"
+	@echo "Targets: up up-box up-worker up-fem up-fem-box build down down-box logs ps restart smoke health health-box"
 	@echo "  up         — default 4 services (service DNS postgres/redis)"
 	@echo "  up-box     — Bot/box iptables-stub smoke (host.docker.internal)"
 	@echo "  up-worker  — + Celery worker profile (CELERY_ENABLED=1)"
-	@echo "  up-fem     — + analytic worker + fem toolchain + worker-fem (Q3-3)"
+	@echo "  up-fem     — + analytic worker + fem toolchain + worker-fem (normal Docker DNS)"
+	@echo "  up-fem-box — same as up-fem with box overlay (host.docker.internal)"
 
 up:
 	@test -f $(ENV_FILE) || cp .env.example $(ENV_FILE)
@@ -33,6 +34,13 @@ up-fem:
 	@echo "[mo] up-fem: profiles worker,fem (toolchain + worker-fem; arch 8d966d9)"
 	CELERY_ENABLED=1 $(COMPOSE) --env-file $(ENV_FILE) --profile worker --profile fem up -d --build
 	@$(MAKE) --no-print-directory health || true
+
+
+up-fem-box:
+	@test -f $(ENV_FILE) || cp .env.example $(ENV_FILE)
+	@echo "[mo] up-fem-box: box overlay + profiles worker,fem (Q3-L2 Elmer)"
+	CELERY_ENABLED=1 $(COMPOSE_BOX) --env-file $(ENV_FILE) --profile worker --profile fem up -d --build
+	@$(MAKE) --no-print-directory health-box || true
 
 build:
 	@test -f $(ENV_FILE) || cp .env.example $(ENV_FILE)
