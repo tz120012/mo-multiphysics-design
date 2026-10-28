@@ -11,3 +11,5 @@ make down
 ```
 
 连接约定（容器内）：`DATABASE_URL=postgresql+psycopg://mo:mo@postgres:5432/mo`，`REDIS_URL=redis://redis:6379/0`。宿主机可用 `localhost` 替换主机名。API 对外端口预留 `8000`（Gate0 未启 api 服务）。
+
+宿主机默认端口：Postgres `5433`、Redis `6380`（见 `.env.example`），降低与其他项目冲突。
