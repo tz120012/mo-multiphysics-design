@@ -25,7 +25,13 @@
     "stack_length_m": 0.008,
     "airgap_m": 0.001,
     "rotor_od_m": 0.12,
-    "stator_id_m": 0.04
+    "stator_id_m": 0.04,
+    "outer_radius_m": 0.06,
+    "inner_radius_m": 0.02,
+    "disk_thickness_m": 0.008,
+    "disk_count": 3,
+    "n_planes": 4,
+    "magnet_arc_ratio": 0.8333333333333334
   },
   "meshDescriptor": {
     "schemaVersion": "0.1.0-q1",
@@ -437,7 +443,13 @@
       "stack_length_m": 0.008,
       "airgap_m": 0.001,
       "rotor_od_m": 0.12,
-      "stator_id_m": 0.04
+      "stator_id_m": 0.04,
+      "outer_radius_m": 0.06,
+      "inner_radius_m": 0.02,
+      "disk_thickness_m": 0.008,
+      "disk_count": 3,
+      "n_planes": 4,
+      "magnet_arc_ratio": 0.8333333333333334
     },
     "materials": {},
     "operating_point": {
