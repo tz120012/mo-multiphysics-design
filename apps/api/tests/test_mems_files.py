@@ -122,6 +122,25 @@ def test_get_mems_file_path_traversal_400(client):
         assert r.json().get("code") == "bad_path"
 
 
+def test_get_mems_file_empty_and_absolute_path_400(client):
+    """Arch nit on 8d9fc3b: empty + absolute paths → 400 (same normalize as artifacts)."""
+    c = client
+    headers = _auth(c)
+    pid = _create_project(c, headers)
+    assert c.get(f"/api/v1/projects/{pid}/mems", headers=headers).status_code == 200
+
+    # Trailing slash → empty {member_path:path}; %2F… → absolute leading /.
+    cases = (
+        f"/api/v1/projects/{pid}/mems/files/",
+        f"/api/v1/projects/{pid}/mems/files/%2Fetc%2Fpasswd",
+        f"/api/v1/projects/{pid}/mems/files/%20",  # whitespace-only → empty after strip
+    )
+    for url in cases:
+        r = c.get(url, headers=headers)
+        assert r.status_code == 400, (url, r.text)
+        assert r.json().get("code") == "bad_path"
+
+
 def test_get_mems_file_project_missing_404(client):
     c = client
     headers = _auth(c)
