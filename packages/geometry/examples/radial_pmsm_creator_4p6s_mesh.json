@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "0.1.0-q1",
+  "kind": "radial",
+  "units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "meta": {
+    "rotorTopology": "inner",
+    "machineType": "PMSM",
+    "slotCount": 6,
+    "poleCount": 4,
+    "airgap": 0.4
+  },
+  "primitives": [
+    {
+      "type": "ring",
+      "name": "stator_yoke",
+      "innerRadius": 44.9,
+      "outerRadius": 56.5,
+      "height": 30.1,
+      "z": 0.0,
+      "radialSegments": 48,
+      "thetaSegments": 48
+    },
+    {
+      "type": "sector",
+      "name": "stator_tooth_0",
+      "innerRadius": 23.9,
+      "outerRadius": 44.9,
+      "height": 30.1,
+      "startAngleDeg": 17.67474510474392,
+      "sweepAngleDeg": 24.650509790512164,
+      "z": 0.0,
+      "segments": 8
+    },
+    {
+      "type": "sector",
+      "name": "stator_tooth_1",
+      "innerRadius": 23.9,
+      "outerRadius": 44.9,
+      "height": 30.1,
+      "startAngleDeg": 77.67474510474392,
+      "sweepAngleDeg": 24.650509790512164,
+      "z": 0.0,
+      "segments": 8
+    },
+    {
+      "type": "sector",
+      "name": "stator_tooth_2",
+      "innerRadius": 23.9,
+      "outerRadius": 44.9,
+      "height": 30.1,
+      "startAngleDeg": 137.67474510474392,
+      "sweepAngleDeg": 24.650509790512164,
+      "z": 0.0,
+      "segments": 8
+    },
+    {
+      "type": "sector",
+      "name": "stator_tooth_3",
+      "innerRadius": 23.9,
+      "outerRadius": 44.9,
+      "height": 30.1,
+      "startAngleDeg": 197.67474510474392,
+      "sweepAngleDeg": 24.650509790512164,
+      "z": 0.0,
+      "segments": 8
+    },
+    {
+      "type": "sector",
+      "name": "stator_tooth_4",
+      "innerRadius": 23.9,
+      "outerRadius": 44.9,
+      "height": 30.1,
+      "startAngleDeg": 257.6747451047439,
+      "sweepAngleDeg": 24.650509790512164,
+      "z": 0.0,
+      "segments": 8
+    },
+    {
+      "type": "sector",
+      "name": "stator_tooth_5",
+      "innerRadius": 23.9,
+      "outerRadius": 44.9,
+      "height": 30.1,
+      "startAngleDeg": 317.6747451047439,
+      "sweepAngleDeg": 24.650509790512164,
+      "z": 0.0,
+      "segments": 8
+    },
+    {
+      "type": "ring",
+      "name": "rotor_core",
+      "innerRadius": 8.0,
+      "outerRadius": 23.5,
+      "height": 30.1,
+      "z": 0.0,
+      "radialSegments": 48,
+      "thetaSegments": 48
+    },
+    {
+      "type": "sector",
+      "name": "magnet_0",
+      "innerRadius": 21.175,
+      "outerRadius": 23.5,
+      "height": 28.595,
+      "startAngleDeg": 13.500000000000004,
+      "sweepAngleDeg": 62.99999999999999,
+      "z": 0.0,
+      "segments": 6
+    },
+    {
+      "type": "sector",
+      "name": "magnet_1",
+      "innerRadius": 21.175,
+      "outerRadius": 23.5,
+      "height": 28.595,
+      "startAngleDeg": 103.5,
+      "sweepAngleDeg": 62.99999999999999,
+      "z": 0.0,
+      "segments": 6
+    },
+    {
+      "type": "sector",
+      "name": "magnet_2",
+      "innerRadius": 21.175,
+      "outerRadius": 23.5,
+      "height": 28.595,
+      "startAngleDeg": 193.5,
+      "sweepAngleDeg": 62.99999999999999,
+      "z": 0.0,
+      "segments": 6
+    },
+    {
+      "type": "sector",
+      "name": "magnet_3",
+      "innerRadius": 21.175,
+      "outerRadius": 23.5,
+      "height": 28.595,
+      "startAngleDeg": 283.5,
+      "sweepAngleDeg": 62.99999999999999,
+      "z": 0.0,
+      "segments": 6
+    }
+  ]
+}

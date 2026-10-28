@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from mo_geometry import (
+    creator_radial_pmsm_4p6s,
     default_axial_af_pmsm,
     default_radial_acim,
     default_radial_pmsm,
@@ -72,6 +73,17 @@ def rebuild(examples_dir: Path | None = None) -> list[Path]:
     paths[out / "axial_af_pmsm_rfmr_pipeline_entry.json"] = entry
     assert live_af["geometrySummary"] == entry["geometrySummary"]
     assert live_af["pipelineEntry"]["analyticSolveStub"]["geometry"] == entry["geometrySummary"]
+
+    # --- RF PMSM CREATOR 4p/6s（独立样例；不覆盖 radial_pmsm_* demo）---
+    creator = creator_radial_pmsm_4p6s()
+    live_c = rebuild_live_geometry(creator)
+    paths[out / "radial_pmsm_creator_4p6s_params.json"] = to_mems_radial(creator)
+    paths[out / "radial_pmsm_creator_4p6s_mesh.json"] = build_radial_mesh_descriptor(creator)
+    paths[out / "radial_pmsm_creator_4p6s_geometry_summary.json"] = export_geometry_summary(
+        creator
+    )
+    assert live_c["geometrySummary"] == paths[out / "radial_pmsm_creator_4p6s_geometry_summary.json"]
+    assert live_c["meshDescriptor"] == paths[out / "radial_pmsm_creator_4p6s_mesh.json"]
 
     for path, obj in paths.items():
         _dump(path, obj)

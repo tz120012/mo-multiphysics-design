@@ -1,0 +1,9 @@
+{
+  "poles": 4,
+  "slots": 6,
+  "stack_length_m": 0.030100000000000002,
+  "airgap_m": 0.0004,
+  "rotor_od_m": 0.047,
+  "stator_id_m": 0.047799999999999995,
+  "magnet_thickness_m": 0.00435
+}

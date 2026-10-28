@@ -96,6 +96,67 @@ def default_radial_pmsm() -> RadialParams:
     return p
 
 
+def creator_radial_pmsm_4p6s() -> RadialParams:
+    """CREATOR 公开标杆径向 PMSM：4 极 / 6 槽（arXiv 2501.15921 Table 12）。
+
+    论文 inset 磁钢 → ``magnetTopology="IPM"``（非 SPM）。
+    扩展字段（magnetThickness / magnetHeight / magnetSpanDeg、槽口等）
+    供解析/文档消费；``validate_radial`` 不拒未知键。
+
+    单位：``units.length=mm``。气隙校核：47 + 2×0.4 = 47.8。
+    **未**入库 CREATOR NC 数据包二进制。
+    """
+    p: RadialParams = {
+        "schemaVersion": GEOMETRY_SCHEMA_VERSION,
+        "topology": "RF",
+        "machineType": "PMSM",
+        "units": default_units(),
+        "rotorTopology": "inner",
+        "stator": {
+            "innerDiameter": 47.8,
+            "outerDiameter": 113.0,
+            "stackLength": 30.1,
+            "slotCount": 6,
+            "slotShape": "straight",
+            "toothWidth": 14.8,
+            "yokeHeight": 11.6,
+            "skewAngle": None,
+        },
+        "rotor": {
+            "innerDiameter": 16.0,
+            "outerDiameter": 47.0,
+            "magnetTopology": "IPM",
+            "poleCount": 4,
+        },
+        "airgap": 0.4,
+        "axialActiveLength": 30.1,
+    }
+    # 扩展磁钢 / 槽口（论文 Table 12；不进 TypedDict 必填集）
+    stator = p["stator"]  # type: ignore[assignment]
+    rotor = p["rotor"]  # type: ignore[assignment]
+    assert isinstance(stator, dict) and isinstance(rotor, dict)
+    stator["slotOpeningWidth"] = 3.23
+    stator["slotOpeningHeight"] = 0.98
+    rotor["magnetThickness"] = 4.35  # radial magnet length (mm)
+    rotor["magnetHeight"] = 17.6
+    rotor["magnetSpanDeg"] = 45.0
+    # 文档化：Tooth height equiv ≈ 20 mm（论文）；不写入强制字段
+    p["meta"] = {  # type: ignore[typeddict-unknown-key]
+        "source": "arXiv:2501.15921 Table 12 (CREATOR PMSM 4p/6s)",
+        "toothHeightEquiv_mm": 20.0,
+        "paperMagnetTopology": "inset",
+        "mappedMagnetTopology": "IPM",
+        "licenseNote": "CC BY-NC pending user confirmation; NC binary dataset not vendored",
+        "windingNote": (
+            "Table 9: turns_per_slot=328, 1 layer, concentrated tooth-wound; "
+            "Table 7: M250-35A / sintered ferrite radially magnetized; "
+            "Table 6: ~0.10 Nm @ 2000 rpm; Table 8: Inom=0.21 Arms; "
+            "Table 10: Rs=8.9462 ohm, lambda_pm=0.1144 Wb, E0~47.37 Vpeak@2000"
+        ),
+    }
+    return p
+
+
 def default_radial_acim() -> RadialParams:
     p = _base_radial(machine_type="ACIM")
     p["stator"]["slotCount"] = 36

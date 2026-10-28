@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.0.0-gate0",
+  "topology": "RF",
+  "machine_type": "PMSM",
+  "geometry": {
+    "poles": 4,
+    "slots": 6,
+    "stack_length_m": 0.0301,
+    "airgap_m": 0.0004,
+    "rotor_od_m": 0.047,
+    "stator_id_m": 0.0478,
+    "magnet_thickness_m": 0.00435,
+    "turns_per_phase": 656
+  },
+  "materials": {
+    "steel_id": "M250-35A",
+    "magnet_id": "sintered-ferrite-radial",
+    "conductor_id": "Cu",
+    "note": "Table 7 paper labels only; not a materials-service golden binding"
+  },
+  "operating_point": {
+    "speed_rpm": 2000,
+    "current_a_peak": 0.296985,
+    "gamma_deg": 0
+  },
+  "meta": {
+    "status": "skeleton_pending_analytic_wiring",
+    "not_golden": true,
+    "pending_calibration": true,
+    "case_id_hint": "rf-pmsm-creator-001",
+    "source": {
+      "arxiv": "2501.15921",
+      "compel": "10.1108/compel-11-2024-0462",
+      "dataset_doi": "10.3217/sns1d-77m43",
+      "tables": [
+        "Table 6",
+        "Table 7",
+        "Table 8",
+        "Table 9",
+        "Table 10",
+        "Table 12"
+      ]
+    },
+    "turns_assumption": "Table 9 turns_per_slot=328, 1 layer, concentrated tooth-wound; turns_per_phase = (slots/phases)*turns_per_slot = (6/3)*328 = 656",
+    "rated_pointer": "Table 6 ~0.10 Nm @ 2000 rpm; Table 8 Inom=0.21 Arms → Ipeak=√2*0.21",
+    "paper_params_table10": {
+      "Rs_ohm": 8.9462,
+      "lambda_pm_Wb": 0.1144,
+      "E0_Vpeak_at_2000rpm": 47.37
+    },
+    "nc_binary_vendored": false,
+    "license_note": "CC BY-NC pending user confirmation; do not vendor CREATOR NC binary pack"
+  }
+}

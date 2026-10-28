@@ -7,6 +7,7 @@
 | `radial_pmsm_params.json` | `geometry/params.json` 径向 PMSM 片段 |
 | `radial_pmsm_mesh.json` | 对应 mesh descriptor |
 | `radial_pmsm_geometry_summary.json` | `export_geometry_summary` → GeometrySummary（RF） |
+| `radial_pmsm_creator_4p6s_params.json` / `_mesh.json` / `_geometry_summary.json` / `_analytic_request.json` | Q5-3 CREATOR 4p/6s（arXiv 2501.15921 Table 12）；**不**覆盖 `radial_pmsm_*` demo；analytic 骨架非 golden；见 `docs/drafts/几何-Q5-3-CREATOR-PMSM-4p6s.md` |
 | `radial_acim_params.json` / `radial_acim_mesh.json` | 含 `acim` 导条块 |
 | `axial_af_pmsm_rfmr_params.json` / `axial_af_pmsm_rfmr_mesh.json` | 轴向 AF-PMSM RFMR |
 | `axial_af_pmsm_rfmr_geometry_summary.json` | AF GeometrySummary（含半径/盘厚/`n_planes` 等） |
@@ -19,7 +20,7 @@
 | 路径 | 含义 |
 | --- | --- |
 | FE `apps/web/public/geometry/*` | 前端静态拷贝 / 联调快照（**非**本包运行时 live） |
-| 本目录 `examples/` | 由 **live** 路径从 `default_*` 重生成的可演示样例 |
+| 本目录 `examples/` | 由 **live** 路径从 `default_*` / `creator_radial_pmsm_4p6s` 重生成的可演示样例（creator analytic_request 手维护） |
 
 重建（证明 live 可重生成样例）::
 
