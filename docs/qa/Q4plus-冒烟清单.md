@@ -6,8 +6,8 @@
 > 范围：发布候选加固——校准计划、`:5174`、mems/artifacts·FE、live 几何/AF Wasm、磁静力学 FEM/轴向真值  
 > **误差**：解析 ≤5% / FEM ≤3% 均为 **待校准**——**校准书面关闭前不得勾「≤5%/≤3% 达标」**  
 > **MVP**：本清单**不开宣称 MVP 已达成**；Motor 分批签字；全关后方可议该宣称  
-> **Q4+-6**：**已开闸**（Motor 确认 Q4+-3 整关后开；见 [Q4plus-验收跟踪](Q4plus-验收跟踪.md)；签字包骨架 [Q4plus-P06-签字包](Q4plus-P06-签字包.md)）；**仍不**勾 F1/F2；**不开宣称 MVP**  
-> **现状**：A1/A2 **PASS**（对照 tip **`81699d3`** / `5df616d` / 产品 **`31c6597`**；记录 [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)）；**B1 PASS**（`f929dcb`；[Q4plus-冒烟记录-Q4+-2-5174-proxy](Q4plus-冒烟记录-Q4+-2-5174-proxy.md)）；C1 **PASS** / C2 **PASS（后端 + FE）**（后端 **`6144f91`** @ **`83d2e6e`**；FE tip **`4794565`** / merge **`6a32d9d`**；记录 [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)、[Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)）；D1/D2 **PASS**（几何 `ad66ff9` / Wasm `166c319`；[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)）；E1/E2 **PASS**（FEM tip **`9ffa4b2`**；记录 [Q4plus-冒烟记录-E1-E2-magnetostatic](Q4plus-冒烟记录-E1-E2-magnetostatic.md)）；其余区仍待 tip；**F1/F2 禁勾**；**不开宣称 MVP**
+> **Q4+-6**：**已开闸**（tip **`2a5b630`**）；材料齐待签——[阶段汇总](Q4plus-冒烟记录-Q4+-6-阶段汇总.md) / [签字包](Q4plus-P06-签字包.md) / [发布加固清单](Q4plus-发布加固清单.md)；**F1/F2 仍禁止勾选**；**不开宣称 MVP**  
+> **现状**：A1/A2 **PASS**（证据 tip **`3646c94`**）；B1 **PASS**（**`ab1e6d5`**）；C1/C2 **PASS（后端+FE）**（**`7c80f76`** / FE **`db964d0`**；产品整关 **`0a9132c`**）；D1/D2 **PASS**（**`d4759ea`**）；E1/E2 **PASS**（**`0685e96`**）；G1 **PASS（转入+部分消化）**；G2 **签字包已交待 Motor**；**F1/F2 仍禁止勾选**；**不开宣称 MVP**
 
 ## 状态说明
 
@@ -62,19 +62,23 @@
 
 | ID | 检查项 | 通过标准 | 现状 |
 | --- | --- | --- | --- |
-| Q4+-G1 | 遗留已转入 | Q3-L4 / Q4-校准·G3 / `:5174` / pending_calibration 见跟踪表 | **骨架 PASS**（已转入；未消化） |
-| Q4+-G2 | Motor 分批签字 | 有证据后分批签；全关后方可议 MVP 已达成；**本员不代签**；**本阶段不自动授权该宣称** | **进行中**（Q4+-6 已开闸；交 [Q4plus-P06-签字包](Q4plus-P06-签字包.md) 草稿；**仍不**宣称 MVP） |
+| Q4+-G1 | 遗留已转入 | Q3-L4 / Q4-校准·G3 / `:5174` / pending_calibration 见跟踪表 | **PASS（转入+部分消化）**（G3 文档债 / compose:5174 已消化；**Q3-L4 整行**与 **pending_calibration** 仍跟踪；**Q4+-3b mems/files 未做**；见 [Q4+-6 汇总](Q4plus-冒烟记录-Q4+-6-阶段汇总.md) §4） |
+| Q4+-G2 | Motor 分批签字 | 有证据后分批签；全关后方可议 MVP 已达成；**本员不代签**；**本阶段不自动授权该宣称** | **签字包已交待签**（[Q4plus-P06-签字包](Q4plus-P06-签字包.md)；建议用语：Q4+ 通过（发布候选加固）；**非** MVP 已达成；**签署栏留空**；**F1/F2 禁勾**） |
 
 ## 执行方式（骨架）
 
 1. 各角色 tip / 交测后，Mo-测试按区实跑并改「现状」。  
-2. A1/A2、B1、C1、C2（后端+FE）、D1/D2 、E1/E2 已有 PASS；其余区在对应 tip 入库前保持 TODO。  
+2. A1/A2、B1、C1/C2（后端+FE）、D1/D2、E1/E2、G1 已有 PASS；G2 材料齐待 Motor；**F1/F2 仍禁止勾选**。  
 3. 不得勾选 F1/F2；不得宣称 MVP 已达成。  
-4. 证据附于 [Q4plus-验收跟踪](Q4plus-验收跟踪.md) 与分项冒烟记录（A1/A2：[Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)；C1/C2 后端：[Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)；C2 FE：[Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)；D1/D2：[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)；E1/E2：[Q4plus-冒烟记录-E1-E2-magnetostatic](Q4plus-冒烟记录-E1-E2-magnetostatic.md)）。
+4. 全量汇总见 [Q4plus-冒烟记录-Q4+-6-阶段汇总](Q4plus-冒烟记录-Q4+-6-阶段汇总.md)；签字包 [Q4plus-P06-签字包](Q4plus-P06-签字包.md)；发布加固清单 [Q4plus-发布加固清单](Q4plus-发布加固清单.md)。  
+5. 分项证据：A1/A2 tip `3646c94`；B1 `ab1e6d5`；C1/C2 `7c80f76`；FE `db964d0`；D1/D2 `d4759ea`；E1/E2 `0685e96`（产品整关 `0a9132c`；开闸 `2a5b630`）。
 
 ## 相关链接
 
 - [Q4plus-验收跟踪](Q4plus-验收跟踪.md)
+- [Q4plus-冒烟记录-Q4+-6-阶段汇总](Q4plus-冒烟记录-Q4+-6-阶段汇总.md)
+- [Q4plus-P06-签字包](Q4plus-P06-签字包.md)
+- [Q4plus-发布加固清单](Q4plus-发布加固清单.md)
 - [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)
 - [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)
 - [Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)
@@ -87,4 +91,4 @@
 
 ---
 
-*Mo-测试填实中；Q4+-6 已开闸（Motor）；A1/A2 已关文档债；B1/C1 PASS；C2 后端+FE PASS（tip `4794565`；Motor 已确认 Q4+-3 整关）；D1/D2 已补记录；E1/E2 磁静力学壳已 PASS（禁勾 ≤3%）；禁勾 ≤5%/≤3%；不开 MVP；不勾 F1/F2。*
+*Mo-测试：Q4+-6 材料齐待 Motor 签；A–E PASS；G1 部分消化；G2 签字包已交（签署栏留空）；**F1/F2 仍禁止勾选**；不开宣称 MVP；不代签。*
