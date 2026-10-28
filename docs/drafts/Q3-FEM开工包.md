@@ -31,12 +31,12 @@ make up-fem   # worker + fem stub；默认 make up 不拉 FEM
 
 ## Motor 拍板对齐（tip `27a8de2` §8）
 
-- **F1**：精简件进 mems-zip + `resultRef`；全场默认不进浏览器，超顶留 worker 盘
+- **F1**：精简件进 mems-zip + `resultRef`；全场默认不进浏览器，超顶留 worker 盘 → 书面 [Q3-F1-结果精简.md](./Q3-F1-结果精简.md)
 - **F2**：**Elmer-first**；GetDP = 枚举 + 模板 stub，双核同验不阻塞 Q3
 
 ## 未决
 
-- 真实 Elmer 求解替换 dry-run（需 FEM 镜像 / 运维换 Dockerfile 体）
+- heat-proxy E2E 已通（`MO_FEM_DRY_RUN=0`，tip `2c1fed6`）；磁静力学场后处理 / 真 glTF 切片后置
 - GetDP 真跑通（非 Q3 硬阻塞）
 
 ## Q3-L2 Dockerfile

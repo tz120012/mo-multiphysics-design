@@ -1,4 +1,4 @@
-"""Write thinned FEM artifacts per docs/drafts/Q3-前端与FEM边界.md §5."""
+"""Write thinned FEM artifacts per Q3-前端与FEM边界 §5 and docs/drafts/Q3-F1-结果精简.md."""
 from __future__ import annotations
 
 import json

@@ -20,6 +20,7 @@
 | [裁决-Q2-材料typed-curves与Motor采纳.md](./裁决-Q2-材料typed-curves与Motor采纳.md) | Motor 采纳 `3c34f1c`；typed curves 目标 + meta 过渡追认 |
 | [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) | **Q2 锁定**：Materials API CRUD + Wasm/analytic 双轨部署边界 |
 | [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) | **Q3 锁定**：轴向解析 + `solver-fem` 授权 + Jobs fem + 结果精简 |
+| [Q3-F1-结果精简.md](./Q3-F1-结果精简.md) | **F1 书面**：thinning 职责、resultRef、/field 三件套、heat-proxy 口径（不宣称 ≤3%） |
 
 其他范围笔记（几何 / 解析 / FEM / 驱动后处理等）可并存于本目录，**均不替代** 01/02。
 Q2 解析开放项（Rust 偏好）已在 [解析范围.md](./解析范围.md) §6 勾选关闭，细节以 Q2 边界草案为准。
