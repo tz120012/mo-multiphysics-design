@@ -1,6 +1,6 @@
 # packages/solver-analytic — 轻量解析（Wasm 目标）
 
-Gate0 **已签字**（Motor G0-6）。Q1：径向 RF+PMSM **非线性 MEC** 已落地。Q2 进行中：MEC 加固（可复现 + 单测）、**ACIM 稳态等效电路**、材料消费适配器。Gate0 mock 保留回归。**本包不对标 ≤5%**。
+Gate0 / Q1 / Q2 **已签字**。Q3 进行中：轴向多平面 **AF+PMSM MVP**（`axial_planes/`）。Gate0 mock 保留回归。**本包不对标 ≤5%**。
 
 维护：Mo-解析 · 仅 `/workspace/mo-platform`。
 
@@ -13,7 +13,7 @@ Gate0 **已签字**（Motor G0-6）。Q1：径向 RF+PMSM **非线性 MEC** 已�
 | Gate0 mock | 保留 | `solver=mock` / `smoke/run_radial_pmsm_mock.py` |
 | ACIM 等效电路 | **Q2** | `meta.solver=acim_equiv`；Rs/Rr'/Xm/Xσ + 转差转矩 |
 | 材料适配 | **Q2** | `materials_adapter.py`：内联 / catalog id / 工程默认 |
-| 轴向多平面展开 | Q3 | 盘式径向解耦圆环积分 |
+| 轴向多平面展开 | **Q3-1 MVP** | AF+PMSM；`meta.solver=axial_planes`；见 `axial_planes/README.md` |
 | Wasm | **Q2** | `packages/solver-analytic-wasm/`（`solve_json`）；见该包 README |
 | Sync HTTP | **Q2 可选** | `POST /api/v1/solver/analytic/solve`（Bearer）薄包装本包 `solve()` |
 
@@ -29,13 +29,16 @@ packages/solver-analytic/
   api/                     # JSON schema + 样例
   radial_mec/              # 径向非线性 MEC（PMSM/BLDC）
   machines/acim_equiv.py   # ACIM 稳态等效电路
-  axial_planes/            # Q3 占位
+  axial_planes/            # Q3 AF+PMSM 多平面展开
   smoke/
     run_radial_pmsm_mock.py
     run_radial_pmsm_mec.py
     run_radial_acim_equiv.py
     fixtures/radial_pmsm_request.json
     fixtures/radial_acim_request.json
+    fixtures/axial_pmsm_request.json
+    fixtures/axial_pmsm_stub_*.json   # FE UI 临时 stub（非 golden）
+    run_axial_pmsm_planes.py
 ```
 
 ## 接口
@@ -77,8 +80,10 @@ ACIM 工况优先给 `operating_point.voltage_v_peak`（相电压峰值）+ `spe
 python3 packages/solver-analytic/smoke/run_radial_pmsm_mock.py
 python3 packages/solver-analytic/smoke/run_radial_pmsm_mec.py
 python3 packages/solver-analytic/smoke/run_radial_acim_equiv.py
+python3 packages/solver-analytic/smoke/run_axial_pmsm_planes.py
 python3 packages/solver-analytic/radial_mec/tests/test_reluctance_convergence.py
 python3 packages/solver-analytic/radial_mec/tests/test_materials_adapter.py
+python3 packages/solver-analytic/axial_planes/tests/test_axial_planes.py
 ```
 
 范围草案：`docs/drafts/解析范围.md`。

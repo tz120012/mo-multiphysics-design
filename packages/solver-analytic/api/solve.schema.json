@@ -1,108 +1,326 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mo.local/schemas/solver-analytic/solve-v0.json",
-  "title": "Mo solver-analytic Solve API v0 (Gate0 draft + Q2 ACIM)",
-  "description": "Input: geometry summary + materials + operating point. Output: torque / back-EMF / coarse losses. Schema bump note: meta.solver adds acim_equiv (backward-compatible enum extension). Align with Mo-架构 before freeze.",
+  "title": "Mo solver-analytic Solve API v0 (Gate0 + Q2 ACIM + Q3 AF planes)",
+  "description": "Input: geometry summary + materials + operating point. Output: torque / back-EMF / coarse losses. Schema bump note: meta.solver includes axial_planes; GeometrySummary adds AF fields (n_planes, disk_thickness_m, inner/outer radius). Still schema_version 0.0.0-gate0 (backward-compatible extension). Align with Mo-架构 before freeze.",
   "$defs": {
     "GeometrySummary": {
       "type": "object",
-      "description": "Compact geometry digest (not full CAD). Final fields TBD with Mo-几何 / Mo-架构.",
-      "required": ["poles", "slots", "stack_length_m", "airgap_m", "rotor_od_m", "stator_id_m"],
+      "description": "Compact geometry digest (not full CAD). RF: stack_length_m=axial stack; rotor_od_m/stator_id_m diameters. AF: rotor_od_m=outer Ø, stator_id_m=inner Ø (stub mapping), stack_length_m=disk/axial iron thickness; prefer outer_radius_m/inner_radius_m when available.",
+      "required": [
+        "poles",
+        "slots",
+        "stack_length_m",
+        "airgap_m",
+        "rotor_od_m",
+        "stator_id_m"
+      ],
       "properties": {
-        "poles": { "type": "integer", "minimum": 2 },
-        "slots": { "type": "integer", "minimum": 3 },
-        "stack_length_m": { "type": "number", "exclusiveMinimum": 0 },
-        "airgap_m": { "type": "number", "exclusiveMinimum": 0 },
-        "rotor_od_m": { "type": "number", "exclusiveMinimum": 0 },
-        "stator_id_m": { "type": "number", "exclusiveMinimum": 0 },
-        "magnet_thickness_m": { "type": "number", "minimum": 0 },
-        "turns_per_phase": { "type": "integer", "minimum": 1 },
-        "rotor_bars": { "type": "integer", "minimum": 1, "description": "ACIM; default=slots" },
-        "bar_area_m2": { "type": "number", "exclusiveMinimum": 0, "description": "ACIM bar cross-section" },
-        "winding_factor": { "type": "number" },
-        "carter_factor": { "type": "number" }
+        "poles": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "slots": {
+          "type": "integer",
+          "minimum": 3
+        },
+        "stack_length_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "RF: stack length; AF: disk/axial iron thickness"
+        },
+        "airgap_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rotor_od_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "RF: rotor OD; AF stub: outer diameter of annulus"
+        },
+        "stator_id_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "RF: stator ID; AF stub: inner diameter of annulus"
+        },
+        "magnet_thickness_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "turns_per_phase": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rotor_bars": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "ACIM; default=slots"
+        },
+        "bar_area_m2": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "ACIM bar cross-section"
+        },
+        "winding_factor": {
+          "type": "number"
+        },
+        "carter_factor": {
+          "type": "number"
+        },
+        "n_planes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "AF concentric ring count; default 4"
+        },
+        "disk_thickness_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "AF disk axial thickness; else stack_length_m"
+        },
+        "disk_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "AF disk count (meta; single-airgap equiv for MVP)"
+        },
+        "outer_radius_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "AF outer radius (preferred over diameter mapping)"
+        },
+        "inner_radius_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "AF inner radius (preferred)"
+        },
+        "rotor_id_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "AF inner diameter alternative"
+        },
+        "magnet_arc_ratio": {
+          "type": "number"
+        },
+        "tooth_height_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "stator_yoke_height_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rotor_yoke_height_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
       }
     },
     "Materials": {
       "type": "object",
       "properties": {
-        "steel_id": { "type": "string" },
-        "magnet_id": { "type": "string" },
-        "conductor_id": { "type": "string" },
-        "bar_id": { "type": "string", "description": "ACIM rotor bar material id" },
-        "br_t": { "type": "number", "description": "Remanence override for PM machines" },
-        "mur_pm": { "type": "number", "description": "PM recoil mur override" },
-        "sigma_copper": { "type": "number", "description": "S/m, stator conductor" },
-        "sigma_bar": { "type": "number", "description": "S/m, ACIM bar" }
+        "steel_id": {
+          "type": "string"
+        },
+        "magnet_id": {
+          "type": "string"
+        },
+        "conductor_id": {
+          "type": "string"
+        },
+        "bar_id": {
+          "type": "string",
+          "description": "ACIM rotor bar material id"
+        },
+        "br_t": {
+          "type": "number",
+          "description": "Remanence override for PM machines"
+        },
+        "mur_pm": {
+          "type": "number",
+          "description": "PM recoil mur override"
+        },
+        "sigma_copper": {
+          "type": "number",
+          "description": "S/m, stator conductor"
+        },
+        "sigma_bar": {
+          "type": "number",
+          "description": "S/m, ACIM bar"
+        }
       }
     },
     "OperatingPoint": {
       "type": "object",
-      "required": ["speed_rpm"],
+      "required": [
+        "speed_rpm"
+      ],
       "properties": {
-        "speed_rpm": { "type": "number" },
-        "current_a_peak": { "type": "number" },
-        "voltage_v_peak": { "type": "number", "description": "Phase peak; preferred for ACIM" },
-        "gamma_deg": { "type": "number", "description": "Current angle, PMSM/BLDC" },
-        "slip": { "type": "number", "description": "ACIM; else computed from speed vs sync" },
-        "freq_hz": { "type": "number", "description": "ACIM supply frequency; default 50" }
+        "speed_rpm": {
+          "type": "number"
+        },
+        "current_a_peak": {
+          "type": "number"
+        },
+        "voltage_v_peak": {
+          "type": "number",
+          "description": "Phase peak; preferred for ACIM"
+        },
+        "gamma_deg": {
+          "type": "number",
+          "description": "Current angle, PMSM/BLDC"
+        },
+        "slip": {
+          "type": "number",
+          "description": "ACIM; else computed from speed vs sync"
+        },
+        "freq_hz": {
+          "type": "number",
+          "description": "ACIM supply frequency; default 50"
+        }
       }
     },
     "SolveRequest": {
       "type": "object",
-      "required": ["schema_version", "topology", "machine_type", "geometry", "materials", "operating_point"],
+      "required": [
+        "schema_version",
+        "topology",
+        "machine_type",
+        "geometry",
+        "materials",
+        "operating_point"
+      ],
       "properties": {
-        "schema_version": { "type": "string", "const": "0.0.0-gate0" },
-        "topology": { "enum": ["RF", "AF"] },
-        "machine_type": { "enum": ["BLDC", "PMSM", "ACIM"] },
-        "geometry": { "$ref": "#/$defs/GeometrySummary" },
-        "materials": { "$ref": "#/$defs/Materials" },
-        "operating_point": { "$ref": "#/$defs/OperatingPoint" },
+        "schema_version": {
+          "type": "string",
+          "const": "0.0.0-gate0"
+        },
+        "topology": {
+          "enum": [
+            "RF",
+            "AF"
+          ]
+        },
+        "machine_type": {
+          "enum": [
+            "BLDC",
+            "PMSM",
+            "ACIM"
+          ]
+        },
+        "geometry": {
+          "$ref": "#/$defs/GeometrySummary"
+        },
+        "materials": {
+          "$ref": "#/$defs/Materials"
+        },
+        "operating_point": {
+          "$ref": "#/$defs/OperatingPoint"
+        },
         "materials_catalog": {
           "description": "Optional GET /materials-shaped map or {items:[...]} for id→meta resolution",
-          "type": ["object", "array"]
+          "type": [
+            "object",
+            "array"
+          ]
         },
-        "solver": { "enum": ["mec", "mock"], "description": "Optional; default mec" }
+        "solver": {
+          "enum": [
+            "mec",
+            "mock"
+          ],
+          "description": "Optional; default mec"
+        }
       }
     },
     "SolveResult": {
       "type": "object",
-      "required": ["schema_version", "meta", "torque_nm", "back_emf_v_peak", "losses_w"],
+      "required": [
+        "schema_version",
+        "meta",
+        "torque_nm",
+        "back_emf_v_peak",
+        "losses_w"
+      ],
       "properties": {
-        "schema_version": { "type": "string", "const": "0.0.0-gate0" },
+        "schema_version": {
+          "type": "string",
+          "const": "0.0.0-gate0"
+        },
         "meta": {
           "type": "object",
-          "required": ["solver", "elapsed_ms", "mock"],
+          "required": [
+            "solver",
+            "elapsed_ms",
+            "mock"
+          ],
           "properties": {
             "solver": {
-              "enum": ["mec", "axial_planes", "mock", "acim_equiv"],
-              "description": "Q2: acim_equiv added (backward-compatible extension)"
+              "enum": [
+                "mec",
+                "axial_planes",
+                "mock",
+                "acim_equiv"
+              ],
+              "description": "Q3: axial_planes for AF+PMSM; Q2: acim_equiv; mec/mock"
             },
-            "elapsed_ms": { "type": "number", "minimum": 0 },
-            "mock": { "type": "boolean" },
-            "note": { "type": "string" }
+            "elapsed_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "mock": {
+              "type": "boolean"
+            },
+            "note": {
+              "type": "string"
+            },
+            "n_planes": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "AF planes used"
+            },
+            "axial": {
+              "type": "object",
+              "description": "AF multi-plane diagnostics"
+            }
           }
         },
-        "torque_nm": { "type": "number" },
+        "torque_nm": {
+          "type": "number"
+        },
         "back_emf_v_peak": {
           "type": "number",
           "description": "PMSM: phase back-EMF peak; ACIM: airgap/induced voltage peak"
         },
         "losses_w": {
           "type": "object",
-          "required": ["copper", "iron"],
+          "required": [
+            "copper",
+            "iron"
+          ],
           "properties": {
-            "copper": { "type": "number" },
-            "iron": { "type": "number" },
-            "magnet_eddy": { "type": "number" },
-            "rotor_bar": { "type": "number", "description": "ACIM rotor copper (referred)" }
+            "copper": {
+              "type": "number"
+            },
+            "iron": {
+              "type": "number"
+            },
+            "magnet_eddy": {
+              "type": "number"
+            },
+            "rotor_bar": {
+              "type": "number",
+              "description": "ACIM rotor copper (referred)"
+            }
           }
         },
         "inductance_h": {
           "type": "object",
           "properties": {
-            "ld": { "type": "number" },
-            "lq": { "type": "number" }
+            "ld": {
+              "type": "number"
+            },
+            "lq": {
+              "type": "number"
+            }
           }
         }
       }
