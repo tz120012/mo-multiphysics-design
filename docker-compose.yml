@@ -1,9 +1,9 @@
-# Gate0 G0-4: Postgres + Redis deps placeholder.
-# Connection contract (Mo-运维 ↔ Mo-后端):
-#   POSTGRES_USER=mo POSTGRES_PASSWORD=mo POSTGRES_DB=mo
+# Gate0 / Q1 local deps — Postgres + Redis
+# Host ports 5433/6380 avoid clashing with other projects (Motor Gate0 sign-off).
+# In-compose DNS (Mo-后端 contract):
 #   DATABASE_URL=postgresql+psycopg://mo:mo@postgres:5432/mo
 #   REDIS_URL=redis://redis:6379/0
-# Future: API host map 8000:8000 (no api service in Gate0).
+# Future: API host map 8000:8000 (no api service yet).
 
 services:
   postgres:
@@ -42,7 +42,7 @@ services:
 
   # Future (do not enable yet):
   # api:
-  #   ports: ["8000:8000"]
+  #   ports: ["${API_HOST_PORT:-8000}:8000"]
   # celery-worker / celery-beat / flower / fem — profiles: ["workers"]
 
 volumes:
