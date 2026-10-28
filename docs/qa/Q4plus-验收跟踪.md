@@ -4,7 +4,7 @@
 | --- | --- |
 | 依据 | [02-阶段任务拆解与门禁](../02-阶段任务拆解与门禁.md) Q4+-1…Q4+-6、[Q4-签字记录](Q4-签字记录.md)、[Q4-P11-签字包](Q4-P11-签字包.md) §4 |
 | 维护 | Mo-测试（脚手架）/ Mo-产品（口径）/ Motor（分批签字） |
-| 更新 | 2026-10-28 Asia/Shanghai（**Motor 确认** Q4+-3（后端）与 Q4+-4 通过；产品 tip `43d3da0`/`fb478af`；仍禁勾 ≤5%/≤3%；不开宣称 MVP；Q4+-2 产品已确认待 Motor） |
+| 更新 | 2026-10-28 Asia/Shanghai（**Motor 确认** Q4+-2 / Q4+-3（后端）/ Q4+-4 通过；产品 tip `6d8dbde`/`43d3da0`/`fb478af`；仍禁勾 ≤5%/≤3%；不开宣称 MVP） |
 | 前提 | Q4 已签字通过 / 发布候选（Motor tip **`8d63bde`**；pack **`3a62ebb`**；产品 tip **`bff3866`**）；隔离仅 `/workspace/mo-platform` |
 
 状态：`未开始` / `进行中` / `待测` / `通过` / `阻塞`
@@ -14,7 +14,7 @@
 | 产品项 | 对应 02 | 口径摘要 | 状态 | 备注 |
 | --- | --- | --- | --- | --- |
 | Q4+-1 G3 校准计划正式稿 | Q4+-1 | 含 golden 路径与关闭条件；跟踪关闭 G3/Q2-L4 | **通过（文档债）** | **产品确认**；**Motor 确认 tip `d880536`**；正式稿 [G3-校准计划](G3-校准计划.md)；A1/A2 PASS（[记录](Q4plus-冒烟记录-A1-A2-G3.md)；`5df616d`/`31c6597`/`81699d3`）；§6 四项确认；**仍禁勾 ≤5%/≤3%**；**不开宣称 MVP** |
-| Q4+-2 compose `:5174` 代理 | Q4+-2 | 修复 nginx→host 代理超时；或书面不可行+替代路径 | **通过** | **产品确认**；B1 PASS（[冒烟记录](Q4plus-冒烟记录-Q4+-2-5174-proxy.md)；证据 tip **`ab1e6d5`**；业务 **`f929dcb`**）；`:5174` `/`/`/health`/`/api/v1/health`→200；db/redis ok；**不开宣称 MVP** |
+| Q4+-2 compose `:5174` 代理 | Q4+-2 | 修复 nginx→host 代理超时；或书面不可行+替代路径 | **通过** | **产品确认**；**Motor 已确认**；B1 PASS（[冒烟记录](Q4plus-冒烟记录-Q4+-2-5174-proxy.md)；证据 tip **`ab1e6d5`**；业务 **`f929dcb`**）；`:5174` `/`/`/health`/`/api/v1/health`→200；db/redis ok；**不开宣称 MVP** |
 | Q4+-3 mems GET / artifacts·FE | Q4+-3 | Jobs-artifacts-only 关本门；FE 非仅 fixture | **通过（后端）** | **产品确认（后端）**；**Motor 已确认**；业务 tip **`6144f91`** @ 裁决 **`83d2e6e`**（F5=A）；pytest **10 passed**；OpenAPI L4 精简单文件权威、**无** mems/files；[记录](Q4plus-冒烟记录-C1-C2-artifacts.md)；**可关** Q3-L4「无 mems 单文件 GET」**子项**；**不可**整关 Q3-L4；`mems/files`=**Q4+-3b**；**FE `source=job-artifacts` 另线——勿标 FE 已关**；**仍禁勾 ≤5%/≤3%**；**不开宣称 MVP** |
 | Q4+-4 live 几何 + AF Wasm | Q4+-4 | live 几何包 + AF Wasm 余项（可演示/降级） | **通过** | **产品确认**；**Motor 已确认**；D1/D2 PASS（[记录](Q4plus-冒烟记录-D1-D2-geometry.md)；证据 tip **`d4759ea`**）；几何 **`ad66ff9`** + Wasm **`166c319`**；STEP/DXF 书面降级；金标仍 Python；**禁勾 ≤5%**；**不开宣称 MVP** |
 | Q4+-5 磁静力学 FEM / 轴向真值 | Q4+-5 | 相对 heat-proxy 的磁静力学 FEM 与轴向磁拉力真值路径 | **通过（CLI shell / 边界文档）** | FEM tip **`9ffa4b2`**；E1/E2 PASS（[记录](Q4plus-冒烟记录-E1-E2-magnetostatic.md)）；边界稿 [Q4plus-5-磁静力学与轴向真值](../drafts/Q4plus-5-磁静力学与轴向真值.md)；**仍禁勾 ≤3%**；**不**代签；**不开宣称 MVP**；真 Elmer/Maxwell 后处理未关 |
@@ -62,8 +62,9 @@
 
 | 日期 (Asia/Shanghai) | tip / 依据 | 说明 |
 | --- | --- | --- |
-| 2026-10-28 | Motor；产品 tip **`fb478af`**；证据 tip **`d4759ea`** | **Motor 确认** Q4+-4→**通过**；可演示/降级；D1/D2；金标仍 Python；**禁勾 ≤5%**；**不开宣称 MVP**；隔离仅 mo-platform |
-| 2026-10-28 | Motor；产品 tip **`43d3da0`**；业务 **`6144f91`**；F5=A | **Motor 确认** Q4+-3→**通过（后端）**；FE `source=job-artifacts` 另线未关；Q4+-3b 后置；**仍禁勾 ≤5%/≤3%**；**不开宣称 MVP**；隔离仅 mo-platform |
+| 2026-10-28 | Motor；产品 tip **`6d8dbde`**；B1 **`ab1e6d5`** / **`f929dcb`** | **Motor 确认** Q4+-2→**通过**；compose:5174 已消化；**不开宣称 MVP**；隔离仅 mo-platform |
+| 2026-10-28 | Motor；产品 tip **`fb478af`**；证据 tip **`d4759ea`** | **Motor 确认** Q4+-4→**通过**；**禁勾 ≤5%**；**不开宣称 MVP**；隔离仅 mo-platform |
+| 2026-10-28 | Motor；产品 tip **`43d3da0`**；业务 **`6144f91`**；C1/C2 证据 **`7c80f76`** | **Motor 确认** Q4+-3→**通过（后端）**；FE job-artifacts 另线未关；Q4+-3b 后置；**禁勾 ≤5%/≤3%**；**不开宣称 MVP**；隔离仅 mo-platform |
 | 2026-10-28 | **产品确认**；B1 tip **`ab1e6d5`**；业务 **`f929dcb`**；Motor 请确认 | **同意** Q4+-2→**通过**；compose:5174 遗留已消化；**不开宣称 MVP**；隔离仅 mo-platform |
 | 2026-10-28 | Mo-测试 B1；交测 tip **`f929dcb`** | Q4+-B1 **PASS**；curl `:5174/`/`/health`/`/api/v1/health`→200；db/redis ok；Q4+-2→**待产品确认**（不代签）；**禁勾 F1/F2**；**不开宣称 MVP**；隔离仅 mo-platform |
 | 2026-10-28 | **产品确认**；C1/C2 证据；业务 **`6144f91`** | **同意** Q4+-3→**通过（后端）**（FE 另线未关；mems/files=Q4+-3b）；**仍禁勾 ≤5%/≤3%**；**不开宣称 MVP**；隔离仅 mo-platform |
