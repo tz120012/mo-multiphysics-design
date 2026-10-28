@@ -42,3 +42,8 @@ make up-fem   # worker + fem stub；默认 make up 不拉 FEM
 ## Q3-L2 Dockerfile
 
 已替换 stub 为真工具链安装（仍须 `docker build` / `make up-fem` 重建验证）。宿主机无 Elmer。
+
+## 下一步（Q4）
+
+- [Q4-7-热闭环-FEM损耗输入.md](./Q4-7-热闭环-FEM损耗输入.md)：电磁损耗输入契约（LPTN 主责解析；驱动分损耗）
+- [Q4-8-轴向磁拉力.md](./Q4-8-轴向磁拉力.md)：AF 轴向磁拉力 / 变形 / 轴承载荷专项（磁静力学后置；占位标量）

@@ -40,21 +40,34 @@ def write_result_artifacts(
                 "pending_calibration — do NOT claim FEM ≤3%"
             )
 
+    pl = payload or {}
+    # Q4-7/8 placeholders: empty losses + null axial force; do not invent calibrated values.
+    losses_w = pl.get("lossesW")
+    if not isinstance(losses_w, dict):
+        losses_w = {}
     scalars: dict[str, Any] = {
         "schemaVersion": "fem-scalars-v0",
         "torqueNm": 0.0,
         "notes": notes,
         "dryRun": dry_run,
         "pending_calibration": True,
+        "lossesW": losses_w,
+        "axialForceN": pl.get("axialForceN", None),
+        "bearingLoadN": pl.get("bearingLoadN", None),
+        "deflectionHintMm": pl.get("deflectionHintMm", None),
         "inputEcho": {
             "topology": topology,
             "machineType": machine_type,
             "dim": dim,
             "solverKernel": solver_kernel,
-            "meshProfile": (payload or {}).get("meshProfile"),
-            "templateId": (payload or {}).get("templateId"),
+            "meshProfile": pl.get("meshProfile"),
+            "templateId": pl.get("templateId"),
         },
     }
+    if "operatingPoint" in pl and isinstance(pl["operatingPoint"], dict):
+        scalars["operatingPoint"] = pl["operatingPoint"]
+    if "source" in pl:
+        scalars["source"] = pl["source"]
     if elmer_exit is not None:
         scalars["elmerExit"] = elmer_exit
     scalars_path = job_results / "scalars.json"
@@ -106,6 +119,10 @@ def write_result_artifacts(
             "torqueNm": 0.0,
             "dryRun": dry_run,
             "pending_calibration": True,
+            "lossesW": losses_w,
+            "axialForceN": scalars["axialForceN"],
+            "bearingLoadN": scalars["bearingLoadN"],
+            "deflectionHintMm": scalars["deflectionHintMm"],
         },
         "artifacts": artifacts,
         "createdAt": ts,

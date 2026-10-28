@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "fem-scalars-v0",
+  "pending_calibration": true,
+  "dryRun": true,
+  "torqueNm": null,
+  "axialForceN": null,
+  "bearingLoadN": null,
+  "deflectionHintMm": null,
+  "axialForceNotes": "placeholder; magnetostatics pending — do not claim accuracy",
+  "templateId": "af_pmsm_3d",
+  "jobId": "00000000-0000-4000-8000-0000000000q48",
+  "resultRef": "solver/fem/jobs/00000000-0000-4000-8000-0000000000q48/manifest.json",
+  "notes": "Q4-8 axial force placeholders; mesh path may reuse af_pmsm_3d, equations deferred"
+}

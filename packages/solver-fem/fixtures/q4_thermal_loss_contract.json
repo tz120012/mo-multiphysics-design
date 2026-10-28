@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "fem-scalars-v0",
+  "pending_calibration": true,
+  "dryRun": true,
+  "torqueNm": null,
+  "lossesW": {
+    "total": null,
+    "iron": null,
+    "copper": null,
+    "pmEddy": null,
+    "rotorBar": null,
+    "endRing": null
+  },
+  "lossBreakdown": {
+    "source": "analytic",
+    "unit": "W",
+    "notes": "fixture placeholder; FEM EM losses pending magnetostatics — not LPTN temps"
+  },
+  "operatingPoint": {
+    "rpm": 3000,
+    "torqueNm": null,
+    "T_ambientC": 25
+  },
+  "source": "analytic",
+  "jobId": "00000000-0000-4000-8000-0000000000q47",
+  "resultRef": "solver/fem/jobs/00000000-0000-4000-8000-0000000000q47/manifest.json",
+  "thermalLoopDemo": {
+    "schemaVersion": "thermal-loop-iter-v0",
+    "pending_calibration": true,
+    "iters": [
+      {
+        "iter": 0,
+        "lossesIn": {
+          "source": "drive",
+          "lossesW": { "iron": null, "copper": null }
+        },
+        "tempsOut": {
+          "windingC": null,
+          "magnetC": null,
+          "ambientC": 25
+        },
+        "materialUpdate": {
+          "BrFactor": 1.0,
+          "resistivityFactor": 1.0
+        },
+        "residual": null
+      }
+    ]
+  },
+  "notes": "Q4-7 contract sample; heat-proxy temperature must NOT be treated as LPTN"
+}
