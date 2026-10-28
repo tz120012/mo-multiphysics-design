@@ -1,0 +1,8 @@
+{
+  "id": "rf-acim-smoke-001",
+  "topology": "radial",
+  "machine": "ACIM",
+  "source": "pending",
+  "metrics": ["torque", "copperLoss"],
+  "notes": "Q2 首批占位；标杆来源待 Mo-解析确认；与导条材料联动待解析侧确认"
+}

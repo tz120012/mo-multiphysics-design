@@ -1,0 +1,10 @@
+{
+  "caseId": "rf-acim-smoke-001",
+  "pending_calibration": true,
+  "metrics": {
+    "torque": null,
+    "copperLoss": null
+  },
+  "toleranceRel": 0.05,
+  "toleranceNote": "≤5% 待校准；正式数以标定报告为准"
+}

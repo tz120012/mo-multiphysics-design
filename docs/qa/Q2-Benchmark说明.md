@@ -109,18 +109,19 @@ tests/benchmark/
 | 本说明 + `tests/benchmark/` | 标杆用例库、golden 约定、报告模板 |
 | `scripts/smoke_q2.sh` | 占位入口；当前不跑比对、exit 0 |
 
-## 5. 首批标杆用例意向（未建文件）
+## 5. 首批标杆用例（径向占位已建）
 
-| caseId（意向） | 机型 | 备注 |
+| caseId | 机型 | 备注 |
 | --- | --- | --- |
-| `rf-bldc-smoke-001` | BLDC | 最小闭环；标杆来源 TBD |
-| `rf-pmsm-smoke-001` | PMSM | 优先首组对比候选 |
-| `rf-acim-smoke-001` | ACIM | 等效电路；与导条材料联动 |
+| `rf-bldc-smoke-001` | BLDC | 径向占位；标杆来源 pending / 待 Mo-解析确认 |
+| `rf-pmsm-smoke-001` | PMSM | 径向占位；优先首组对比候选 |
+| `rf-acim-smoke-001` | ACIM | 径向占位；等效电路；与导条材料联动待确认 |
 
-本轮**不**创建上述 case 正文，避免空壳被误认为已验收。
+Motor 关项口径（覆盖原「本轮不创建 case 正文」）：已落地 `cases/` + `golden/`（`pending_calibration: true` + metrics null）。**框架占位 ≠ 数值验收**；不得宣称 ≤5% 达标。
 
 ## 6. 修订
 
 | 日期 | 说明 |
 | --- | --- |
 | 2026-10-28 | Mo-测试：Q2-5 框架脚手架初稿 |
+| 2026-10-28 | Mo-测试：落地 3 径向占位 + pending golden；§5 改「已建」 |

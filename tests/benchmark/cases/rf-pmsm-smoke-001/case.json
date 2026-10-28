@@ -1,0 +1,8 @@
+{
+  "id": "rf-pmsm-smoke-001",
+  "topology": "radial",
+  "machine": "PMSM",
+  "source": "pending",
+  "metrics": ["torque", "copperLoss"],
+  "notes": "Q2 首批占位；标杆来源待 Mo-解析确认"
+}
