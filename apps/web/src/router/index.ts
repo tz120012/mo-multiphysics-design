@@ -22,8 +22,11 @@ const routes: RouteRecordRaw[] = [
         name: 'projects',
         component: () => import('@/views/ProjectListView.vue'),
       },
-      // Q1-4/5 预留：工作区路由（Three.js 几何预览）
-      // { path: 'workspace/:projectId', name: 'workspace', component: () => import('@/views/WorkspaceView.vue') },
+      {
+        path: 'workspace',
+        name: 'workspace',
+        component: () => import('@/views/WorkspaceView.vue'),
+      },
     ],
   },
   {

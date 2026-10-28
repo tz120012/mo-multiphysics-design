@@ -2,7 +2,7 @@
 
 Vue 3 + TypeScript + Vite + Element Plus + Vue Router + Pinia 工程壳（Q1-3）。
 
-深色工程软件风：石墨黑底、细分割线、青绿 / 琥珀点缀。暂未接入 Three.js（见 Q1-4/5 工作区预留）。
+深色工程软件风：石墨黑底、细分割线、青绿 / 琥珀点缀。Q1-4/5 已接入 Three.js 工作区（mesh descriptor 占位场景）。
 
 ## 架构契约
 
@@ -45,7 +45,8 @@ pnpm dev
 2. 任意账号 / 密码登录（假登录，token → `localStorage`）
 3. 进入 `/projects`（3 条假数据；拓扑显示中文 label，值为 `RF`/`AF`）
 4. 「新建工程」对话框占位（本地 store，不调 API）
-5. 退出或清 `mo_token` 后访问 `/projects` → 回 `/login`
+5. 「打开」或顶栏「工作区」→ `/workspace`：切换 RF-PMSM / RF-ACIM / AF-PMSM，OrbitControls 旋转预览
+6. 退出或清 `mo_token` 后访问 `/projects` → 回 `/login`
 
 ## 构建
 
@@ -66,11 +67,18 @@ pnpm preview
 | `src/api/types.ts` | Login*/Project*/MemsMeta 等最小类型 |
 | `src/api/auth.ts` | `/auth/*` 占位 |
 | `src/api/projects.ts` | `/projects/*`、mems、history 占位 |
-| `src/layouts/AppLayout.vue` | 顶栏（工作区路由注释占位） |
+| `src/layouts/AppLayout.vue` | 顶栏（含工作区入口） |
+| `src/views/WorkspaceView.vue` | 工作区：样例切换 + meta + Viewport3D |
+| `src/components/Viewport3D.vue` | Three.js 视口（OrbitControls / AxesHelper） |
+| `src/lib/meshToThree.ts` | ring/sector → Mesh（mm→场景） |
+| `src/types/mesh.ts` | mesh descriptor 类型（0.1.0-q1） |
+| `public/mesh/` | 自 `packages/geometry/examples` 复制的权威 fixture |
 
 ## 已知限制
 
-- 鉴权为 localStorage 占位；`src/api/auth.ts` 未接线
-- 工程 CRUD / MEMS / history API 函数签名已对齐，实现未接线
+- 鉴权接真 API（`POST /auth/login`）；token 存 `accessToken`
+- 工程列表/新建接真 API；MEMS / history 仍可能未完全可用
+- 开发态 `VITE_API_BASE=/api/v1` + vite proxy → `127.0.0.1:8000`
 - 列表 `uiStatus` 为前端本地装饰，契约 `Project` 无此字段
-- 工作区 / Three.js 未实现
+- 工作区为静态 fixture 预览，未接 MEMS 参数编辑 / Undo
+- mesh 为 ring/sector 挤出近似，非真实 CAD 实体

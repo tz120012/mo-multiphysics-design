@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "0.1.0-q1",
+  "topology": "RF",
+  "machineType": "ACIM",
+  "units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "rotorTopology": "inner",
+  "stator": {
+    "innerDiameter": 51.0,
+    "outerDiameter": 80.0,
+    "stackLength": 25.0,
+    "slotCount": 36,
+    "slotShape": "straight",
+    "toothWidth": 4.5,
+    "yokeHeight": 5.0,
+    "skewAngle": null
+  },
+  "rotor": {
+    "innerDiameter": 15.0,
+    "outerDiameter": 50.0,
+    "magnetTopology": "SPM",
+    "poleCount": 4
+  },
+  "airgap": 0.5,
+  "axialActiveLength": 25.0,
+  "acim": {
+    "barSlotShape": "rectangular",
+    "barCrossSection": {
+      "width": 4.0,
+      "height": 12.0
+    },
+    "endRingSection": {
+      "width": 8.0,
+      "height": 10.0
+    },
+    "barMaterialId": "mat.acim.bar.aluminum-default",
+    "endRingMaterialId": "mat.acim.endring.aluminum-default",
+    "cagePolePairs": 2
+  }
+}

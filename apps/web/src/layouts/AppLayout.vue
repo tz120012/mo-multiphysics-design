@@ -10,8 +10,9 @@
         <router-link to="/projects" class="mo-nav-link" active-class="is-active">
           工程
         </router-link>
-        <!-- Q1-4/5 预留：工作区入口 -->
-        <!-- <router-link to="/workspace" class="mo-nav-link">工作区</router-link> -->
+        <router-link to="/workspace" class="mo-nav-link" active-class="is-active">
+          工作区
+        </router-link>
       </nav>
       <div class="mo-header-right">
         <span class="mo-user">{{ auth.username }}</span>
@@ -31,8 +32,8 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 const router = useRouter()
 
-function onLogout() {
-  auth.logout()
+async function onLogout() {
+  await auth.logout()
   router.push({ name: 'login' })
 }
 </script>

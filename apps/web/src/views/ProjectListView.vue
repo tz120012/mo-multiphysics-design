@@ -4,14 +4,15 @@
       <div>
         <h2 class="page-title">工程列表</h2>
         <p class="page-desc">
-          本地假数据 · 未接后端 · memsSchemaVersion={{ memsVersion }}
+          GET /projects · memsSchemaVersion={{ memsVersion }}
+          <span v-if="projects.loading"> · 加载中…</span>
         </p>
       </div>
       <el-button type="primary" @click="dialogVisible = true">新建工程</el-button>
     </div>
 
     <div class="project-table-wrap">
-      <el-table :data="projects.items" stripe empty-text="暂无工程" style="width: 100%">
+      <el-table :data="projects.items" v-loading="projects.loading" stripe empty-text="暂无工程" style="width: 100%">
         <el-table-column prop="name" label="名称" min-width="220" />
         <el-table-column label="机型" width="100">
           <template #default="{ row }">
@@ -37,8 +38,8 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
-          <template #default>
-            <el-button text type="primary" disabled title="Q1-4/5 工作区占位">打开</el-button>
+          <template #default="{ row }">
+            <el-button text type="primary" @click="openWorkspace(row.id)">打开</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -85,9 +86,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 import {
   MACHINE_TYPE_LABELS,
   MEMS_SCHEMA_VERSION,
@@ -98,6 +101,7 @@ import {
 import { useProjectsStore } from '@/stores/projects'
 
 const projects = useProjectsStore()
+const router = useRouter()
 const memsVersion = MEMS_SCHEMA_VERSION
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
@@ -135,17 +139,49 @@ function resetForm() {
   form.topology = 'RF'
 }
 
+function openWorkspace(projectId: string) {
+  router.push({ name: 'workspace', query: { projectId } })
+}
+
+function errorMessage(e: unknown): string {
+  if (axios.isAxiosError(e)) {
+    const detail = e.response?.data?.detail
+    if (typeof detail === 'string') return detail
+    if (detail && typeof detail === 'object' && 'message' in detail) {
+      return String((detail as { message: string }).message)
+    }
+    return e.message
+  }
+  return e instanceof Error ? e.message : String(e)
+}
+
+async function loadProjects() {
+  try {
+    await projects.fetchProjects()
+  } catch (e) {
+    ElMessage.error(`加载工程失败：${errorMessage(e)}`)
+  }
+}
+
 async function onCreate() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
-  projects.addProject({
-    name: form.name,
-    machineType: form.machineType,
-    topology: form.topology,
-  })
-  dialogVisible.value = false
-  ElMessage.success('已创建（本地占位，未调 API）')
+  try {
+    await projects.addProject({
+      name: form.name,
+      machineType: form.machineType,
+      topology: form.topology,
+    })
+    dialogVisible.value = false
+    ElMessage.success('已创建')
+  } catch (e) {
+    ElMessage.error(`创建失败：${errorMessage(e)}`)
+  }
 }
+
+onMounted(() => {
+  void loadProjects()
+})
 </script>
 
 <style scoped>

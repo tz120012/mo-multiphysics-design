@@ -15,5 +15,12 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    proxy: {
+      // 浏览器走同源 /api → FastAPI，规避 CORS
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
   },
 })

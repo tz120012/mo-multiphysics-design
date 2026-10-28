@@ -1,18 +1,19 @@
+import { apiClient } from './client'
 import type { AuthUser, LoginRequest, LoginResponse } from './types'
 
-const NOT_WIRED = 'not wired'
-
-/** POST /auth/login — 相对 baseURL（含 /api/v1） */
-export async function login(_body: LoginRequest): Promise<LoginResponse> {
-  return Promise.reject(new Error(NOT_WIRED))
+/** POST /auth/login — body { username, password } */
+export async function login(body: LoginRequest): Promise<LoginResponse> {
+  const { data } = await apiClient.post<LoginResponse>('/auth/login', body)
+  return data
 }
 
 /** POST /auth/logout → 204 */
 export async function logout(): Promise<void> {
-  return Promise.reject(new Error(NOT_WIRED))
+  await apiClient.post('/auth/logout')
 }
 
 /** GET /auth/me */
 export async function getMe(): Promise<AuthUser> {
-  return Promise.reject(new Error(NOT_WIRED))
+  const { data } = await apiClient.get<AuthUser>('/auth/me')
+  return data
 }

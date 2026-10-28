@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "0.1.0-q1",
+  "topology": "RF",
+  "machineType": "PMSM",
+  "units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "rotorTopology": "inner",
+  "stator": {
+    "innerDiameter": 51.0,
+    "outerDiameter": 80.0,
+    "stackLength": 25.0,
+    "slotCount": 18,
+    "slotShape": "straight",
+    "toothWidth": 4.5,
+    "yokeHeight": 5.0,
+    "skewAngle": null
+  },
+  "rotor": {
+    "innerDiameter": 15.0,
+    "outerDiameter": 50.0,
+    "magnetTopology": "SPM",
+    "poleCount": 6
+  },
+  "airgap": 0.5,
+  "axialActiveLength": 25.0
+}
