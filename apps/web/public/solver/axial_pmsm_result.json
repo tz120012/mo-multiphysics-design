@@ -2,62 +2,62 @@
   "schema_version": "0.0.0-gate0",
   "meta": {
     "solver": "axial_planes",
-    "elapsed_ms": 1.183,
+    "elapsed_ms": 1.724,
     "mock": false,
     "n_planes": 4,
-    "note": "AF PMSM axial multi-plane unfold v0 (concentric rings + series MEC per plane, analytic steel \u03bc(B)). Engineering first cut \u2014 not calibrated to \u22645%; pending_calibration for golden benchmarks. Defaults: annulus from rotor_od_m (outer \u00d8) / stator_id_m (inner \u00d8) \u2014 AF stub mapping; disk_thickness_m taken from stack_length_m (AF axial thickness); magnet_arc_ratio defaulted to 0.7; carter_factor defaulted to 1.15; winding_factor defaulted to 0.93; tooth_height_m (axial) estimated as 0.0028 m; stator_yoke_height_m (axial) estimated as 0.003755 m; rotor_yoke_height_m (axial) estimated as 0.00338 m; disk_count defaulted to 1 (single airgap equivalent)",
+    "note": "AF PMSM axial multi-plane unfold v0 (concentric rings + series MEC per plane, analytic steel μ(B)). Engineering first cut — not calibrated to ≤5%; pending_calibration for golden benchmarks. Defaults: annulus from rotor_od_m (outer Ø) / stator_id_m (inner Ø) — AF stub mapping; disk_thickness_m taken from stack_length_m (AF axial thickness); magnet_arc_ratio defaulted to 0.7; carter_factor defaulted to 1.15; winding_factor defaulted to 0.93; tooth_height_m (axial) estimated as 0.0028 m; stator_yoke_height_m (axial) estimated as 0.005341 m; rotor_yoke_height_m (axial) estimated as 0.004807 m; disk_count defaulted to 1 (single airgap equivalent)",
     "axial": {
-      "inner_radius_m": 0.03,
+      "inner_radius_m": 0.02,
       "outer_radius_m": 0.06,
       "disk_thickness_m": 0.008,
       "disk_count": 1,
-      "flux_pole_sum_wb": 0.00029003343312618046,
-      "B_airgap_mean_t": 0.7815492832837129,
-      "B_tooth_mean_t": 1.0941689965971981,
-      "B_stator_yoke_mean_t": 2.574515286111054,
-      "B_rotor_yoke_mean_t": 2.860572540123393,
+      "flux_pole_sum_wb": 0.0005204641509333859,
+      "B_airgap_mean_t": 0.7395932350283454,
+      "B_tooth_mean_t": 1.0354305290396837,
+      "B_stator_yoke_mean_t": 2.436307127152196,
+      "B_rotor_yoke_mean_t": 2.7070079190579954,
       "F_pm_a": 3637.8272706718935,
       "F_net_a": 3637.8272706718935,
-      "psi_pm_wb": 0.009710319341064522,
+      "psi_pm_wb": 0.017425139773249762,
       "converged": true,
-      "max_iterations": 15,
+      "max_iterations": 20,
       "tol": 0.0001,
       "planes": [
         {
           "index": 0,
-          "r_mean_m": 0.03375,
-          "dr_m": 0.0075,
-          "flux_pole_wb": 6.275154936295673e-05,
-          "B_airgap_t": 0.9018441384670715,
+          "r_mean_m": 0.025,
+          "dr_m": 0.009999999999999998,
+          "flux_pole_wb": 0.0001006596608648453,
+          "B_airgap_t": 0.9154561483767966,
           "converged": true,
-          "iterations": 15
+          "iterations": 16
         },
         {
           "index": 1,
-          "r_mean_m": 0.041249999999999995,
-          "dr_m": 0.0075,
-          "flux_pole_wb": 7.180552607988469e-05,
-          "B_airgap_t": 0.844334871784554,
+          "r_mean_m": 0.034999999999999996,
+          "dr_m": 0.009999999999999998,
+          "flux_pole_wb": 0.00013062481693354566,
+          "B_airgap_t": 0.848554502263172,
           "converged": true,
-          "iterations": 10
+          "iterations": 11
         },
         {
           "index": 2,
-          "r_mean_m": 0.04875,
-          "dr_m": 0.0075,
-          "flux_pole_wb": 7.655339337587736e-05,
-          "B_airgap_t": 0.7616766416006558,
+          "r_mean_m": 0.04499999999999999,
+          "dr_m": 0.009999999999999998,
+          "flux_pole_wb": 0.00014253784985664077,
+          "B_airgap_t": 0.7201778851547553,
           "converged": true,
-          "iterations": 6
+          "iterations": 8
         },
         {
           "index": 3,
-          "r_mean_m": 0.056249999999999994,
-          "dr_m": 0.0075,
-          "flux_pole_wb": 7.892296430746168e-05,
-          "B_airgap_t": 0.6805525613983969,
+          "r_mean_m": 0.05499999999999999,
+          "dr_m": 0.009999999999999998,
+          "flux_pole_wb": 0.00014664182327835413,
+          "B_airgap_t": 0.6062018451625515,
           "converged": true,
-          "iterations": 11
+          "iterations": 20
         }
       ]
     },
@@ -70,15 +70,15 @@
       "mur0": "inline/curves/meta"
     }
   },
-  "torque_nm": 2.330476641855485,
-  "back_emf_v_peak": 24.404694324719348,
+  "torque_nm": 2.613770965987464,
+  "back_emf_v_peak": 27.371345549708384,
   "losses_w": {
-    "copper": 19.77204254079618,
-    "iron": 42.24028380430782,
-    "magnet_eddy": 0.04642312638219898
+    "copper": 26.619548625071037,
+    "iron": 28.65482012493399,
+    "magnet_eddy": 0.019246588255255194
   },
   "inductance_h": {
-    "ld": 9.038543433863289e-06,
-    "lq": 1.9705118201208927e-05
+    "ld": 2.511399701729533e-05,
+    "lq": 5.969089663801952e-05
   }
 }

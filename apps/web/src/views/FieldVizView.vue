@@ -3,14 +3,43 @@
     <aside class="field-side">
       <h2 class="side-title">场量 · 精简可视化</h2>
       <p class="side-desc">
-        Q3-6 · manifest §5 · {{ FEM_MANIFEST_FIXTURE_BASE }}
+        Q3-6 · F1 §5 · source={{ dataSource }} · {{ artifactBase }}
       </p>
 
+      <dl v-if="queryJobId || queryResultRef || job" class="meta-list job-meta">
+        <div v-if="queryJobId || job" class="meta-row">
+          <dt>jobId</dt>
+          <dd class="mono-trunc" :title="(job?.id || queryJobId) || ''">{{ shortId(job?.id || queryJobId || '') }}</dd>
+        </div>
+        <div v-if="job" class="meta-row">
+          <dt>job.status</dt>
+          <dd>
+            <span class="status-pill" :data-status="job.status">{{ job.status }}</span>
+          </dd>
+        </div>
+        <div v-if="displayResultRef" class="meta-row">
+          <dt>resultRef</dt>
+          <dd class="mono-trunc" :title="displayResultRef">{{ displayResultRef }}</dd>
+        </div>
+        <div v-if="queryProjectId" class="meta-row">
+          <dt>projectId</dt>
+          <dd class="mono-trunc" :title="queryProjectId">{{ shortId(queryProjectId) }}</dd>
+        </div>
+        <div class="meta-row">
+          <dt>source</dt>
+          <dd>{{ dataSource }}</dd>
+        </div>
+      </dl>
+
+      <div v-if="jobError" class="error-box">{{ jobError }}</div>
       <div v-if="loadError" class="error-box">{{ loadError }}</div>
+      <p v-if="dataSource === 'fixture'" class="degrade-note">
+        dry-run 降级：FE 无单文件 GET / 真场不可达时使用 public fixture（不宣称误差达标）。
+      </p>
 
       <template v-if="manifest">
         <dl class="meta-list">
-          <div class="meta-row"><dt>jobId</dt><dd class="mono-trunc" :title="manifest.jobId">{{ shortId(manifest.jobId) }}</dd></div>
+          <div class="meta-row"><dt>manifest.jobId</dt><dd class="mono-trunc" :title="manifest.jobId">{{ shortId(manifest.jobId) }}</dd></div>
           <div class="meta-row"><dt>status</dt><dd>{{ manifest.status }}</dd></div>
           <div class="meta-row"><dt>kernel</dt><dd>{{ manifest.solverKernel }}</dd></div>
           <div class="meta-row"><dt>topo×type</dt><dd>{{ manifest.topology }} · {{ manifest.machineType }}</dd></div>
@@ -66,7 +95,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import axios from 'axios'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
@@ -77,6 +108,26 @@ import {
   type FemScalarsArtifact,
 } from '@/types/fieldViz'
 import { disposeObject3D } from '@/lib/meshToThree'
+import { getJob, pollJob, JobPollAbortedError } from '@/api/jobs'
+import { isJobTerminal, type Job } from '@/api/types'
+
+const route = useRoute()
+
+const queryJobId = computed(() =>
+  typeof route.query.jobId === 'string' ? route.query.jobId.trim() : '',
+)
+const queryResultRef = computed(() =>
+  typeof route.query.resultRef === 'string' ? route.query.resultRef.trim() : '',
+)
+const queryProjectId = computed(() =>
+  typeof route.query.projectId === 'string' ? route.query.projectId.trim() : '',
+)
+
+const job = ref<Job | null>(null)
+const jobError = ref<string | null>(null)
+/** fixture | job-fixture — 本 tip 无 jszip/单文件 GET，真场缺时降级 fixture */
+const dataSource = ref<'fixture' | 'job-fixture'>('fixture')
+const artifactBase = ref<string>(FEM_MANIFEST_FIXTURE_BASE)
 
 const manifest = ref<FemManifest | null>(null)
 const scalarsArtifact = ref<FemScalarsArtifact | null>(null)
@@ -85,6 +136,12 @@ const gltfError = ref<string | null>(null)
 const meshLoaded = ref(false)
 const previewUrl = ref<string | null>(null)
 const hostRef = ref<HTMLDivElement | null>(null)
+
+let jobAbort: AbortController | null = null
+
+const displayResultRef = computed(
+  () => job.value?.resultRef || queryResultRef.value || '',
+)
 
 let renderer: THREE.WebGLRenderer | null = null
 let scene: THREE.Scene | null = null
@@ -104,9 +161,22 @@ function shortId(id: string): string {
   return `${id.slice(0, 8)}…`
 }
 
-/** manifest 内 path 可能是 .mems 相对路径；本 tip mock 文件落在 fixture 目录根，用 basename 解析 */
+/** manifest 内 path 多为 .mems 相对路径；fixture/降级用 basename 映射到 artifactBase */
 function resolveArtifactUrl(artifact: FemArtifact): string {
-  return `${FEM_MANIFEST_FIXTURE_BASE}/${basename(artifact.path)}`
+  return `${artifactBase.value}/${basename(artifact.path)}`
+}
+
+function errorMessage(e: unknown): string {
+  if (axios.isAxiosError(e)) {
+    const detail = e.response?.data?.detail
+    if (typeof detail === 'string') return detail
+    if (detail && typeof detail === 'object' && 'message' in detail) {
+      return String((detail as { message: string }).message)
+    }
+    if (!e.response) return `API 不可达：${e.message}`
+    return e.message
+  }
+  return e instanceof Error ? e.message : String(e)
 }
 
 function flattenScalars(obj: Record<string, unknown>, prefix = ''): { key: string; value: string }[] {
@@ -247,10 +317,16 @@ async function loadGltf(url: string) {
   }
 }
 
-async function loadFixture() {
+/**
+ * 加载精简产物：manifest → scalars / slice|surface glTF / preview。
+ * 架构 F1：真产物在 mems；本 tip 无 jszip 依赖、无单文件 GET → 允许降级 public fixture。
+ */
+async function loadFromBase(base: string, source: 'fixture' | 'job-fixture') {
   loadError.value = null
+  artifactBase.value = base
+  dataSource.value = source
   try {
-    const res = await fetch(`${FEM_MANIFEST_FIXTURE_BASE}/manifest.json`)
+    const res = await fetch(`${base}/manifest.json`)
     if (!res.ok) throw new Error(`manifest ${res.status}`)
     const m = (await res.json()) as FemManifest
     manifest.value = m
@@ -261,12 +337,17 @@ async function loadFixture() {
       if (sRes.ok) scalarsArtifact.value = (await sRes.json()) as FemScalarsArtifact
     }
 
-    const previewArt = m.artifacts.find((a) => a.role === 'preview' && (a.format === 'png' || a.format === 'webp'))
+    const previewArt = m.artifacts.find(
+      (a) => a.role === 'preview' && (a.format === 'png' || a.format === 'webp'),
+    )
     previewUrl.value = previewArt ? resolveArtifactUrl(previewArt) : null
 
     const meshArt =
-      m.artifacts.find((a) => (a.role === 'slice' || a.role === 'surface') && (a.format === 'glb' || a.format === 'gltf')) ??
-      null
+      m.artifacts.find(
+        (a) =>
+          (a.role === 'slice' || a.role === 'surface') &&
+          (a.format === 'glb' || a.format === 'gltf'),
+      ) ?? null
     if (meshArt) {
       await loadGltf(resolveArtifactUrl(meshArt))
     } else {
@@ -277,12 +358,72 @@ async function loadFixture() {
   }
 }
 
+async function loadFixtureDegraded(reason?: string) {
+  if (reason) {
+    // 保留 job 上下文，标明降级
+    jobError.value = jobError.value || reason
+  }
+  const src: 'fixture' | 'job-fixture' = queryJobId.value || job.value ? 'job-fixture' : 'fixture'
+  await loadFromBase(FEM_MANIFEST_FIXTURE_BASE, src)
+}
+
+async function resolveJobThenLoad() {
+  jobError.value = null
+  const id = queryJobId.value
+  if (!id) {
+    await loadFixtureDegraded()
+    return
+  }
+
+  jobAbort?.abort()
+  jobAbort = new AbortController()
+  const { signal } = jobAbort
+
+  try {
+    let j = await getJob(id, signal)
+    job.value = j
+    if (!isJobTerminal(j.status)) {
+      try {
+        j = await pollJob(id, {
+          intervalMs: 1200,
+          timeoutMs: 60_000,
+          signal,
+          onUpdate: (u) => {
+            job.value = u
+          },
+        })
+        job.value = j
+      } catch (e) {
+        if (e instanceof JobPollAbortedError) return
+        // 短 poll 失败仍展示最后状态并降级 fixture
+        jobError.value = errorMessage(e)
+      }
+    }
+
+    // 真场：未来可 downloadMems+JSZip；本 tip 无 jszip → 直接降级 fixture，仍展示 jobId/resultRef
+    await loadFixtureDegraded(
+      j.resultRef
+        ? `无 mems 单文件 GET；resultRef=${j.resultRef} 文本保留，产物降级 fixture`
+        : '无 mems 单文件 GET；产物降级 public fixture',
+    )
+  } catch (e) {
+    if (e instanceof JobPollAbortedError) return
+    jobError.value = errorMessage(e)
+    await loadFixtureDegraded(`getJob 失败：${jobError.value}`)
+  }
+}
+
 onMounted(() => {
   initScene()
-  void loadFixture()
+  void resolveJobThenLoad()
 })
 
 onBeforeUnmount(() => teardownScene())
+
+onUnmounted(() => {
+  jobAbort?.abort()
+  jobAbort = null
+})
 </script>
 
 <style scoped>
@@ -408,6 +549,49 @@ onBeforeUnmount(() => teardownScene())
   font-size: 11px;
   color: var(--mo-text-muted);
   line-height: 1.4;
+}
+
+.job-meta {
+  margin-bottom: 10px;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.degrade-note {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--mo-radius);
+}
+
+.status-pill {
+  font-family: var(--mo-font-mono);
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mo-accent-dim);
+  color: var(--mo-accent);
+  text-transform: uppercase;
+}
+
+.status-pill[data-status='succeeded'] {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.status-pill[data-status='failed'],
+.status-pill[data-status='cancelled'] {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.status-pill[data-status='queued'],
+.status-pill[data-status='running'] {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
 }
 
 .field-main {

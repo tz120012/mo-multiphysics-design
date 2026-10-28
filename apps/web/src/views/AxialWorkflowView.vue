@@ -105,13 +105,54 @@
 
       <section class="fem-hint">
         <h3 class="panel-title">FEM 入口</h3>
-        <p class="panel-note">femEntryHint {{ femHint.schemaVersion }} · 无网格</p>
+        <p class="panel-note">
+          femEntryHint {{ femHint.schemaVersion }} · AF+PMSM · dim=3d · mesh=af_pmsm_3d_min · elmer
+        </p>
         <dl class="meta-list compact">
           <div class="meta-row"><dt>diskCount</dt><dd>{{ femHint.diskCount }}</dd></div>
           <div class="meta-row"><dt>poleCount</dt><dd>{{ femHint.poleCount }}</dd></div>
           <div class="meta-row"><dt>config</dt><dd>{{ femHint.config ?? '—' }}</dd></div>
+          <div class="meta-row"><dt>projectId</dt><dd class="mono-trunc" :title="resolvedProjectId || ''">{{ resolvedProjectId || '未选' }}</dd></div>
         </dl>
-        <el-button size="small" type="warning" plain @click="goField">打开场量可视化</el-button>
+
+        <div class="fem-actions">
+          <el-button
+            size="small"
+            type="warning"
+            :loading="femSubmitting"
+            :disabled="femSubmitting"
+            @click="onSubmitFem"
+          >
+            提交 FEM
+          </el-button>
+          <el-button
+            v-if="femJob?.status === 'succeeded'"
+            size="small"
+            type="primary"
+            @click="goFieldWithJob"
+          >
+            查看场量
+          </el-button>
+          <el-button size="small" plain @click="goFieldFixture">仅打开 dry-run 场量样例</el-button>
+        </div>
+
+        <div v-if="femJob || femError" class="fem-status">
+          <span
+            v-if="femJob"
+            class="status-pill"
+            :data-status="femJob.status"
+          >{{ femJob.status }}</span>
+          <span v-if="femJob" class="mono-line" :title="femJob.id">jobId={{ shortId(femJob.id) }}</span>
+          <span
+            v-if="femJob?.resultRef"
+            class="mono-line"
+            :title="femJob.resultRef"
+          >resultRef={{ femJob.resultRef }}</span>
+          <p v-if="femError" class="fem-error">{{ femError }}</p>
+          <p v-if="femJob?.error" class="fem-error">
+            {{ femJob.error.code }}: {{ femJob.error.message }}
+          </p>
+        </div>
       </section>
     </aside>
 
@@ -157,8 +198,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
 import Viewport3D from '@/components/Viewport3D.vue'
 import {
   buildFemEntryHintLocal,
@@ -172,6 +215,13 @@ import type { GeometrySummary, Materials, OperatingPoint, SolveBackend, SolveRes
 import type { MeshDescriptor } from '@/types/mesh'
 import { getAxialSolveBackend, loadAxialSampleRequest, solveAxial } from '@/lib/axialSolve'
 import { useProjectsStore } from '@/stores/projects'
+import {
+  createJob,
+  pollJob,
+  JobPollAbortedError,
+  JobPollTimeoutError,
+} from '@/api/jobs'
+import type { FemJobPayload, Job } from '@/api/types'
 
 const PIPELINE_URL = '/geometry/axial_af_pmsm_rfmr_pipeline_entry.json'
 
@@ -337,19 +387,188 @@ async function onSolve() {
   }
 }
 
-function goField() {
+const femSubmitting = ref(false)
+const femJob = ref<Job | null>(null)
+const femError = ref<string | null>(null)
+let femAbort: AbortController | null = null
+
+const resolvedProjectId = computed(() => {
+  const q = route.query.projectId
+  if (typeof q === 'string' && q.trim()) return q.trim()
+  if (projects.items.length > 0) return projects.items[0].id
+  return ''
+})
+
+function shortId(id: string): string {
+  if (id.length <= 12) return id
+  return `${id.slice(0, 8)}…`
+}
+
+function errorMessage(e: unknown): string {
+  if (axios.isAxiosError(e)) {
+    const detail = e.response?.data?.detail
+    if (typeof detail === 'string') return detail
+    if (detail && typeof detail === 'object' && 'message' in detail) {
+      return String((detail as { message: string }).message)
+    }
+    if (!e.response) return `API 不可达：${e.message}`
+    return e.message
+  }
+  return e instanceof Error ? e.message : String(e)
+}
+
+async function ensureProjectId(): Promise<string | null> {
+  let id = resolvedProjectId.value
+  if (id) return id
+  try {
+    if (!projects.items.length) await projects.fetchProjects()
+  } catch (e) {
+    femError.value = `无法加载工程列表：${errorMessage(e)}`
+    ElMessage.error(femError.value)
+    return null
+  }
+  id = resolvedProjectId.value
+  if (!id) {
+    femError.value = '请先在工程列表创建/选择工程（需要 projectId）'
+    ElMessage.warning(femError.value)
+    return null
+  }
+  return id
+}
+
+function buildFemPayload(projectId: string): FemJobPayload {
+  const hint = femHint.value
+  return {
+    projectId,
+    topology: 'AF',
+    machineType: 'PMSM',
+    dim: '3d',
+    solverKernel: 'elmer',
+    meshProfile: 'af_pmsm_3d_min',
+    operatingPoint: {
+      speed_rpm: op.speed_rpm,
+      current_a_peak: op.current_a_peak,
+      gamma_deg: op.gamma_deg,
+      // femEntryHint 注释进 OP，便于 worker / 审计（非必填契约字段）
+      femEntryHint: {
+        schemaVersion: hint.schemaVersion,
+        config: hint.config,
+        diskCount: hint.diskCount,
+        poleCount: hint.poleCount,
+        innerDiameter: hint.innerDiameter,
+        outerDiameter: hint.outerDiameter,
+        airgap: hint.airgap,
+        diskThickness: hint.diskThickness,
+        slotCount: hint.slotCount,
+      },
+    },
+    materials: {
+      steel_id: materials.steel_id,
+      magnet_id: materials.magnet_id,
+      conductor_id: materials.conductor_id,
+      br_t: materials.br_t,
+    },
+  }
+}
+
+async function onSubmitFem() {
+  femError.value = null
+  const projectId = await ensureProjectId()
+  if (!projectId) return
+
+  femAbort?.abort()
+  femAbort = new AbortController()
+  const { signal } = femAbort
+
+  femSubmitting.value = true
+  femJob.value = null
+  try {
+    const payload = buildFemPayload(projectId)
+    const created = await createJob(
+      { projectId, jobType: 'fem', payload },
+      signal,
+    )
+    femJob.value = created
+    ElMessage.info(`FEM 已提交 · ${created.status}`)
+    const final = await pollJob(created.id, {
+      intervalMs: 1500,
+      timeoutMs: 180_000,
+      signal,
+      onUpdate: (j) => {
+        femJob.value = j
+      },
+    })
+    femJob.value = final
+    if (final.status === 'succeeded') {
+      ElMessage.success('FEM 成功')
+    } else if (final.status === 'failed') {
+      const msg = final.error?.message || 'FEM 失败'
+      femError.value = msg
+      ElMessage.error(msg)
+    } else if (final.status === 'cancelled') {
+      femError.value = 'FEM 已取消'
+      ElMessage.warning(femError.value)
+    }
+  } catch (e) {
+    if (e instanceof JobPollAbortedError) {
+      // 离开页取消，静默
+      return
+    }
+    if (e instanceof JobPollTimeoutError) {
+      if (e.job) femJob.value = e.job
+      femError.value = e.message
+      ElMessage.error(femError.value)
+      return
+    }
+    femError.value = errorMessage(e)
+    ElMessage.error(`FEM 提交/轮询失败：${femError.value}`)
+  } finally {
+    femSubmitting.value = false
+  }
+}
+
+function goFieldWithJob() {
+  const j = femJob.value
+  if (!j) return
+  router.push({
+    name: 'field',
+    query: {
+      jobId: j.id,
+      ...(j.resultRef ? { resultRef: j.resultRef } : {}),
+      ...(j.projectId ? { projectId: j.projectId } : resolvedProjectId.value
+        ? { projectId: resolvedProjectId.value }
+        : {}),
+      from: 'axial',
+    },
+  })
+}
+
+/** 无后端 / 次要入口：仅打开 public fixture 场量样例 */
+function goFieldFixture() {
   router.push({
     name: 'field',
     query: {
       from: 'axial',
+      source: 'fixture',
       poles: String(pmsm.poleCount),
       disks: String(pmsm.diskCount),
+      ...(resolvedProjectId.value ? { projectId: resolvedProjectId.value } : {}),
     },
   })
 }
 
 onMounted(() => {
   void reloadEntry()
+  if (!projects.items.length) {
+    void projects.fetchProjects().catch(() => {
+      /* projectId 可稍后提示 */
+    })
+  }
+})
+
+onUnmounted(() => {
+  femAbort?.abort()
+  femAbort = null
 })
 </script>
 
@@ -487,6 +706,70 @@ onMounted(() => {
   margin: 0 0 8px;
   font-size: 11px;
   color: var(--mo-text-muted);
+}
+
+.fem-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.fem-status {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-pill {
+  align-self: flex-start;
+  font-family: var(--mo-font-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mo-accent-dim);
+  color: var(--mo-accent);
+  text-transform: uppercase;
+}
+
+.status-pill[data-status='succeeded'] {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.status-pill[data-status='failed'],
+.status-pill[data-status='cancelled'] {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.status-pill[data-status='queued'],
+.status-pill[data-status='running'] {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+.mono-line {
+  font-family: var(--mo-font-mono);
+  font-size: 11px;
+  color: var(--mo-text-secondary);
+  word-break: break-all;
+}
+
+.mono-trunc {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fem-error {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-family: var(--mo-font-mono);
+  color: #fca5a5;
+  white-space: pre-wrap;
 }
 
 .axial-main {

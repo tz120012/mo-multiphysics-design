@@ -112,3 +112,64 @@ export const MACHINE_TYPE_LABELS: Record<MachineType, string> = {
   PMSM: 'PMSM',
   ACIM: 'ACIM',
 }
+
+/** Jobs — 对齐 openapi Job / JobCreate / FemJobPayload（OpenAPI Job 不含 payload） */
+export type JobType = 'analytic' | 'fem' | 'optimize'
+
+export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
+
+export interface ApiErrorBody {
+  code: string
+  message: string
+  details?: Record<string, unknown>
+}
+
+export type FemDim = '2d' | '3d'
+export type FemSolverKernel = 'elmer' | 'getdp'
+
+/**
+ * Q3 FEM 作业载荷。必填：topology, machineType, dim, solverKernel,
+ * meshProfile, operatingPoint, materials。
+ */
+export interface FemJobPayload {
+  projectId?: string
+  topology: Topology
+  machineType: MachineType
+  dim: FemDim
+  solverKernel: FemSolverKernel
+  /** e.g. rf_pmsm_2d_default | af_pmsm_3d_min */
+  meshProfile: string
+  operatingPoint: Record<string, unknown>
+  materials: Record<string, unknown> | Record<string, unknown>[]
+  templateId?: string
+}
+
+export interface JobCreate {
+  projectId: string
+  jobType: JobType
+  /** jobType=fem 时须符合 FemJobPayload */
+  payload?: FemJobPayload | Record<string, unknown>
+}
+
+/** OpenAPI Job — 不含 payload */
+export interface Job {
+  id: string
+  projectId: string
+  jobType: JobType
+  status: JobStatus
+  /** fem 成功多为 solver/fem/jobs/{jobId}/manifest.json */
+  resultRef?: string | null
+  error?: ApiErrorBody | null
+  createdAt: string
+  updatedAt?: string
+}
+
+export const JOB_TERMINAL_STATUSES: readonly JobStatus[] = [
+  'succeeded',
+  'failed',
+  'cancelled',
+] as const
+
+export function isJobTerminal(status: JobStatus): boolean {
+  return (JOB_TERMINAL_STATUSES as readonly string[]).includes(status)
+}
