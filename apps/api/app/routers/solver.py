@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
+from pydantic import BaseModel, ConfigDict
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.deps.auth import require_bearer
