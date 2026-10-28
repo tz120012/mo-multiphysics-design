@@ -1,9 +1,6 @@
-# Gate0 / Q1 local deps — Postgres + Redis
-# Host ports 5433/6380 avoid clashing with other projects (Motor Gate0 sign-off).
-# In-compose DNS (Mo-后端 contract):
-#   DATABASE_URL=postgresql+psycopg://mo:mo@postgres:5432/mo
-#   REDIS_URL=redis://redis:6379/0
-# Future: API host map 8000:8000 (no api service yet).
+# Q1-8 / P09 — one-click: web + api + Postgres + Redis
+# Host ports 5433/6380 avoid clashing with other projects.
+# In-compose DNS (Mo-后端): postgres:5432 / redis:6379
 
 services:
   postgres:
@@ -21,7 +18,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mo} -d ${POSTGRES_DB:-mo}"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 12
     networks:
       - mo-net
 
@@ -36,14 +33,58 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 12
     networks:
       - mo-net
 
-  # Future (do not enable yet):
-  # api:
-  #   ports: ["${API_HOST_PORT:-8000}:8000"]
-  # celery-worker / celery-beat / flower / fem — profiles: ["workers"]
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: mo-api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    ports:
+      - "${API_HOST_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 18
+      start_period: 15s
+    networks:
+      - mo-net
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: mo-web
+    ports:
+      - "${WEB_HOST_PORT:-5173}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+      - mo-net
 
 volumes:
   mo_pgdata:
