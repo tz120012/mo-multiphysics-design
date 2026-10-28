@@ -1,0 +1,38 @@
+{
+  "schema_version": "0.0.0-gate0",
+  "meta": {
+    "solver": "acim_equiv",
+    "elapsed_ms": 0.142,
+    "mock": false,
+    "note": "ACIM single-cage steady equivalent circuit v0 (Rs/Rr'/Xm/Xσ from geometry+materials). Engineering first cut — not calibrated to ≤5%. Defaults: mur_pm defaulted to 1.05; winding_factor defaulted to 0.90 (ACIM); carter_factor defaulted to 1.2 (ACIM); leakage_frac_stator defaulted to 0.04; leakage_frac_rotor defaulted to 0.05; conductor_area_m2 estimated as 1.018e-06 m²; slip computed as (n_sync-n)/n_sync = 0.0333333",
+    "acim": {
+      "slip": 0.03333333333333333,
+      "freq_hz": 50.0,
+      "n_sync_rpm": 1500.0,
+      "I1_rms": 62.924773744964504,
+      "I2_rms": 59.75091419292405,
+      "pf": 0.7094416033411679,
+      "P_in_w": 29451.333359056465,
+      "P_mech_w": 22145.506589259487,
+      "Rs": 0.5507550407152374,
+      "Rr_p": 0.07129798530612245,
+      "Xm": 26.412918442079228,
+      "Xsigma_s": 1.0565167376831692,
+      "Xsigma_r": 1.3206459221039617
+    },
+    "materials_sources": {
+      "mur_pm": "default",
+      "sigma_copper": "inline",
+      "sigma_bar": "inline",
+      "bs_t": "inline/catalog",
+      "mur0": "inline/catalog"
+    }
+  },
+  "torque_nm": 145.8441451429567,
+  "back_emf_v_peak": 212.41711501978332,
+  "losses_w": {
+    "copper": 6542.188611546658,
+    "iron": 7.576799844183071,
+    "rotor_bar": 763.6381582503271
+  }
+}

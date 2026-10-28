@@ -43,21 +43,77 @@
           <el-form-item label="turns_per_phase">
             <el-input-number v-model="form.geometry.turns_per_phase" :min="1" :step="1" controls-position="right" />
           </el-form-item>
+          <el-form-item v-if="machineType === 'ACIM'" label="rotor_bars">
+            <el-input-number v-model="form.geometry.rotor_bars" :min="1" :step="1" controls-position="right" />
+          </el-form-item>
+          <el-form-item v-if="machineType === 'ACIM'" label="bar_area_m2">
+            <el-input-number v-model="form.geometry.bar_area_m2" :min="1e-8" :step="1e-6" :precision="8" controls-position="right" />
+          </el-form-item>
         </div>
 
         <h3 class="section-title">materials</h3>
         <div class="form-grid">
           <el-form-item label="steel_id">
-            <el-input v-model="form.materials.steel_id" />
+            <el-select
+              v-if="steelOptions.length"
+              v-model="form.materials.steel_id"
+              filterable
+              allow-create
+              default-first-option
+              placeholder="选择或输入"
+              style="width: 100%"
+            >
+              <el-option v-for="o in steelOptions" :key="o.id" :label="o.label" :value="o.id" />
+            </el-select>
+            <el-input v-else v-model="form.materials.steel_id" />
           </el-form-item>
           <el-form-item v-if="machineType !== 'ACIM'" label="magnet_id">
-            <el-input v-model="form.materials.magnet_id" />
+            <el-select
+              v-if="magnetOptions.length"
+              v-model="form.materials.magnet_id"
+              filterable
+              allow-create
+              default-first-option
+              placeholder="选择或输入"
+              style="width: 100%"
+            >
+              <el-option v-for="o in magnetOptions" :key="o.id" :label="o.label" :value="o.id" />
+            </el-select>
+            <el-input v-else v-model="form.materials.magnet_id" />
           </el-form-item>
           <el-form-item label="conductor_id">
-            <el-input v-model="form.materials.conductor_id" />
+            <el-select
+              v-if="coilOptions.length"
+              v-model="form.materials.conductor_id"
+              filterable
+              allow-create
+              default-first-option
+              placeholder="选择或输入"
+              style="width: 100%"
+            >
+              <el-option v-for="o in coilOptions" :key="o.id" :label="o.label" :value="o.id" />
+            </el-select>
+            <el-input v-else v-model="form.materials.conductor_id" />
+          </el-form-item>
+          <el-form-item v-if="machineType === 'ACIM'" label="bar_id">
+            <el-select
+              v-if="barOptions.length"
+              v-model="form.materials.bar_id"
+              filterable
+              allow-create
+              default-first-option
+              placeholder="选择或输入"
+              style="width: 100%"
+            >
+              <el-option v-for="o in barOptions" :key="o.id" :label="o.label" :value="o.id" />
+            </el-select>
+            <el-input v-else v-model="form.materials.bar_id" />
           </el-form-item>
           <el-form-item v-if="machineType !== 'ACIM'" label="br_t">
             <el-input-number v-model="form.materials.br_t" :min="0.1" :max="1.6" :step="0.05" :precision="2" controls-position="right" />
+          </el-form-item>
+          <el-form-item v-if="machineType === 'ACIM'" label="sigma_bar">
+            <el-input-number v-model="form.materials.sigma_bar" :min="1e5" :step="1e6" :precision="0" controls-position="right" />
           </el-form-item>
         </div>
 
@@ -72,8 +128,11 @@
           <el-form-item v-if="machineType === 'PMSM'" label="gamma_deg">
             <el-input-number v-model="form.operating_point.gamma_deg" :min="-90" :max="90" :step="5" controls-position="right" />
           </el-form-item>
-          <el-form-item v-if="machineType === 'ACIM'" label="slip">
+          <el-form-item v-if="machineType === 'ACIM'" label="slip（可选）">
             <el-input-number v-model="form.operating_point.slip" :min="0.001" :max="0.5" :step="0.01" :precision="3" controls-position="right" />
+          </el-form-item>
+          <el-form-item v-if="machineType === 'ACIM'" label="freq_hz">
+            <el-input-number v-model="form.operating_point.freq_hz" :min="1" :max="400" :step="1" :precision="1" controls-position="right" />
           </el-form-item>
           <el-form-item v-if="machineType === 'ACIM'" label="voltage_v_peak">
             <el-input-number v-model="form.operating_point.voltage_v_peak" :min="0" :step="10" controls-position="right" />
@@ -85,7 +144,8 @@
         <el-button type="primary" :loading="solving" @click="onSolve">求解</el-button>
         <el-button :disabled="solving" @click="resetToSample">恢复样例</el-button>
       </div>
-      <p class="side-hint">local-first · 不调用 /jobs 作权威</p>
+      <p class="side-hint">local-first · Wasm→sync→fixture · 不阻塞 /jobs</p>
+      <p v-if="solveBackendLabel" class="side-backend">路径：{{ solveBackendLabel }}</p>
     </aside>
 
     <section class="analytic-main">
@@ -97,6 +157,7 @@
 
       <template v-if="result">
         <div class="meta-banner" :data-mock="result.meta.mock">
+          <span class="meta-pill">path={{ result.meta.source || solveBackend || '—' }}</span>
           <span class="meta-pill">solver={{ result.meta.solver }}</span>
           <span class="meta-pill">mock={{ result.meta.mock }}</span>
           <span class="meta-pill">{{ result.meta.elapsed_ms.toFixed(2) }} ms</span>
@@ -161,18 +222,22 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import type { ECharts } from 'echarts/core'
 import {
+  DEFAULT_RADIAL_ACIM_REQUEST,
   DEFAULT_RADIAL_PMSM_REQUEST,
   SOLVE_SCHEMA_VERSION,
   type MachineType,
+  type SolveBackend,
   type SolveRequest,
   type SolveResult,
   type SweepPoint,
 } from '@/types/solver'
 import {
   defaultSpeedSweep,
+  getSolveBackend,
   solveRadial,
   sweepSpeed,
 } from '@/lib/analyticSolve'
+import { listMaterials } from '@/api/materials'
 import { useProjectsStore } from '@/stores/projects'
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
@@ -189,7 +254,24 @@ const sweepPoints = ref<SweepPoint[]>([])
 const sweepError = ref<string | null>(null)
 const chartMetric = ref<'torque' | 'bemf'>('torque')
 const chartEl = ref<HTMLDivElement | null>(null)
+const solveBackend = ref<SolveBackend | null>(null)
+const steelOptions = ref<{ id: string; label: string }[]>([])
+const magnetOptions = ref<{ id: string; label: string }[]>([])
+const coilOptions = ref<{ id: string; label: string }[]>([])
+const barOptions = ref<{ id: string; label: string }[]>([])
 let chart: ECharts | null = null
+
+const BACKEND_LABELS: Record<SolveBackend, string> = {
+  wasm: 'Wasm',
+  sync: 'sync HTTP',
+  fixture: 'fixture',
+  mock: 'mock',
+}
+
+const solveBackendLabel = computed(() => {
+  const b = result.value?.meta.source ?? solveBackend.value
+  return b ? BACKEND_LABELS[b] ?? b : ''
+})
 
 const projectLabel = computed(() => {
   const id = typeof route.query.projectId === 'string' ? route.query.projectId : ''
@@ -237,30 +319,29 @@ function cloneRequest(src: SolveRequest): SolveRequest {
 }
 
 function resetToSample() {
-  const base = cloneRequest(DEFAULT_RADIAL_PMSM_REQUEST)
-  base.machine_type = machineType.value
   if (machineType.value === 'ACIM') {
-    delete base.geometry.magnet_thickness_m
-    delete base.materials.magnet_id
-    delete base.materials.br_t
-    delete base.operating_point.gamma_deg
-    base.operating_point.slip = 0.03
-    base.operating_point.voltage_v_peak = 311
-    base.operating_point.current_a_peak = 15
-  } else if (machineType.value === 'BLDC') {
-    delete base.operating_point.gamma_deg
-    delete base.operating_point.slip
-    delete base.operating_point.voltage_v_peak
+    form.value = cloneRequest(DEFAULT_RADIAL_ACIM_REQUEST)
   } else {
-    delete base.operating_point.slip
-    delete base.operating_point.voltage_v_peak
-    base.operating_point.gamma_deg = 0
+    const base = cloneRequest(DEFAULT_RADIAL_PMSM_REQUEST)
+    base.machine_type = machineType.value
+    if (machineType.value === 'BLDC') {
+      delete base.operating_point.gamma_deg
+      delete base.operating_point.slip
+      delete base.operating_point.voltage_v_peak
+      delete base.operating_point.freq_hz
+    } else {
+      delete base.operating_point.slip
+      delete base.operating_point.voltage_v_peak
+      delete base.operating_point.freq_hz
+      base.operating_point.gamma_deg = 0
+    }
+    form.value = base
   }
-  form.value = base
   result.value = null
   sweepPoints.value = []
   errorMsg.value = null
   sweepError.value = null
+  solveBackend.value = null
 }
 
 function onMachineChange() {
@@ -287,6 +368,7 @@ async function onSolve() {
     const req = buildRequest()
     const r = await solveRadial(req)
     result.value = r
+    solveBackend.value = getSolveBackend()
     await nextTick()
     ensureChart()
     try {
@@ -374,6 +456,30 @@ watch(chartMetric, () => {
   if (sweepPoints.value.length) renderChart()
 })
 
+async function loadMaterialOptions() {
+  try {
+    const { items } = await listMaterials()
+    steelOptions.value = items
+      .filter((m) => m.category === 'steel')
+      .map((m) => ({ id: m.id, label: `${m.name} (${m.id})` }))
+    magnetOptions.value = items
+      .filter((m) => m.category === 'magnet')
+      .map((m) => ({ id: m.id, label: `${m.name} (${m.id})` }))
+    coilOptions.value = items
+      .filter((m) => m.category === 'coil')
+      .map((m) => ({ id: m.id, label: `${m.name} (${m.id})` }))
+    barOptions.value = items
+      .filter((m) => m.category === 'acim_bar')
+      .map((m) => ({ id: m.id, label: `${m.name} (${m.id})` }))
+  } catch {
+    /* listMaterials 失败则保持手填 id */
+    steelOptions.value = []
+    magnetOptions.value = []
+    coilOptions.value = []
+    barOptions.value = []
+  }
+}
+
 onMounted(async () => {
   const id = typeof route.query.projectId === 'string' ? route.query.projectId : ''
   if (id && !projects.items.length) {
@@ -383,6 +489,7 @@ onMounted(async () => {
       /* optional label only */
     }
   }
+  void loadMaterialOptions()
   window.addEventListener('resize', onResize)
 })
 
@@ -468,6 +575,13 @@ onBeforeUnmount(() => {
   margin: 8px 0 0;
   font-size: 11px;
   color: var(--mo-text-muted);
+}
+
+.side-backend {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-family: var(--mo-font-mono);
+  color: var(--mo-accent);
 }
 
 .analytic-main {
