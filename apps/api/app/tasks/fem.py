@@ -1,9 +1,12 @@
 """FEM job Celery task. Gates on MO_FEM_DRY_RUN; never runs Elmer/GetDP in-process.
 
-Q5-2: stub/success scalars echo equationMode (heat_proxy | magnetostatic);
-pending_calibration always true until calibrated; magnetostaticPathReady false
-and force scalars null on magnetostatic stub — never invent axialForceN from
-heat-proxy. Real Elmer magnetostatic path owned by packages/solver-fem.
+Q5-2 (FEM tip 797ce67 / docs/drafts/Q5-2-真磁静力学后处理.md):
+- MO_FEM_DRY_RUN!=0 stub: equationMode echo; magnetostaticPathReady=false;
+  force scalars null — never invent true-path numbers in the API stub.
+- MO_FEM_DRY_RUN=0: call packages/solver-fem.run_job; writeback stores the
+  FEM-written manifest/scalars as-is (magnetostaticPathReady, postprocess,
+  axialForceN, magneticEnergyJ, elmerExit; still pending_calibration=true).
+  resultRef stays F1: solver/fem/jobs/{id}/manifest.json.
 """
 
 from __future__ import annotations
@@ -161,16 +164,22 @@ def _complete_fem_stub(job_id: str, payload: dict[str, Any] | None) -> dict[str,
 def _complete_fem_via_run_job(job_id: str, payload: dict[str, Any] | None) -> dict[str, Any]:
     """MO_FEM_DRY_RUN=0: call solver-fem.run_job; fail the job on errors (no silent stub).
 
-    equationMode is passed through payload; magnetostatic real path not ready
-    raises FemSolveError → job failed (never falls back to heat stub that lies).
+    Pass-through writeback (Q5-2 / tip 797ce67): store the FEM-written
+    manifest/scalars unchanged — including magnetostaticPathReady, postprocess,
+    axialForceN, magneticEnergyJ, elmerExit; pending_calibration must stay true.
+    Do **not** invent stub forces or overwrite FEM scalars. FemSolveError /
+    pipeline errors → job failed (never fall back to a lying heat stub).
+    resultRef remains F1 layout: solver/fem/jobs/{id}/manifest.json.
     """
     try:
         run_job = _import_run_job()
+        # Pass payload through as-is (equationMode / templateId preserved).
         result = run_job(job_id, payload, _work_root(), dry_run=False)
     except Exception as exc:  # noqa: BLE001 — surface to job.error
         return _fail_fem_job(job_id, "fem_run_job_failed", str(exc))
 
     ref = str(result.get("resultRef") or result_ref_for(job_id))
+    # Prefer in-memory manifest from run_job; fall back to disk path only.
     manifest: dict[str, Any] | None = result.get("manifest")
     if not isinstance(manifest, dict):
         man_path = result.get("manifestPath")
@@ -181,17 +190,31 @@ def _complete_fem_via_run_job(job_id: str, payload: dict[str, Any] | None) -> di
         except (OSError, json.JSONDecodeError) as exc:
             return _fail_fem_job(job_id, "fem_manifest_unreadable", str(exc))
 
+    # Never rewrite scalars here — FEM thinning already set true-path fields.
     maybe_write_local_manifest(job_id, manifest)
+    man_sc = manifest.get("scalars") if isinstance(manifest.get("scalars"), dict) else {}
     update_payload: dict[str, Any] = {
         "input": payload or {},
         "manifest": manifest,
         "run_job": {
             "jobDir": result.get("jobDir"),
             "dryRun": result.get("dryRun"),
-            "equationMode": result.get("equationMode"),
-            "resultRef": result.get("resultRef"),
+            "equationMode": result.get("equationMode") or man_sc.get("equationMode"),
+            "magnetostaticPathReady": result.get("magnetostaticPathReady")
+            if result.get("magnetostaticPathReady") is not None
+            else man_sc.get("magnetostaticPathReady"),
+            "postprocess": result.get("postprocess") or man_sc.get("postprocess"),
+            "axialForceN": result.get("axialForceN")
+            if result.get("axialForceN") is not None
+            else man_sc.get("axialForceN"),
+            "magneticEnergyJ": result.get("magneticEnergyJ")
+            if result.get("magneticEnergyJ") is not None
+            else man_sc.get("magneticEnergyJ"),
+            "elmerExit": result.get("elmerExit")
+            if result.get("elmerExit") is not None
+            else man_sc.get("elmerExit"),
+            "resultRef": result.get("resultRef") or ref,
             "manifestPath": result.get("manifestPath"),
-            "elmerExit": result.get("elmerExit"),
         },
     }
     job_update(job_id, payload=update_payload)

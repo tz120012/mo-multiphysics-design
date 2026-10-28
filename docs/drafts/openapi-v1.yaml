@@ -784,12 +784,16 @@ paths:
         - `jobType=fem`：**Q3 主路径**（非可选）。payload **必须**符合 `FemJobPayload`
          （topology、machineType、dim、solverKernel、meshProfile、operatingPoint、materials；
           可选 templateId、`equationMode`、`dryRun`）。**禁止**在 api 进程内跑 Elmer/GetDP。
-          **Q5-2**：`equationMode`=`heat_proxy`|`magnetostatic`；缺省 + dryRun=false → heat_proxy 兼容；
-          `templateId=af_pmsm_3d_ms` 暗示 magnetostatic。**heat-proxy ≠ magnetostatic**；
-          stub/未校准路径须 `pending_calibration: true`；不得用 heat-proxy 冒充轴向力/真磁静力学；
-          **禁止**宣称 FEM ≤3%（待 Q5-4 标定）。见 Q4plus-5-磁静力学与轴向真值.md。
-          成功后 `resultRef` → `solver/fem/jobs/{jobId}/manifest.json`；精简产物在
-          `results/fem/{jobId}/`（scalars.json + slice.gltf + preview.png）。见 Q3-large与FEM边界.md。
+          **Q5-2**（FEM tip `797ce67` / `Q5-2-真磁静力学后处理.md`）：
+          `equationMode`=`heat_proxy`|`magnetostatic`；缺省 + dryRun=false → heat_proxy 兼容；
+          `templateId=af_pmsm_3d_ms` 暗示 magnetostatic。**heat-proxy ≠ magnetostatic**。
+          Worker：`MO_FEM_DRY_RUN!=0` → API stub（magnetostaticPathReady=false、力标量 null）；
+          `MO_FEM_DRY_RUN=0` → `packages/solver-fem.run_job` 真路径，写回 FEM 标量原样
+          （可含 magnetostaticPathReady=true、postprocess=maxwell、axialForceN、
+          magneticEnergyJ、elmerExit；仍 `pending_calibration: true`）。
+          不得用 heat-proxy 冒充轴向力；**禁止**宣称 FEM ≤3%（待 Q5-4）。
+          成功后 `resultRef` → `solver/fem/jobs/{jobId}/manifest.json`（F1）；精简产物在
+          `results/fem/{jobId}/`。见 Q3-调度与FEM边界.md、Q4plus-5。
         - `jobType=drive`：Q4-1…4（BLDC 方波 / PMSM FOC / ACIM V/f+FOC / Map）；见 DriveJobPayload。
         - `optimize`：Q4-9 异步；校验 OptimizeJobPayload；resultRef=`solver/optimize/jobs/{jobId}/manifest.json`；cancel 幂等。
         交互 FEM：**fire → poll/subscribe → 进度**；不得以阻塞长轮询为唯一 UX。
@@ -1394,9 +1398,12 @@ components:
       type: object
       description: |
         Q3/Q5-2 FEM 作业载荷。真理源亦见 packages/solver-fem/api/fem-job-payload.schema.json、
-        docs/drafts/Q3-FEM与FEM边界.md（见 Q3-large与FEM边界.md）、docs/drafts/Q4plus-5-磁静力学与轴向真值.md。
+        docs/drafts/Q3-调度与FEM边界.md、docs/drafts/Q4plus-5-磁静力学与轴向真值.md、
+        docs/drafts/Q5-2-真磁静力学后处理.md（tip `797ce67`）。
         **heat-proxy ≠ magnetostatic**；未校准路径 `pending_calibration: true`；
-        不得用 heat-proxy 假造 axialForceN；**禁止**宣称 FEM ≤3%（Q5-4）。
+        真路径成功可含 magnetostaticPathReady / postprocess / axialForceN /
+        magneticEnergyJ / elmerExit；不得用 heat-proxy 假造轴向力；
+        **禁止**宣称 FEM ≤3%（Q5-4）。
       required: [topology, machineType, dim, solverKernel, meshProfile, operatingPoint, materials]
       properties:
         projectId:
@@ -1443,8 +1450,11 @@ components:
           enum: [heat_proxy, magnetostatic]
           description: |
             Q5-2 方程模式。缺省 + dryRun=false → heat_proxy（Q3 E2E 兼容）；
-            不得默认为 magnetostatic。stub 须回显；magnetostatic 时
-            magnetostaticPathReady=false、力相关标量可为 null。
+            不得默认为 magnetostatic。`MO_FEM_DRY_RUN!=0` stub 须回显；
+            magnetostatic stub：magnetostaticPathReady=false、力标量 null。
+            `MO_FEM_DRY_RUN=0` + templateId=af_pmsm_3d_ms 真路径成功时可写回
+            magnetostaticPathReady=true、postprocess=maxwell、axialForceN、
+            magneticEnergyJ、elmerExit（仍 pending_calibration）。
             **heat-proxy ≠ magnetostatic**；禁止宣称 FEM ≤3%（待 Q5-4）。
         dryRun:
           type: boolean
