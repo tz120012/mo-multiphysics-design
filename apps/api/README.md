@@ -124,6 +124,19 @@ Also: history empty stub —
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/projects/$PID/history"
 ```
 
+### Sync analytic solve (path + Docker)
+
+`POST /api/v1/solver/analytic/solve` loads `packages/solver-analytic` via:
+
+1. Env **`SOLVER_ANALYTIC_PATH`** (or `MO_SOLVER_ANALYTIC_PATH`) — directory containing `solve.py`
+2. Else walk parents for `packages/solver-analytic/solve.py` (host monorepo)
+3. Else `apps/api/vendor/solver-analytic` (optional vendored copy)
+
+Compose builds the API from **repo root** so the image includes the package at
+`/opt/mo/packages/solver-analytic` and sets `SOLVER_ANALYTIC_PATH` accordingly.
+After pulling solver or Dockerfile changes: `docker compose build api && docker compose up -d api`
+(or `make up` from repo root). Mo-运维 owns compose; this context/`ENV` change is required for sync solve in containers.
+
 ### Materials (Q2-1 typed curves)
 
 Aligned to architecture tip `3c34f1c` / OpenAPI `Material`: required `id`, `name`, `category`, `builtin`, `materialsSchemaVersion` (`0.1.0-q2`); typed `curves` by category (`curves.steel|magnet|coil|acim_bar`); `meta` is extension bag only (old camelCase keys kept for transition). Builtin seeds are read-only (PUT/DELETE → 403). Soft-delete via DELETE sets `deletedAt`.

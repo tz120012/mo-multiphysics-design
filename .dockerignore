@@ -1,0 +1,27 @@
+# Compose api/web builds use repo-root context
+.git
+.github
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.vite
+**/dist
+.env
+.env.*
+!.env.example
+*.md
+!packages/solver-analytic/README.md
+docs
+scripts
+tests
+apps/web/node_modules
+apps/web/dist
+packages/geometry
+packages/solver-analytic-wasm
+packages/solver-analytic/smoke
+packages/solver-analytic/radial_mec/tests
+packages/solver-analytic/**/__pycache__

@@ -1,6 +1,9 @@
 # Q1-8 / P09 — one-click: web + api + Postgres + Redis
 # Host ports 5433/6380 avoid clashing with other projects.
 # In-compose DNS (Mo-后端): postgres:5432 / redis:6379
+#
+# Mo-运维 owns compose; context=. + SOLVER_ANALYTIC_PATH required for sync solve
+# (packages/solver-analytic must be copied into the api image).
 
 services:
   postgres:
@@ -39,12 +42,13 @@ services:
 
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: mo-api
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
     ports:
       - "${API_HOST_PORT:-8000}:8000"
     depends_on:
@@ -88,15 +92,17 @@ services:
 
 
   # Optional Celery worker (Q2-6). Ops-owned — uncomment when running analytic via broker.
+  # Same repo-root build context so solver-analytic is in the image (sync/async analytic).
   # worker:
   #   build:
-  #     context: ./apps/api
-  #     dockerfile: Dockerfile
+  #     context: .
+  #     dockerfile: apps/api/Dockerfile
   #   container_name: mo-worker
   #   command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=INFO"]
   #   environment:
   #     DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
   #     REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  #     SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
   #   depends_on:
   #     redis:
   #       condition: service_healthy

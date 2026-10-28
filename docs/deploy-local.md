@@ -55,7 +55,7 @@ make health             # curl /health，检查 db.ok / redis.ok
 
 | 服务 | 上下文 |
 | --- | --- |
-| `api` | `apps/api/Dockerfile`（uvicorn :8000） |
+| `api` | 仓库根上下文 + `apps/api/Dockerfile`（打入 `packages/solver-analytic`，uvicorn :8000） |
 | `web` | `apps/web/Dockerfile`（pnpm build + nginx，反代 `/api/` → `api:8000`） |
 | `postgres` | `postgres:16-alpine` |
 | `redis` | `redis:7-alpine` |

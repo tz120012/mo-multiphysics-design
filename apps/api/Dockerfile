@@ -1,16 +1,22 @@
 # Mo API — Q1 FastAPI shell
+# Build from repo root (required so packages/solver-analytic can be shipped):
+#   docker build -f apps/api/Dockerfile .
+# Compose: api.build.context=.  dockerfile: apps/api/Dockerfile
 FROM python:3.12-slim
 
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    SOLVER_ANALYTIC_PATH=/opt/mo/packages/solver-analytic
 
-COPY requirements.txt .
+COPY apps/api/requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY app ./app
+COPY apps/api/app ./app
+# Sync analytic solve (packages/solver-analytic) — needed for POST /api/v1/solver/analytic/solve
+COPY packages/solver-analytic /opt/mo/packages/solver-analytic
 
 EXPOSE 8000
 

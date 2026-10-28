@@ -4,6 +4,8 @@
 #
 # Why: some Bot/box Docker setups lack real iptables; mo-net DNS/east-west fails.
 # Postgres/Redis stay on mo-net with host publish 5433/6380; api talks via host gateway.
+#
+# Mo-运维 owns compose; SOLVER_ANALYTIC_PATH kept so sync solve still finds the packaged solver.
 
 services:
   api:
@@ -13,6 +15,7 @@ services:
       # Use host publish ports (not in-compose DNS)
       DATABASE_URL: postgresql+psycopg://mo:mo@host.docker.internal:${POSTGRES_PORT:-5433}/mo
       REDIS_URL: redis://host.docker.internal:${REDIS_PORT:-6380}/0
+      SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
 
   web:
     extra_hosts:
