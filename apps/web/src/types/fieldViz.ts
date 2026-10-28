@@ -10,6 +10,10 @@
  * 禁止默认 VTK / 全场；勿再依赖旧 fem-result-v0 float32 grid 假彩主路径。
  */
 
+/**
+ * public dry-run。`/field` 仅在下列情况使用（见 FieldVizView.vue）：
+ * 无 jobId；或 `?source=fixture`；或 artifacts 列表空/失败且关键 GET 404/不可达。
+ */
 export const FEM_MANIFEST_FIXTURE_BASE = '/fem/rf_pmsm_2d_dryrun' as const
 
 export type FemJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
