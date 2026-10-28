@@ -1,7 +1,8 @@
 """Unified SolveRequest → SolveResult entry for solver-analytic.
 
 ``solver`` query: \"mec\" (default) | \"mock\".
-RF+PMSM → MEC or Gate0 mock; other machine types raise clear errors.
+RF+PMSM/BLDC → MEC (BLDC = same path + square-wave coeff approx);
+RF+ACIM → steady equivalent circuit (``meta.solver=acim_equiv``).
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ _PKG = Path(__file__).resolve().parent
 if str(_PKG) not in sys.path:
     sys.path.insert(0, str(_PKG))
 
+from machines.acim_equiv import solve_radial_acim_equiv  # noqa: E402
 from radial_mec import solve_radial_pmsm_mec  # noqa: E402
 
 
@@ -78,7 +80,8 @@ def solve(request: dict[str, Any], *, solver: str | None = None) -> dict[str, An
         Dict matching ``api/solve.schema.json`` SolveRequest.
     solver:
         ``\"mec\"`` (default) or ``\"mock\"``. Also read from ``request[\"solver\"]``
-        if this argument is omitted.
+        if this argument is omitted. ACIM always uses the equivalent-circuit path
+        when ``solver=mec`` (result ``meta.solver=acim_equiv``).
     """
     kind = (solver or request.get("solver") or "mec").strip().lower()
     topo = request.get("topology")
@@ -95,17 +98,17 @@ def solve(request: dict[str, Any], *, solver: str | None = None) -> dict[str, An
     if kind == "mec":
         if topo == "RF" and mtype == "PMSM":
             return solve_radial_pmsm_mec(request)
+        if topo == "RF" and mtype == "BLDC":
+            return solve_radial_pmsm_mec(request)
+        if topo == "RF" and mtype == "ACIM":
+            return solve_radial_acim_equiv(request)
         if mtype == "ACIM":
             raise NotImplementedError(
-                "ACIM equivalent-circuit solve is scheduled for Q2; use radial PMSM MEC for now"
-            )
-        if mtype == "BLDC":
-            raise NotImplementedError(
-                "BLDC trapezoidal path not implemented yet; PMSM MEC is the Q1 radial path"
+                f"ACIM equivalent-circuit solve requires topology=RF; got topology={topo!r}"
             )
         if topo == "AF":
             raise NotImplementedError(
-                "Axial (AF) multi-plane solve is Q3; radial_mec is RF-only"
+                "Axial (AF) multi-plane solve is Q3; radial solvers are RF-only"
             )
         raise ValueError(f"unsupported combination topology={topo!r} machine_type={mtype!r}")
 
@@ -120,7 +123,11 @@ def main(argv: list[str] | None = None) -> int:
         if a.startswith("--solver="):
             solver = a.split("=", 1)[1]
         elif a in ("-h", "--help"):
-            print("usage: solve.py [--solver=mec|mock] [request.json]", file=sys.stderr)
+            print(
+                "usage: solve.py [--solver=mec|mock] [request.json]\n"
+                "  RF+PMSM/BLDC → MEC; RF+ACIM → acim_equiv (see smoke/fixtures/)",
+                file=sys.stderr,
+            )
             return 0
         else:
             path = a

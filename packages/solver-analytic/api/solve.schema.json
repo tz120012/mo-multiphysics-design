@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mo.local/schemas/solver-analytic/solve-v0.json",
-  "title": "Mo solver-analytic Solve API v0 (Gate0 draft)",
-  "description": "Input: geometry summary + materials + operating point. Output: torque / back-EMF / coarse losses. Align with Mo-架构 before freeze.",
+  "title": "Mo solver-analytic Solve API v0 (Gate0 draft + Q2 ACIM)",
+  "description": "Input: geometry summary + materials + operating point. Output: torque / back-EMF / coarse losses. Schema bump note: meta.solver adds acim_equiv (backward-compatible enum extension). Align with Mo-架构 before freeze.",
   "$defs": {
     "GeometrySummary": {
       "type": "object",
@@ -16,7 +16,11 @@
         "rotor_od_m": { "type": "number", "exclusiveMinimum": 0 },
         "stator_id_m": { "type": "number", "exclusiveMinimum": 0 },
         "magnet_thickness_m": { "type": "number", "minimum": 0 },
-        "turns_per_phase": { "type": "integer", "minimum": 1 }
+        "turns_per_phase": { "type": "integer", "minimum": 1 },
+        "rotor_bars": { "type": "integer", "minimum": 1, "description": "ACIM; default=slots" },
+        "bar_area_m2": { "type": "number", "exclusiveMinimum": 0, "description": "ACIM bar cross-section" },
+        "winding_factor": { "type": "number" },
+        "carter_factor": { "type": "number" }
       }
     },
     "Materials": {
@@ -25,8 +29,11 @@
         "steel_id": { "type": "string" },
         "magnet_id": { "type": "string" },
         "conductor_id": { "type": "string" },
-        "br_t": { "type": "number", "description": "Remanence override for mock/PM machines" },
-        "sigma_copper": { "type": "number", "description": "S/m, optional" }
+        "bar_id": { "type": "string", "description": "ACIM rotor bar material id" },
+        "br_t": { "type": "number", "description": "Remanence override for PM machines" },
+        "mur_pm": { "type": "number", "description": "PM recoil mur override" },
+        "sigma_copper": { "type": "number", "description": "S/m, stator conductor" },
+        "sigma_bar": { "type": "number", "description": "S/m, ACIM bar" }
       }
     },
     "OperatingPoint": {
@@ -35,9 +42,10 @@
       "properties": {
         "speed_rpm": { "type": "number" },
         "current_a_peak": { "type": "number" },
-        "voltage_v_peak": { "type": "number" },
-        "gamma_deg": { "type": "number", "description": "Current angle, PMSM" },
-        "slip": { "type": "number", "description": "ACIM only" }
+        "voltage_v_peak": { "type": "number", "description": "Phase peak; preferred for ACIM" },
+        "gamma_deg": { "type": "number", "description": "Current angle, PMSM/BLDC" },
+        "slip": { "type": "number", "description": "ACIM; else computed from speed vs sync" },
+        "freq_hz": { "type": "number", "description": "ACIM supply frequency; default 50" }
       }
     },
     "SolveRequest": {
@@ -49,7 +57,12 @@
         "machine_type": { "enum": ["BLDC", "PMSM", "ACIM"] },
         "geometry": { "$ref": "#/$defs/GeometrySummary" },
         "materials": { "$ref": "#/$defs/Materials" },
-        "operating_point": { "$ref": "#/$defs/OperatingPoint" }
+        "operating_point": { "$ref": "#/$defs/OperatingPoint" },
+        "materials_catalog": {
+          "description": "Optional GET /materials-shaped map or {items:[...]} for id→meta resolution",
+          "type": ["object", "array"]
+        },
+        "solver": { "enum": ["mec", "mock"], "description": "Optional; default mec" }
       }
     },
     "SolveResult": {
@@ -61,14 +74,20 @@
           "type": "object",
           "required": ["solver", "elapsed_ms", "mock"],
           "properties": {
-            "solver": { "enum": ["mec", "axial_planes", "mock"] },
+            "solver": {
+              "enum": ["mec", "axial_planes", "mock", "acim_equiv"],
+              "description": "Q2: acim_equiv added (backward-compatible extension)"
+            },
             "elapsed_ms": { "type": "number", "minimum": 0 },
             "mock": { "type": "boolean" },
             "note": { "type": "string" }
           }
         },
         "torque_nm": { "type": "number" },
-        "back_emf_v_peak": { "type": "number" },
+        "back_emf_v_peak": {
+          "type": "number",
+          "description": "PMSM: phase back-EMF peak; ACIM: airgap/induced voltage peak"
+        },
         "losses_w": {
           "type": "object",
           "required": ["copper", "iron"],
@@ -76,7 +95,7 @@
             "copper": { "type": "number" },
             "iron": { "type": "number" },
             "magnet_eddy": { "type": "number" },
-            "rotor_bar": { "type": "number", "description": "ACIM" }
+            "rotor_bar": { "type": "number", "description": "ACIM rotor copper (referred)" }
           }
         },
         "inductance_h": {

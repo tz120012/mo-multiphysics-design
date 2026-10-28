@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.0.0-gate0",
+  "topology": "RF",
+  "machine_type": "ACIM",
+  "geometry": {
+    "poles": 4,
+    "slots": 36,
+    "stack_length_m": 0.12,
+    "airgap_m": 0.0005,
+    "rotor_od_m": 0.119,
+    "stator_id_m": 0.120,
+    "turns_per_phase": 96,
+    "rotor_bars": 28,
+    "bar_area_m2": 5.0e-5
+  },
+  "materials": {
+    "steel_id": "mat-steel-m19",
+    "conductor_id": "mat-copper",
+    "bar_id": "mat-al-bar",
+    "sigma_copper": 5.8e7,
+    "sigma_bar": 3.5e7
+  },
+  "operating_point": {
+    "speed_rpm": 1450,
+    "voltage_v_peak": 311.0,
+    "freq_hz": 50.0
+  }
+}
