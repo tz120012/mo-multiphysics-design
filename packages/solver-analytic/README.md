@@ -1,6 +1,6 @@
 # packages/solver-analytic — 轻量解析（Wasm 目标）
 
-Gate0 / Q1 / Q2 **已签字**。Q3 进行中：轴向多平面 **AF+PMSM MVP**（`axial_planes/`）。Gate0 mock 保留回归。**本包不对标 ≤5%**。
+Gate0 / Q1 / Q2 / Q3 **已签字**。Q4 进行中：退磁 / 导条温升 / LPTN（`thermal/`）。Gate0 mock 保留回归。**本包不对标 ≤5%**。
 
 维护：Mo-解析 · 仅 `/workspace/mo-platform`。
 
@@ -14,6 +14,9 @@ Gate0 / Q1 / Q2 **已签字**。Q3 进行中：轴向多平面 **AF+PMSM MVP**�
 | ACIM 等效电路 | **Q2** | `meta.solver=acim_equiv`；Rs/Rr'/Xm/Xσ + 转差转矩 |
 | 材料适配 | **Q2** | `materials_adapter.py`：内联 / catalog id / 工程默认 |
 | 轴向多平面展开 | **Q3-1 MVP** | AF+PMSM；`meta.solver=axial_planes`；见 `axial_planes/README.md` |
+| 退磁工作点（PM） | **Q4-6 MVP** | `thermal/demag.py` → `demagMargin`；`pending_calibration` |
+| ACIM 导条温升 | **Q4-6 MVP** | `thermal/bar_temp.py` → `barDeltaT_K` / `endRingDeltaT_K` |
+| LPTN 温漂闭环 | **Q4-7 MVP** | `thermal/lptn.py`；`schemaVersion=thermal-loop-iter-v0`；对齐 FEM tip `864ec20` |
 | Wasm | **Q2** | `packages/solver-analytic-wasm/`（`solve_json`）；见该包 README |
 | Sync HTTP | **Q2 可选** | `POST /api/v1/solver/analytic/solve`（Bearer）薄包装本包 `solve()` |
 
@@ -30,15 +33,16 @@ packages/solver-analytic/
   radial_mec/              # 径向非线性 MEC（PMSM/BLDC）
   machines/acim_equiv.py   # ACIM 稳态等效电路
   axial_planes/            # Q3 AF+PMSM 多平面展开
+  thermal/                 # Q4 退磁 / 导条温升 / LPTN
   smoke/
     run_radial_pmsm_mock.py
     run_radial_pmsm_mec.py
     run_radial_acim_equiv.py
-    fixtures/radial_pmsm_request.json
-    fixtures/radial_acim_request.json
-    fixtures/axial_pmsm_request.json
-    fixtures/axial_pmsm_stub_*.json   # FE UI 临时 stub（非 golden）
     run_axial_pmsm_planes.py
+    run_demag_pm.py
+    run_bar_temp_acim.py
+    run_lptn_loop.py
+    fixtures/…
 ```
 
 ## 接口
@@ -81,9 +85,12 @@ python3 packages/solver-analytic/smoke/run_radial_pmsm_mock.py
 python3 packages/solver-analytic/smoke/run_radial_pmsm_mec.py
 python3 packages/solver-analytic/smoke/run_radial_acim_equiv.py
 python3 packages/solver-analytic/smoke/run_axial_pmsm_planes.py
+python3 packages/solver-analytic/smoke/run_demag_pm.py
+python3 packages/solver-analytic/smoke/run_bar_temp_acim.py
+python3 packages/solver-analytic/smoke/run_lptn_loop.py
 python3 packages/solver-analytic/radial_mec/tests/test_reluctance_convergence.py
 python3 packages/solver-analytic/radial_mec/tests/test_materials_adapter.py
 python3 packages/solver-analytic/axial_planes/tests/test_axial_planes.py
 ```
 
-范围草案：`docs/drafts/解析范围.md`。
+范围草案：`docs/drafts/解析范围.md`；Q4：`docs/drafts/Q4-热与退磁.md`（损耗契约对齐 `Q4-7-热闭环-FEM损耗输入.md`）。
