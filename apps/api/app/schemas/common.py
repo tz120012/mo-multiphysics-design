@@ -64,15 +64,7 @@ class HistoryCursorResponse(BaseModel):
     entry: HistoryEntry
 
 
-class Material(BaseModel):
-    id: str
-    name: str
-    category: str
-    meta: dict[str, Any] | None = None
-
-
-class MaterialList(BaseModel):
-    items: list[Material]
+# Re-export for older imports.
 
 
 class JobType(str, Enum):
@@ -104,3 +96,6 @@ class Job(BaseModel):
     error: ErrorBody | None = None
     createdAt: datetime
     updatedAt: datetime | None = None
+
+# Re-export typed Material schemas (Q2 openapi MaterialCurves)
+from app.schemas.materials import Material, MaterialList  # noqa: E402,F401

@@ -124,24 +124,40 @@ Also: history empty stub —
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/projects/$PID/history"
 ```
 
-### Materials (Q2-1 seed)
+### Materials (Q2-1 typed curves)
 
-Seed covers `steel` / `magnet` / `coil` / `acim_bar` (builtin in `meta.builtin`). Meta field names are **camelCase** (stable for MEC/ACIM).
+Aligned to architecture tip `3c34f1c` / OpenAPI `Material`: required `id`, `name`, `category`, `builtin`, `materialsSchemaVersion` (`0.1.0-q2`); typed `curves` by category (`curves.steel|magnet|coil|acim_bar`); `meta` is extension bag only (old camelCase keys kept for transition). Builtin seeds are read-only (PUT/DELETE → 403). Soft-delete via DELETE sets `deletedAt`.
 
 ```bash
-# List all
+# List all / filter
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials" | python3 -m json.tool | head
-
-# Filter by category
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials?category=steel"
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials?category=acim_bar"
 
-# Get one (stable ids)
+# Get one (stable ids) — prefer curves.* over meta
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials/mat-steel-m19"
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials/mat-ndfeb-n42"
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials/mat-acim-bar-al"
 
-# Optional: create custom material
-curl -s -X POST -H "Authorization: Bearer $TOKEN"   -H 'Content-Type: application/json'   -d '{"name":"My Steel","category":"steel","meta":{"bsT":1.6,"muR":3000,"builtin":false}}'   "$BASE/materials"
+# Create custom (builtin forced false; curves required)
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"My Steel","category":"steel","curves":{"steel":{"bh":{"xName":"H","yName":"B","xUnit":"A/m","yUnit":"T","points":[[0,0],[200,1.0],[8000,1.8]]}}}}' \
+  "$BASE/materials"
+
+# Builtin write rejection (expect 403)
+curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"x","category":"steel","curves":{"steel":{"bh":{"xName":"H","yName":"B","points":[[0,0],[1,1]]}}}}' \
+  "$BASE/materials/mat-steel-m19"
+curl -s -o /dev/null -w '%{http_code}\n' -X DELETE -H "Authorization: Bearer $TOKEN" \
+  "$BASE/materials/mat-steel-m19"
+
+# Optional sync analytic solve stub (expect 501; Jobs analytic remains batch path)
+curl -s -o /dev/null -w '%{http_code}\n' -X POST -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"schema_version":"0.1.0-q2","topology":"RF","machine_type":"PMSM","geometry":{},"materials":{},"operating_point":{}}' \
+  "$BASE/solver/analytic/solve"
 ```
 
 ### Jobs analytic poll (Q2-6 optional Celery)
