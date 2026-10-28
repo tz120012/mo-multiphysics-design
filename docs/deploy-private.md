@@ -117,7 +117,10 @@ make down-box
 ## FEM
 
 - 默认 **`MO_FEM_DRY_RUN=1`**（compose / `.env.example`）；**不要**在运行中随意翻成 0。  
-- 真 Elmer 端到端临时开关、rebuild、测完改回：见 [deploy-local.md](./deploy-local.md) **「Q3-L2 真 Elmer 联调」**。  
+- 真 Elmer 临时开关：见 [deploy-local.md](./deploy-local.md) **「Q3-L2 真 Elmer 联调」**。  
+  - `MO_FEM_DRY_RUN=0` + **`equationMode=heat_proxy`**：调度回归；**不计 ≤3%**。  
+  - `MO_FEM_DRY_RUN=0` + **`equationMode=magnetostatic`**：Q5-2 真值路径（有限元 case 就绪后）；**禁宣称 ≤3%** 直至标定。  
+- worker-fem 已含 Elmer MagnetoDynamics / WhitneyAV；**不加** GetDP 专用 profile。  
 - **勿宣称** FEM 精度（≤3% / ≤5% 等）。
 
 ## 相关文档

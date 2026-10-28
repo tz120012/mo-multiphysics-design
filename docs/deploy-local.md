@@ -141,9 +141,12 @@ make up && make health
 
 - 工作目录：`MO_FEM_WORKDIR=/var/mo/fem`（卷 `mo_femdata`）
 - 模板/schema：`packages/solver-fem`（Mo-有限元）；Jobs `jobType=fem`（Mo-后端入队）
-- `MO_FEM_DRY_RUN=0` 时 worker 内 `gmsh → ElmerGrid → ElmerSolver`（heat-proxy E2E；**勿宣称 ≤3%**）
-- 默认 **`MO_FEM_DRY_RUN=1`**（compose / `.env.example`）；真 Elmer 端到端见下节。
+- 默认 **`MO_FEM_DRY_RUN=1`**（compose / `.env.example`）；真 Elmer 仅临时开关，见下节。
+- `MO_FEM_DRY_RUN=0` + worker 内 `gmsh → ElmerGrid → ElmerSolver`：
+  - **`equationMode=heat_proxy`**（缺省兼容）：调度回归 E2E；**不计 ≤3%**；≠ 磁静力学。
+  - **`equationMode=magnetostatic`**（Q5-2 真值路径；模板如 `af_pmsm_3d_ms`）：真磁静力学；有限元 tip 把 `magnetostaticPathReady` 升为可跑后才冒烟；**仍禁宣称 ≤3%** 直至标定报告。
 - sidecar `mo-fem` 仍保留作工具链对照 / exec；作业路径以 **worker-fem** 为准。
+- **镜像能力（Q5-2 运维核对）**：`mo-worker-fem` Elmer **v26.2** 含 `MagnetoDynamics.so` / `MagnetoDynamics2D.so`（内含 WhitneyAVSolver）；**无需**为磁静力学加 GetDP/新 profile。方程与 Maxwell 后处理归 Mo-有限元。
 
 ### Q3-L2 真 Elmer 联调（临时关 dry-run）
 
@@ -171,7 +174,26 @@ sudo env MO_FEM_DRY_RUN=1 CELERY_ENABLED=1 docker compose \
   up -d --force-recreate --no-deps worker-fem
 ```
 
-未改 `.env` 时，命令行 `MO_FEM_DRY_RUN=0` 仅作用于本次 recreate；默认仍是 `1`。成功标志：`manifest.scalars.dryRun=false` 且 `elmerExit=0`（heat-proxy，pending_calibration）。
+未改 `.env` 时，命令行 `MO_FEM_DRY_RUN=0` 仅作用于本次 recreate；默认仍是 `1`。
+
+| 路径 | 标志 | 口径 |
+| --- | --- | --- |
+| heat-proxy | `dryRun=false` + `elmerExit=0` + `equationMode=heat_proxy` | 调度 PASS；**不计 ≤3%** |
+| magnetostatic 真值 | `equationMode=magnetostatic` + `MO_FEM_DRY_RUN=0` + 有限元真值 tip | 等 `run_magnetostatic_truepath` / 可跑 case；**禁 ≤3%** 直至 Q5-4 |
+
+包内冒烟期望（有限元真值 tip 落地后）：
+
+```bash
+MO_FEM_DRY_RUN=0 python3 packages/solver-fem/smoke/run_magnetostatic_truepath.py
+# 或 worker 内等价 run_job(payload equationMode=magnetostatic, dry_run=false)
+```
+
+模块自检（运维，无需真值 case）：
+
+```bash
+docker exec mo-worker-fem ls /usr/share/elmersolver/lib/MagnetoDynamics.so \
+  /usr/share/elmersolver/lib/MagnetoDynamics2D.so
+```
 
 ### Q2-L7 抽检（开 Q3 前）
 

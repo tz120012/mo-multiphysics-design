@@ -20,3 +20,15 @@ GetDP：F2 Elmer-first；若 apt 无包则镜像内可缺，不阻塞 Q3。
 ## 与 solver-fem
 
 模板与 dry-run：`packages/solver-fem/`。`MO_FEM_DRY_RUN=0` 且本镜像就绪后，工人可改调真实 Elmer。
+
+## Q5-2 磁静力学模块（运维核对）
+
+现镜像（Elmer CSC PPA / v26.2）已含：
+
+- `MagnetoDynamics.so` / `MagnetoDynamics2D.so`（含 WhitneyAVSolver）
+- `MagneticSolve.so`、`StatCurrentSolve*.so`、`CoilSolver.so`
+
+**默认不加** GetDP/新 compose profile。方程与 Maxwell 后处理归 `packages/solver-fem`（Mo-有限元）。
+
+`MO_FEM_DRY_RUN=0` + `equationMode=magnetostatic` = 真值路径；`heat_proxy` = 调度回归（不计 ≤3%）。
+
