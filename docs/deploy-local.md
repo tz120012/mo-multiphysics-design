@@ -90,3 +90,25 @@ make up && make health
 python -c "..."  # 或 make health 指向 API
 # Postgres: localhost:5433  Redis: localhost:6380
 ```
+
+
+## Bot / box 冒烟兜底（`make up-box`）
+
+**仅当**默认 `make up` 后四服务 healthy，但 `GET /health` 里 `db.ok`/`redis.ok` 为 false（容器内解析不了 `postgres`/`redis`，常见于缺真实 iptables 的 Bot 电脑）。
+
+**不要**把这套当成正常开发默认路径。
+
+```bash
+cd /workspace/mo-platform
+make down          # 先停掉默认栈（如已起）
+make up-box        # 使用 docker-compose.yml + docker-compose.box.yml
+make health-box    # 期望 db.ok=true redis.ok=true
+```
+
+原理：`docker-compose.box.yml` 让 **api** 通过 `host.docker.internal`（`extra_hosts: host-gateway`）访问宿主机已 publish 的 **5433/6380**；**web** 挂载 `apps/web/nginx.box.conf`，把 `/api` 反代到 `host.docker.internal:8000`。
+
+正常 Docker 主机请继续：
+
+```bash
+make up && make health
+```
