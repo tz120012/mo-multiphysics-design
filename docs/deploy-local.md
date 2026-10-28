@@ -129,7 +129,7 @@ make up && make health
 
 | 目标 | 命令 | 说明 |
 | --- | --- | --- |
-| 仅 analytic Celery | `make up-worker` | profile `worker`（api 镜像）；`CELERY_ENABLED=1` |
+| 仅 analytic Celery | `make up-worker` | profile `worker`（api 镜像）；`CELERY_ENABLED=1`；消费队列 **`celery,optimize`**（Q4-9 tip `5112059`） |
 | FEM 栈 | `make up-fem` | profiles `worker` + `fem`：真 Elmer 工具链 + `worker-fem`（队列 `fem`） |
 | FEM 栈（box） | `make up-fem-box` | 同上 + `docker-compose.box.yml`（`host.docker.internal`） |
 

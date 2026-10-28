@@ -28,5 +28,8 @@ grep -q '6380' docker-compose.yml
 echo "[mo-platform] smoke: box overlay uses host.docker.internal"
 grep -q 'host.docker.internal' docker-compose.box.yml
 
+echo "[mo-platform] smoke: worker consumes celery+optimize queues (Q4-9)"
+grep -q 'celery,optimize' docker-compose.yml
+
 echo "[mo-platform] Gate0/Q1 smoke placeholder: ok"
 exit 0

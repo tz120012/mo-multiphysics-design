@@ -93,7 +93,7 @@ make stress-jobs            # JOBS_N / POLL_SEC；analytic + fem dry-run 入队�
 | Profile | 命令 | 说明 |
 | --- | --- | --- |
 | （默认） | `make up` / `make up-box` | **四服务**：postgres、redis、api、web |
-| `worker` | `make up-worker` | + analytic Celery（`CELERY_ENABLED=1`） |
+| `worker` | `make up-worker` | + analytic/drive + **optimize** 队列（`-Q celery,optimize`） |
 | `worker` + `fem` | `make up-fem` / `make up-fem-box` | + FEM 工具链 sidecar + `worker-fem`（队列 `fem`） |
 
 ## 回滚

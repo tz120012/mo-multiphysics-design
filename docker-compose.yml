@@ -101,7 +101,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     container_name: mo-worker
-    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=INFO"]
+    # Default queue (analytic/drive) + Q4-9 optimize (task_routes → queue optimize)
+    command: ["celery", "-A", "app.celery_app", "worker", "-Q", "celery,optimize", "--loglevel=INFO"]
     # Inherit api image HEALTHCHECK (:8000) — disable; worker is not an HTTP server
     healthcheck:
       disable: true
@@ -109,6 +110,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
+      SOLVER_OPT_PATH: ${SOLVER_OPT_PATH:-/opt/mo/packages/solver-opt}
       CELERY_ENABLED: "1"
       # FEM workdir shared with fem service (Q3-3; Mo-有限元 fills solver tasks)
       MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}

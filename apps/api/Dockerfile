@@ -11,7 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     SOLVER_ANALYTIC_PATH=/opt/mo/packages/solver-analytic \
     SOLVER_FEM_PATH=/opt/mo/packages/solver-fem \
-    MO_FEM_DRY_RUN=1
+    MO_FEM_DRY_RUN=1 \
+    SOLVER_OPT_PATH=/opt/mo/packages/solver-opt
 
 COPY apps/api/requirements.txt .
 RUN pip install -r requirements.txt
@@ -20,6 +21,7 @@ COPY apps/api/app ./app
 # Sync analytic solve (packages/solver-analytic) — needed for POST /api/v1/solver/analytic/solve
 COPY packages/solver-analytic /opt/mo/packages/solver-analytic
 COPY packages/solver-fem /opt/mo/packages/solver-fem
+COPY packages/solver-opt /opt/mo/packages/solver-opt
 
 EXPOSE 8000
 
