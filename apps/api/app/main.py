@@ -40,9 +40,9 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         description=(
-            "Mo motor multi-physics design platform API (Q1). "
+            "Mo motor multi-physics design platform API (Q1/Q2). "
             "Aligned with docs/drafts/openapi-v1.yaml (1.0.0-draft). "
-            "Auth is Bearer-token placeholder; projects CRUD uses Postgres when "
+            "Auth is Bearer-token placeholder; materials seed (Q2-1); analytic jobs optional Celery (Q2-6); projects CRUD uses Postgres when "
             "DATABASE_URL is reachable, else memory."
         ),
         lifespan=lifespan,

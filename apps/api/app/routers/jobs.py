@@ -1,4 +1,4 @@
-"""Jobs enqueue / poll thin stubs (Q1; body → Q2/Q3)."""
+"""Jobs enqueue / poll (Q2-6: optional Celery for analytic)."""
 
 from __future__ import annotations
 
@@ -8,8 +8,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.deps.auth import require_bearer
+from app.job_dispatch import try_enqueue_analytic
 from app.jobs_store import job_create, job_get
-from app.schemas.common import Job, JobCreate
+from app.schemas.common import Job, JobCreate, JobType
 
 router = APIRouter(
     prefix="/api/v1/jobs",
@@ -22,7 +23,7 @@ router = APIRouter(
     "",
     response_model=Job,
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Enqueue job stub",
+    summary="Enqueue job (analytic: Celery or in-process degrade)",
 )
 def create_job(
     body: JobCreate,
@@ -32,7 +33,11 @@ def create_job(
         project_id=body.projectId,
         job_type=body.jobType.value,
         payload=body.payload,
+        status="queued",
     )
+    if body.jobType == JobType.analytic:
+        try_enqueue_analytic(item["id"], body.payload)
+    # fem / optimize: remain queued placeholders until Q3/Q4
     return Job.model_validate(item)
 
 

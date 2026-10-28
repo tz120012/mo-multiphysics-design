@@ -1,6 +1,6 @@
 # Mo API (`apps/api`)
 
-Q1 FastAPI shell aligned with `docs/drafts/openapi-v1.yaml` (`1.0.0-draft`).
+Q1/Q2 FastAPI shell aligned with `docs/drafts/openapi-v1.yaml` (`1.0.0-draft`).
 
 - Contract base: **`/api/v1`** (OpenAPI `servers.url`)
 - Health: **`GET /api/v1/health`** (preferred); root **`GET /health`** is a probe alias
@@ -118,9 +118,61 @@ curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H "Authorization: Bearer $TOKEN
   "$BASE/projects/$PID/mems"
 ```
 
-Also: history / materials stubs —
+Also: history empty stub —
 
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/projects/$PID/history"
-curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials"
 ```
+
+### Materials (Q2-1 seed)
+
+Seed covers `steel` / `magnet` / `coil` / `acim_bar` (builtin in `meta.builtin`). Meta field names are **camelCase** (stable for MEC/ACIM).
+
+```bash
+# List all
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials" | python3 -m json.tool | head
+
+# Filter by category
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials?category=steel"
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials?category=acim_bar"
+
+# Get one (stable ids)
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials/mat-steel-m19"
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/materials/mat-acim-bar-al"
+
+# Optional: create custom material
+curl -s -X POST -H "Authorization: Bearer $TOKEN"   -H 'Content-Type: application/json'   -d '{"name":"My Steel","category":"steel","meta":{"bsT":1.6,"muR":3000,"builtin":false}}'   "$BASE/materials"
+```
+
+### Jobs analytic poll (Q2-6 optional Celery)
+
+`jobType=analytic`: set `CELERY_ENABLED=1` **and** run a worker with reachable Redis (`REDIS_URL`) to enqueue (`queued`→`running`→`succeeded`). Otherwise the API **degrades** to an in-process daemon thread with the same status transitions (default; API shape unchanged). Redis down / enqueue error also degrades. `fem` / `optimize` stay `queued` placeholders (Q3/Q4).
+
+```bash
+# Need a project id — reuse $PID from mems smoke or create one
+JOB=$(curl -s -X POST -H "Authorization: Bearer $TOKEN"   -H 'Content-Type: application/json'   -d "{"projectId":"$PID","jobType":"analytic","payload":{"mode":"smoke"}}"   "$BASE/jobs")
+echo "$JOB" | python3 -m json.tool
+JID=$(echo "$JOB" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
+
+# Poll until succeeded (degrade path typically <200ms)
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  ST=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/jobs/$JID")
+  echo "$ST" | python3 -c 'import sys,json; j=json.load(sys.stdin); print(j["status"], j.get("resultRef"))'
+  echo "$ST" | python3 -c 'import sys,json; raise SystemExit(0 if json.load(sys.stdin)["status"] in ("succeeded","failed") else 1)' && break
+  sleep 0.2
+done
+```
+
+### Celery worker (optional)
+
+Host (Redis on published **6380**):
+
+```bash
+cd /workspace/mo-platform/apps/api
+source .venv/bin/activate
+export REDIS_URL=redis://127.0.0.1:6380/0
+export CELERY_ENABLED=1   # also set on the API process
+celery -A app.celery_app worker --loglevel=INFO
+```
+
+Compose: see commented `worker` stub in repo `docker-compose.yml` (ops owns compose; uncomment when needed). Default API (`CELERY_ENABLED` unset/false) always uses in-process degrade so poll-to-succeeded works without a worker.

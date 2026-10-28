@@ -1,0 +1,197 @@
+[
+  {
+    "id": "mat-steel-m19",
+    "name": "M19 Steel",
+    "category": "steel",
+    "meta": {
+      "builtin": true,
+      "grade": "M19",
+      "bhCurve": [
+        {
+          "bT": 0.0,
+          "hAPerM": 0.0
+        },
+        {
+          "bT": 0.5,
+          "hAPerM": 80.0
+        },
+        {
+          "bT": 1.0,
+          "hAPerM": 200.0
+        },
+        {
+          "bT": 1.5,
+          "hAPerM": 1200.0
+        },
+        {
+          "bT": 1.8,
+          "hAPerM": 8000.0
+        }
+      ],
+      "bpPoints": [
+        {
+          "bT": 1.0,
+          "pWPerKg": 1.5
+        },
+        {
+          "bT": 1.5,
+          "pWPerKg": 3.5
+        },
+        {
+          "bT": 1.8,
+          "pWPerKg": 6.0
+        }
+      ],
+      "ironLossCoeffs": {
+        "kH": 0.02,
+        "kE": 0.0001,
+        "kExc": 0.001,
+        "freqHz": 60.0
+      },
+      "densityKgPerM3": 7650.0,
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-steel-50ww470",
+    "name": "50WW470 Silicon Steel",
+    "category": "steel",
+    "meta": {
+      "builtin": true,
+      "grade": "50WW470",
+      "bsT": 1.7,
+      "muR": 4000.0,
+      "bpPoints": [
+        {
+          "bT": 1.0,
+          "pWPerKg": 2.0
+        },
+        {
+          "bT": 1.5,
+          "pWPerKg": 4.7
+        }
+      ],
+      "ironLossCoeffs": {
+        "kH": 0.025,
+        "kE": 0.00012,
+        "kExc": 0.0012,
+        "freqHz": 50.0
+      },
+      "densityKgPerM3": 7700.0,
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-ndfeb-n42",
+    "name": "NdFeB N42",
+    "category": "magnet",
+    "meta": {
+      "builtin": true,
+      "grade": "N42",
+      "brT": 1.28,
+      "muRec": 1.05,
+      "tempCoeffBr": -0.0012,
+      "demagCurve": [
+        {
+          "bT": 1.28,
+          "hAPerM": 0.0
+        },
+        {
+          "bT": 0.64,
+          "hAPerM": -480000.0
+        },
+        {
+          "bT": 0.0,
+          "hAPerM": -955000.0
+        }
+      ],
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-ndfeb-n35",
+    "name": "NdFeB N35",
+    "category": "magnet",
+    "meta": {
+      "builtin": true,
+      "grade": "N35",
+      "brT": 1.18,
+      "muRec": 1.05,
+      "tempCoeffBr": -0.0012,
+      "demagCurve": [
+        {
+          "bT": 1.18,
+          "hAPerM": 0.0
+        },
+        {
+          "bT": 0.0,
+          "hAPerM": -868000.0
+        }
+      ],
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-copper",
+    "name": "Copper",
+    "category": "coil",
+    "meta": {
+      "builtin": true,
+      "resistivityOhmM": 1.72e-08,
+      "conductivitySPerM": 58000000.0,
+      "densityKgPerM3": 8960.0,
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-coil-al",
+    "name": "Aluminum Coil",
+    "category": "coil",
+    "meta": {
+      "builtin": true,
+      "resistivityOhmM": 2.82e-08,
+      "conductivitySPerM": 35000000.0,
+      "densityKgPerM3": 2700.0,
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-acim-bar-al",
+    "name": "ACIM Bar Aluminum",
+    "category": "acim_bar",
+    "meta": {
+      "builtin": true,
+      "role": "bar",
+      "conductivitySPerM": 35000000.0,
+      "densityKgPerM3": 2700.0,
+      "materialRef": "aluminum-cast",
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-acim-bar-cu",
+    "name": "ACIM Bar Copper",
+    "category": "acim_bar",
+    "meta": {
+      "builtin": true,
+      "role": "bar",
+      "conductivitySPerM": 58000000.0,
+      "densityKgPerM3": 8960.0,
+      "materialRef": "copper",
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  },
+  {
+    "id": "mat-acim-endring-al",
+    "name": "ACIM End-Ring Aluminum",
+    "category": "acim_bar",
+    "meta": {
+      "builtin": true,
+      "role": "endring",
+      "conductivitySPerM": 35000000.0,
+      "densityKgPerM3": 2700.0,
+      "materialRef": "aluminum-cast",
+      "materialsSchemaVersion": "0.1.0-q2"
+    }
+  }
+]

@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://mo:mo@127.0.0.1:5433/mo"
     redis_url: str = "redis://127.0.0.1:6380/0"
     mems_schema_version: str = "1.0.0-draft"
+    # Q2-6: set CELERY_ENABLED=1 when a worker is running; else analytic uses in-process degrade.
+    celery_enabled: bool = False
 
 
 @lru_cache
