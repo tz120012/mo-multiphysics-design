@@ -45,13 +45,19 @@ fi
 
 # G0-S4 CI placeholder
 ci_found=0
-if compgen -G ".github/workflows/*.{yml,yaml}" > /dev/null 2>&1; then
+shopt -s nullglob
+_ci_files=(.github/workflows/*.yml .github/workflows/*.yaml)
+if ((${#_ci_files[@]} > 0)); then
   ci_found=1
 elif [[ -f .gitlab-ci.yml || -f Jenkinsfile || -f .circleci/config.yml ]]; then
   ci_found=1
-elif compgen -G ".woodpecker/*.{yml,yaml}" > /dev/null 2>&1; then
-  ci_found=1
+else
+  _wp=(.woodpecker/*.yml .woodpecker/*.yaml)
+  if ((${#_wp[@]} > 0)); then
+    ci_found=1
+  fi
 fi
+shopt -u nullglob
 if [[ $ci_found -eq 1 ]]; then
   ok "G0-S4 CI placeholder"
 else
