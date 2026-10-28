@@ -1,0 +1,10 @@
+{
+  "id": "af-pmsm-fem-heat-proxy-001",
+  "topology": "axial",
+  "machine": "PMSM",
+  "dim": "3d",
+  "kind": "fem-heat-proxy",
+  "source": "docs/qa/Q3-冒烟记录-L2-elmer-e2e-2c1fed6.md (tips 291bea9 / 2c1fed6+781c09b; job 98279d72-f196-4307-9572-b456ad8f13ce)",
+  "metrics": [],
+  "notes": "Q3 FEM 指针；heat-proxy E2E dryRun=false elmerExit=0；非磁静力学；pending_calibration；勿宣称 ≤3%"
+}

@@ -11,3 +11,5 @@ Benchmark 用例库根目录。约定与报告模板见 [`docs/qa/Q2-Benchmark�
 - `reports/` — 对比报告输出
 
 勿在本目录实现求解器；对比由解析交付物驱动。
+Q3 FEM 用例（heat-proxy 指针）见 [`docs/qa/Q3-FEM-Benchmark说明.md`](../../docs/qa/Q3-FEM-Benchmark说明.md)（`rf-pmsm-fem-heat-proxy-001` / `af-pmsm-fem-heat-proxy-001`；`pending_calibration`；**不得宣称** ≤3%/≤5%）。勿改坏 Q2 径向 cases。
+

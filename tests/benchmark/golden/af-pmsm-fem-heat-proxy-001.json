@@ -1,0 +1,7 @@
+{
+  "caseId": "af-pmsm-fem-heat-proxy-001",
+  "pending_calibration": true,
+  "metrics": null,
+  "toleranceRel": 0.03,
+  "toleranceNote": "≤3% 待校准；heat-proxy 非磁静力学；正式数以标定报告为准"
+}
