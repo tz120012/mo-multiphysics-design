@@ -59,6 +59,8 @@ make health             # curl /health，检查 db.ok / redis.ok
 | `web` | `apps/web/Dockerfile`（pnpm build + nginx，反代 `/api/` → `api:8000`） |
 | `postgres` | `postgres:16-alpine` |
 | `redis` | `redis:7-alpine` |
+| `worker`（可选 profile） | 同 api 镜像；`celery -A app.celery_app worker` |
+| `fem`（可选 profile） | `apps/fem/Dockerfile`（Q3-3 Elmer/GetDP stub，禁宿主机安装） |
 
 ## CI / 冒烟
 
@@ -111,4 +113,25 @@ make health-box    # 期望 db.ok=true redis.ok=true
 
 ```bash
 make up && make health
+```
+
+
+## Q3-3 Celery 工人与 FEM 容器
+
+默认 `make up` / `make up-box` **仍是四服务**（web/api/postgres/redis）。
+
+| 目标 | 命令 | 说明 |
+| --- | --- | --- |
+| 仅 Celery 工人 | `make up-worker` | compose profile `worker`；api 设 `CELERY_ENABLED=1` |
+| 工人 + FEM stub | `make up-fem` | profiles `worker,fem`；共享卷 `mo_femdata` → `/var/mo/fem` |
+
+- 容器内 FEM 工作目录：`MO_FEM_WORKDIR=/var/mo/fem`
+- Elmer/GetDP/Gmsh **只**进 `apps/fem` 镜像；禁止宿主机系统级安装（见 `docs/drafts/FEM范围.md`）
+- 真实工具链由 **Mo-有限元** 替换 stub Dockerfile；运维负责 compose / 卷 / profile
+
+### Q2-L7 抽检（开 Q3 前）
+
+```bash
+make up-box && make health-box
+# 期望四服务 healthy；GET :8000/health → status=ok, db.ok=true, redis.ok=true
 ```

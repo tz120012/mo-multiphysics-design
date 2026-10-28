@@ -49,6 +49,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
+      # Set CELERY_ENABLED=1 when using `make up-worker` (profile worker)
+      CELERY_ENABLED: ${CELERY_ENABLED:-0}
     ports:
       - "${API_HOST_PORT:-8000}:8000"
     depends_on:
@@ -91,27 +93,56 @@ services:
       - mo-net
 
 
-  # Optional Celery worker (Q2-6). Ops-owned — uncomment when running analytic via broker.
-  # Same repo-root build context so solver-analytic is in the image (sync/async analytic).
-  # worker:
-  #   build:
-  #     context: .
-  #     dockerfile: apps/api/Dockerfile
-  #   container_name: mo-worker
-  #   command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=INFO"]
-  #   environment:
-  #     DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
-  #     REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-  #     SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #   networks:
-  #     - mo-net
+  # Optional Celery worker (Q2-6 / Q3-3). Profile: worker. Default `make up` stays 4 services.
+  # Same repo-root build context so solver-analytic is in the image.
+  worker:
+    profiles: ["worker"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: mo-worker
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=INFO"]
+    # Inherit api image HEALTHCHECK (:8000) — disable; worker is not an HTTP server
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
+      CELERY_ENABLED: "1"
+      # FEM workdir shared with fem service (Q3-3; Mo-有限元 fills solver tasks)
+      MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
+    volumes:
+      - mo_femdata:/var/mo/fem
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - mo-net
+
+  # Elmer/GetDP/Gmsh container (Q3-3). Profile: fem. Image owned with Mo-有限元.
+  # Stub image until FEM ships real Dockerfile body; do not install FEM on host.
+  fem:
+    profiles: ["fem"]
+    build:
+      context: .
+      dockerfile: apps/fem/Dockerfile
+    container_name: mo-fem
+    environment:
+      MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
+    volumes:
+      - mo_femdata:/var/mo/fem
+    # Idle placeholder — worker/FEM tasks will exec or queue into this volume.
+    command: ["sleep", "infinity"]
+    networks:
+      - mo-net
 
 volumes:
   mo_pgdata:
   mo_redisdata:
+  mo_femdata:
 
 networks:
   mo-net:
