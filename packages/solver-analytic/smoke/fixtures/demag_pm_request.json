@@ -1,0 +1,29 @@
+{
+  "machineType": "PMSM",
+  "source": "drive",
+  "operatingPoint": {
+    "speedRpm": 3000,
+    "torqueNm": 8.0,
+    "idA": 0.0,
+    "iqA": 25.0,
+    "tempC": 100.0
+  },
+  "lossesW": {
+    "copper": 80.0,
+    "iron": 40.0,
+    "magnetEddy": 5.0,
+    "bar": 0.0,
+    "endRing": 0.0
+  },
+  "currentsA": { "rmsPhase": 17.7, "id": 0.0, "iq": 25.0 },
+  "materials": {
+    "br_t": 1.2,
+    "temp_coeff_br": -0.0012,
+    "magnet_id": "mat-ndfeb-n42"
+  },
+  "demag": {
+    "load_line_pc": 4.0,
+    "margin_ref": "knee"
+  },
+  "notes": "Q4-6 demag smoke — drive aliases mapped in io_adapt"
+}
