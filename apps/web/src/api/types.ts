@@ -1,6 +1,12 @@
 /**
  * 手写最小类型，对齐 docs/drafts/openapi-v1.yaml（1.0.0；Q5-5）
- * 与 docs/drafts/mems-schema-v1.md（memsSchemaVersion: 1.0.0；读侧可过渡接受 1.0.0-draft）
+ * 与 docs/drafts/mems-schema-v1.md（memsSchemaVersion: 1.0.0）。
+ *
+ * 展示常量钉 `1.0.0`：后端 tip `8d9fc3b`，架构 tip `4b553f5`
+ * （`docs/drafts/Q5-5-契约1.0.0钉死.md`）。
+ * 读 / 接受仍双接受 `1.0.0` 与 `1.0.0-draft`。
+ * 新写入 / 保存只发出 `1.0.0`。
+ * 钉 `1.0.0` ≠ MVP，≠ git tag `v1.0.0`。
  */
 
 /** 径向 RF / 轴向 AF */
@@ -9,9 +15,32 @@ export type Topology = 'RF' | 'AF'
 /** 机型枚举 */
 export type MachineType = 'BLDC' | 'PMSM' | 'ACIM'
 
-/** 当前 MEMS 包 schema 版本（契约锁定） */
+/** 当前 MEMS 包 schema 版本。tip `8d9fc3b` / `4b553f5`；钉版本 ≠ MVP / tag。 */
 export const MEMS_SCHEMA_VERSION = '1.0.0' as const
 export type MemsSchemaVersion = typeof MEMS_SCHEMA_VERSION
+
+/** 读侧接受的整包版本（Q5-5 过渡仍双接受 draft）。 */
+export const MEMS_SCHEMA_VERSIONS_ACCEPTED = ['1.0.0', '1.0.0-draft'] as const
+export type MemsSchemaVersionAccepted = (typeof MEMS_SCHEMA_VERSIONS_ACCEPTED)[number]
+
+/** 新建工程与 mems 保存写出的版本，与展示钉相同。 */
+export const MEMS_SCHEMA_VERSION_WRITE = MEMS_SCHEMA_VERSION
+
+export function isAcceptedMemsSchemaVersion(
+  version: string | null | undefined,
+): version is MemsSchemaVersionAccepted {
+  return (MEMS_SCHEMA_VERSIONS_ACCEPTED as readonly string[]).includes(version ?? '')
+}
+
+export function assertAcceptedMemsSchemaVersion(
+  version: string | null | undefined,
+): asserts version is MemsSchemaVersionAccepted {
+  if (!isAcceptedMemsSchemaVersion(version)) {
+    throw new Error(
+      `memsSchemaVersion ${JSON.stringify(version ?? null)} is not accepted; Q5-5 (tips 8d9fc3b / 4b553f5) accepts "1.0.0" and "1.0.0-draft"`,
+    )
+  }
+}
 
 export interface LoginRequest {
   username: string
