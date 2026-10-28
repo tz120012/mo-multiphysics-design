@@ -1,0 +1,21 @@
+{
+  "schema_version": "0.0.0-gate0",
+  "meta": {
+    "solver": "axial_planes",
+    "elapsed_ms": 0,
+    "mock": true,
+    "n_planes": 4,
+    "note": "TEMP FE stub for Q3-2 UI — not Q3-1 golden; AF geometry maps rotor_od_m=outer, stator_id_m=inner, stack_length_m=disk/magnet axial thickness; replace when axial_pmsm_request.json lands"
+  },
+  "torque_nm": 12.5,
+  "back_emf_v_peak": 48.0,
+  "losses_w": {
+    "copper": 45.0,
+    "iron": 18.0,
+    "magnet_eddy": 2.5
+  },
+  "inductance_h": {
+    "ld": 0.00085,
+    "lq": 0.00092
+  }
+}
