@@ -4,7 +4,7 @@
 | --- | --- |
 | 日期 | 2026-10-28 14:27 Asia/Shanghai |
 | 指派 tip | **`63356c8`**（`feat(solver): LPTN thermal loop MVP + smoke`）；叠 **`dd94137`**（`feat(solver): demag margin + ACIM bar rise MVP`） |
-| 仓库 HEAD（实测时） | 冒烟时链上含 `1b5c1f4`+；证据 docs tip **`f3f804f`**（`63356c8` / `dd94137` 均为祖先） |
+| 仓库 HEAD（实测时） | 冒烟时链上含 `1b5c1f4`+；证据 docs tip **`9897bb5`**（`63356c8` / `dd94137` 均为祖先） |
 | 执行 | Mo-测试 |
 | 入口 | **CLI**（`packages/solver-analytic/smoke/`）；**非** compose API / 前端报告组件 |
 | 范围 | Q4-P06 退磁/导条温升 + Q4-P07 LPTN；**不**宣称解析 ≤5% / FEM ≤3%；**不开宣称 MVP** |
