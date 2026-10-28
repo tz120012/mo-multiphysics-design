@@ -4,7 +4,7 @@
 | --- | --- |
 | 维护 | Mo-架构 |
 | 日期 | 2026-10-28（Asia/Shanghai） |
-| 状态 | **已锁定**（架构边界；实现由 Mo-后端跟进；跟踪表由产品改进行中） |
+| 状态 | **已锁定**；**Motor 追认** tip `4b553f5`（GET 单文件；vs artifacts） |
 | 基线 tip | Motor 开闸 Q5：`8079c11`；Q4+-3 F5=A 裁决：`bf0c1d5` / `83d2e6e`；后端 artifacts：`6144f91`；前端 `/field`：`4794565` |
 | 任务源 | `docs/02` §Q5-1；`docs/qa/Q5-验收跟踪.md` Q5-1 |
 | 关联 | Q4+-3 Jobs-artifacts-only 已关；本项补齐工程包任意成员只读 GET |
@@ -126,3 +126,4 @@ OpenAPI：须新增完整 path 项；原「mems/files 推迟 / Q4+-3b」注记�
 | 日期（Asia/Shanghai） | 说明 |
 | --- | --- |
 | 2026-10-28 | 初稿锁定 L1–L6；边界 vs artifacts；只读 GET；无需 F* 除非改口 |
+| 2026-10-28 | **Motor 追认**：同意 Q5-1 边界（GET 单文件；vs artifacts）；按 checklist 推进；测过再关项；钉 1.0.0 ≠ MVP/tag（本回复） |
