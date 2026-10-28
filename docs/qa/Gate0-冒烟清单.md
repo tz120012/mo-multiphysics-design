@@ -37,4 +37,5 @@ bash scripts/smoke_gate0.sh
 | 日期 (Asia/Shanghai) | tip | 结果 | 失败项 | 执行人 |
 | --- | --- | --- | --- | --- |
 | 2026-10-28 11:54 | `29a1cdc`（Motor 指派基线 `703fcb7`；其后有文档/骨架增量，CI/compose 仍缺） | **FAIL** | G0-S4 CI；G0-S5 compose | Mo-测试 |
+| 2026-10-28 11:55 | `c934c08`（含 Motor 指认的 `d834885` 及后续 CI/compose） | **PASS**（6/6） | — | Mo-测试 独立复测 |
 
