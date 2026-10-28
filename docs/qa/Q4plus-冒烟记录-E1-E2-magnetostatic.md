@@ -90,11 +90,13 @@ stderr：`Q4+-5 magnetostatic shell smoke OK (pending_calibration; path not read
 | --- | --- |
 | Q4+-E1 | **PASS** |
 | Q4+-E2 | **PASS** |
-| Q4+-5 | **通过（CLI shell / 边界文档）** |
+| Q4+-5 | **通过（CLI shell / 边界文档）**（**产品已确认**） |
 | Q4+-F1 / F2 | **禁止勾选** |
 | MVP | **不开宣称** |
 
-证据 tip：本记录入库 commit 的 short SHA；交测对照 FEM tip **`9ffa4b2`**。
+证据 tip：本记录入库 commit 的 short SHA；交测对照 FEM tip **`9ffa4b2`**；冒烟入库 tip **`0685e96`**。
+
+**产品确认（Mo-产品）**：同意 E1/E2 PASS → Q4+-5 **通过（CLI shell / 边界文档）**；heat-proxy≠磁静力学；shell `pending_calibration`；力标量 null；**禁勾 ≤3%**；真 Elmer/Maxwell 后处理仍后置；**不开宣称 MVP**。
 
 ---
 
