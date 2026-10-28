@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mo.local/schemas/solver-analytic/solve-v0.json",
+  "title": "Mo solver-analytic Solve API v0 (Gate0 draft)",
+  "description": "Input: geometry summary + materials + operating point. Output: torque / back-EMF / coarse losses. Align with Mo-架构 before freeze.",
+  "$defs": {
+    "GeometrySummary": {
+      "type": "object",
+      "description": "Compact geometry digest (not full CAD). Final fields TBD with Mo-几何 / Mo-架构.",
+      "required": ["poles", "slots", "stack_length_m", "airgap_m", "rotor_od_m", "stator_id_m"],
+      "properties": {
+        "poles": { "type": "integer", "minimum": 2 },
+        "slots": { "type": "integer", "minimum": 3 },
+        "stack_length_m": { "type": "number", "exclusiveMinimum": 0 },
+        "airgap_m": { "type": "number", "exclusiveMinimum": 0 },
+        "rotor_od_m": { "type": "number", "exclusiveMinimum": 0 },
+        "stator_id_m": { "type": "number", "exclusiveMinimum": 0 },
+        "magnet_thickness_m": { "type": "number", "minimum": 0 },
+        "turns_per_phase": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "Materials": {
+      "type": "object",
+      "properties": {
+        "steel_id": { "type": "string" },
+        "magnet_id": { "type": "string" },
+        "conductor_id": { "type": "string" },
+        "br_t": { "type": "number", "description": "Remanence override for mock/PM machines" },
+        "sigma_copper": { "type": "number", "description": "S/m, optional" }
+      }
+    },
+    "OperatingPoint": {
+      "type": "object",
+      "required": ["speed_rpm"],
+      "properties": {
+        "speed_rpm": { "type": "number" },
+        "current_a_peak": { "type": "number" },
+        "voltage_v_peak": { "type": "number" },
+        "gamma_deg": { "type": "number", "description": "Current angle, PMSM" },
+        "slip": { "type": "number", "description": "ACIM only" }
+      }
+    },
+    "SolveRequest": {
+      "type": "object",
+      "required": ["schema_version", "topology", "machine_type", "geometry", "materials", "operating_point"],
+      "properties": {
+        "schema_version": { "type": "string", "const": "0.0.0-gate0" },
+        "topology": { "enum": ["RF", "AF"] },
+        "machine_type": { "enum": ["BLDC", "PMSM", "ACIM"] },
+        "geometry": { "$ref": "#/$defs/GeometrySummary" },
+        "materials": { "$ref": "#/$defs/Materials" },
+        "operating_point": { "$ref": "#/$defs/OperatingPoint" }
+      }
+    },
+    "SolveResult": {
+      "type": "object",
+      "required": ["schema_version", "meta", "torque_nm", "back_emf_v_peak", "losses_w"],
+      "properties": {
+        "schema_version": { "type": "string", "const": "0.0.0-gate0" },
+        "meta": {
+          "type": "object",
+          "required": ["solver", "elapsed_ms", "mock"],
+          "properties": {
+            "solver": { "enum": ["mec", "axial_planes", "mock"] },
+            "elapsed_ms": { "type": "number", "minimum": 0 },
+            "mock": { "type": "boolean" },
+            "note": { "type": "string" }
+          }
+        },
+        "torque_nm": { "type": "number" },
+        "back_emf_v_peak": { "type": "number" },
+        "losses_w": {
+          "type": "object",
+          "required": ["copper", "iron"],
+          "properties": {
+            "copper": { "type": "number" },
+            "iron": { "type": "number" },
+            "magnet_eddy": { "type": "number" },
+            "rotor_bar": { "type": "number", "description": "ACIM" }
+          }
+        },
+        "inductance_h": {
+          "type": "object",
+          "properties": {
+            "ld": { "type": "number" },
+            "lq": { "type": "number" }
+          }
+        }
+      }
+    }
+  }
+}
