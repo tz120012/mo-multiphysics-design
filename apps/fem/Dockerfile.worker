@@ -12,7 +12,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     MO_FEM_WORKDIR=/var/mo/fem \
-    SOLVER_FEM_PATH=/opt/mo/packages/solver-fem
+    SOLVER_FEM_PATH=/opt/mo/packages/solver-fem \
+    MO_FEM_DRY_RUN=1
 
 COPY apps/api/requirements.txt .
 RUN pip install -r requirements.txt
