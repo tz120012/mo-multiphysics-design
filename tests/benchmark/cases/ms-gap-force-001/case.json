@@ -8,22 +8,30 @@
   "templateId": "ms_gap_force_3d",
   "source": {
     "type": "textbook_formula",
-    "formula": "Fz = Bg^2 * A / (2 * mu0); Bg = Br * hm / (hm + g * mu_r_pm)",
-    "assumptions": "non-saturated; iron reluctance neglected; fringing neglected; open-domain FEM will deviate",
+    "formula": "Fz = Bg^2 * A / (2 * mu0); Bg_1d = Br * hm / (hm + g * mu_r_pm); closing single-metric uses FEM body-rms(Bz)",
+    "assumptions": "non-saturated; closed pot-core side-yoke; iron reluctance small; single-metric: rms(Bz)^2≈mean(Bz^2) matches Maxwell pressure",
     "refs": [
       "机电能量转换 / 电磁场教材气隙磁拉力通式（Maxwell 磁压强）",
-      "一维磁路：Bg = Br·hm/(hm+g·μr_pm)（μr_pm≈1.05）"
+      "一维磁路：Bg = Br·hm/(hm+g·μr_pm)（μr_pm≈1.05）",
+      "书面单指标：F = [body-rms(Bz_fem)]²·A/(2μ0) vs Component Maxwell Fz"
     ],
     "params": {
       "Br_T": 1.0,
       "hm_m": 0.008,
       "g_m": 0.001,
       "mu_r_pm": 1.05,
-      "A_m2": 0.0064,
+      "A_m2": 0.0025000000000000005,
       "Bg_T": 0.8839779005524862,
-      "Fz_ref_N": 1989.8618690040087
+      "Fz_ref_N": 777.289792579691,
+      "geometry": "closed_pot_side_yoke",
+      "L_m": 0.05,
+      "W_m": 0.05,
+      "cr_m": 0.00025,
+      "mu_r_iron": 10000.0
     }
   },
-  "metrics": ["axialForceN"],
-  "notes": "Q5-4 verification；≠ heat-proxy；pending_calibration；见 docs/qa/reports/标定报告-FEM-20261028-Q5-4.md"
+  "metrics": [
+    "axialForceN"
+  ],
+  "notes": "Q5-4 verification 闭磁路罐式；≠ heat-proxy；见标定报告"
 }

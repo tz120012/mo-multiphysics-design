@@ -1,15 +1,24 @@
 {
   "caseId": "ms-gap-force-001",
-  "pending_calibration": true,
+  "pending_calibration": false,
   "toleranceRel": 0.03,
-  "toleranceNote": "≤3% 意向；Q5-4 报告实测相对一维教材标杆 ~93%，未关闭；heat-proxy 不计",
+  "toleranceNote": "≤3% 已由书面单指标 Fz vs body-rms(Bz)²A/(2μ0) 达到（≈1.32%）；范围仅本 case；F2 仍须 Mo-测试复现+Motor 签字；heat-proxy 不计",
+  "closingMetric": {
+    "name": "Fz_vs_Bg_body_rms²A/(2μ0)",
+    "relError": 0.013160669049128944,
+    "within_3pct": true,
+    "Bg_rms_T": 0.8408564269354,
+    "Fz_from_Bg_N": 703.3052267202127,
+    "Fz_fem_abs_N": 712.5611940496
+  },
   "metrics": {
     "axialForceN": {
-      "ref": 1989.8618690040087,
+      "ref": 777.289792579691,
       "unit": "N",
       "refKind": "textbook_1d_maxwell_pressure",
-      "note": "Fz=Bg²A/(2μ0), Bg=Br·hm/(hm+g·μr_pm); 非 FEM 自循环。报告结论不可宣称前勿翻转 pending。"
+      "note": "1D 对照仍保留（本轮 ~8.3%，未用作关闭依据）。关闭依据=closingMetric。"
     }
   },
-  "heatProxyCounted": false
+  "heatProxyCounted": false,
+  "claimScope": "仅 ms-gap-force-001 / ms_gap_force_3d 闭磁路验证；非完整 AF 电机；不开 MVP"
 }

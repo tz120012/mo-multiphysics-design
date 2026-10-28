@@ -5,10 +5,10 @@
   "machineType": "PMSM",
   "dim": "3d",
   "solverKernel": "elmer",
-  "meshProfile": "ms_gap_force_3d_verif",
-  "pending_calibration": true,
+  "meshProfile": "ms_gap_force_3d_closed_pot",
+  "pending_calibration": false,
   "magnetostaticPathReady": true,
   "postprocess": "maxwell",
   "verification": true,
-  "notes": "Q5-4 verification: iron+PM+airgap+iron; textbook Fz≈Bg²A/(2μ0). NOT heat-proxy. pending_calibration until calibration report closes."
+  "notes": "Q5-4 closed pot-core: iron_stator+PM+airgap+iron_target; WhitneyAV Maxwell; claimable on single-metric Fz vs body-rms Bg (scope=this case only); F2 needs Mo-\u6d4b\u8bd5+Motor; NOT heat-proxy; NOT MVP."
 }

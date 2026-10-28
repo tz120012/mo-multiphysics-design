@@ -1,4 +1,4 @@
-! ms_gap_force_3d — stack in air box; Body Force Magnetization on PM
+! ms_gap_force_3d — closed pot-core; PM magnetization; Maxwell Fz on lid
 Header
   CHECK KEYWORDS Warn
   Mesh DB "." "mesh"
@@ -21,7 +21,7 @@ End
 
 Body 1
   Target Bodies(1) = 1
-  Name = "iron_return"
+  Name = "iron_stator"
   Equation = 1
   Material = 1
 End
@@ -66,9 +66,13 @@ Solver 1
   Procedure = "MagnetoDynamics" "WhitneyAVSolver"
   Variable = "A"
   Fix Input Current Density = Logical True
-  Linear System Solver = Direct
-  Linear System Direct Method = MUMPS
+  Linear System Solver = Iterative
+  Linear System Iterative Method = BiCGStabL
+  BiCGStabL Polynomial Degree = 4
+  Linear System Max Iterations = 3000
   Linear System Convergence Tolerance = 1.0e-8
+  Linear System Preconditioning = None
+  Linear System Residual Output = 50
   Linear System Abort Not Converged = False
   Steady State Convergence Tolerance = 1.0e-5
   Nonlinear System Consistent Norm = Logical True
@@ -103,11 +107,14 @@ Solver 3
   Variable 1 = String "Magnetic Flux Density 3"
   Operator 1 = String "body mean"
   Mask Name 1 = String "airgap_mask"
+  Variable 2 = String "Magnetic Flux Density 3"
+  Operator 2 = String "body rms"
+  Mask Name 2 = String "airgap_mask"
 End
 
 Material 1
   Name = "IronSoft"
-  Relative Permeability = 1000.0
+  Relative Permeability = 10000.0
   Relative Permittivity = 1.0
   Electric Conductivity = 0.0
 End

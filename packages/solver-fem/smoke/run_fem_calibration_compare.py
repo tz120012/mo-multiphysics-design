@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Q5-4 FEM magnetostatic calibration compare (textbook air-gap pull).
 
-Runs templates/ms_gap_force_3d via host Elmer or docker:mo-fem / mo-worker-fem,
-parses Maxwell Fz, compares to F_ref = Bg²·A/(2·μ0) with
-Bg = Br·hm/(hm+g) (non-saturated 1D circuit, fringing neglected).
+Runs templates/ms_gap_force_3d (closed pot-core) via host Elmer or docker:mo-fem /
+mo-worker-fem, parses Maxwell Fz, compares to F_ref = Bg²·A/(2·μ0) with
+Bg = Br·hm/(hm+g·μr_pm) (1D) and/or FEM airgap body-rms Bz (single metric).
 
 Does NOT use heat-proxy. Does NOT invent golden. Prints JSON + exit:
   0 = ran OK (whether or not ≤3% — see claimable in JSON)
@@ -32,8 +32,9 @@ TEMPLATE_DIR = ROOT / "templates" / "ms_gap_force_3d"
 DOCKER_CANDIDATES = ("mo-fem", "mo-worker-fem")
 
 # Geometry / material params (must match mesh.geo + case.sif)
-L = 0.08  # m
-W = 0.08
+# Closed pot-core: pole face L×W; side-yoke return (see mesh.geo)
+L = 0.05  # m
+W = 0.05
 H_PM = 0.008
 G = 0.001
 BR = 1.0  # T
@@ -163,7 +164,7 @@ def _run_pipeline_docker(container: str, work: Path) -> dict[str, Any]:
 
     pp = postprocess_magnetostatic_job(solve)
     # Optional: body-mean Bz from SaveScalars variable 1 (often col before forces)
-    bg_fem = _try_parse_bg_mean(solve / "scalars.dat", solve / "scalars.dat.names")
+    bg_stats = _try_parse_bg_stats(solve / "scalars.dat", solve / "scalars.dat.names")
     return {
         "elmerExit": 0,
         "runMode": f"docker:{container}",
@@ -171,35 +172,48 @@ def _run_pipeline_docker(container: str, work: Path) -> dict[str, Any]:
         "magneticEnergyJ": pp.get("magneticEnergyJ"),
         "forceXN": pp.get("forceXN"),
         "forceYN": pp.get("forceYN"),
-        "Bg_fem_body_mean_T": bg_fem,
+        "Bg_fem_body_mean_T": bg_stats.get("mean"),
+        "Bg_fem_body_rms_T": bg_stats.get("rms"),
         "postprocess": pp.get("postprocess") or "maxwell",
         "ppNotes": pp.get("notes"),
         "log": str(log_path),
     }
 
 
-def _try_parse_bg_mean(dat: Path, names: Path) -> float | None:
-    """Best-effort: first 'Magnetic Flux Density 3' / body mean column."""
+def _try_parse_bg_stats(dat: Path, names: Path) -> dict[str, float | None]:
+    """Parse airgap body-mean / body-rms of Magnetic Flux Density 3 (Bz)."""
+    out: dict[str, float | None] = {"mean": None, "rms": None}
     if not dat.is_file():
-        return None
+        return out
     text = dat.read_text(encoding="utf-8", errors="replace").strip()
     if not text:
-        return None
+        return out
     values = [float(x) for x in [ln for ln in text.splitlines() if ln.strip()][-1].split()]
-    idx = None
-    if names.is_file():
-        for ln in names.read_text(encoding="utf-8", errors="replace").splitlines():
-            low = ln.lower()
-            if "magnetic flux density" in low and ("3" in low or "z" in low):
-                # "1: ..." 1-based
-                try:
-                    idx = int(ln.strip().split(":", 1)[0]) - 1
-                except ValueError:
-                    idx = None
-                break
-    if idx is not None and 0 <= idx < len(values):
-        return float(values[idx])
-    return None
+    if not names.is_file():
+        return out
+    for ln in names.read_text(encoding="utf-8", errors="replace").splitlines():
+        low = ln.lower()
+        if "magnetic flux density" not in low:
+            continue
+        if not ("3" in low or "z" in low):
+            continue
+        try:
+            idx = int(ln.strip().split(":", 1)[0]) - 1
+        except ValueError:
+            continue
+        if not (0 <= idx < len(values)):
+            continue
+        val = float(values[idx])
+        if "rms" in low:
+            out["rms"] = val
+        elif "mean" in low:
+            out["mean"] = val
+    return out
+
+
+def _try_parse_bg_mean(dat: Path, names: Path) -> float | None:
+    """Back-compat: prefer body mean Bz."""
+    return _try_parse_bg_stats(dat, names).get("mean")
 
 
 def _run_pipeline_host(work: Path) -> dict[str, Any]:
@@ -225,7 +239,7 @@ def _run_pipeline_host(work: Path) -> dict[str, Any]:
             raise RuntimeError(f"host step failed: {cmd}; see {log}")
     log.write_text("\n".join(chunks), encoding="utf-8")
     pp = postprocess_magnetostatic_job(solve)
-    bg_fem = _try_parse_bg_mean(solve / "scalars.dat", solve / "scalars.dat.names")
+    bg_stats = _try_parse_bg_stats(solve / "scalars.dat", solve / "scalars.dat.names")
     return {
         "elmerExit": 0,
         "runMode": "host",
@@ -233,7 +247,8 @@ def _run_pipeline_host(work: Path) -> dict[str, Any]:
         "magneticEnergyJ": pp.get("magneticEnergyJ"),
         "forceXN": pp.get("forceXN"),
         "forceYN": pp.get("forceYN"),
-        "Bg_fem_body_mean_T": bg_fem,
+        "Bg_fem_body_mean_T": bg_stats.get("mean"),
+        "Bg_fem_body_rms_T": bg_stats.get("rms"),
         "postprocess": pp.get("postprocess") or "maxwell",
         "ppNotes": pp.get("notes"),
         "log": str(log),
@@ -305,21 +320,29 @@ def main() -> int:
         fz_fem_mag = abs(float(fz_fem))
         rel_err = abs(fz_fem_mag - fz_ref) / abs(fz_ref) if fz_ref else float("inf")
 
-        # Optional single-metric: Maxwell pressure from FEM body-mean Bz
-        bg_fem = result.get("Bg_fem_body_mean_T")
+        # Single-metric: Maxwell pressure from FEM airgap Bz.
+        # Prefer body-rms: rms(Bz)^2 == mean(Bz^2), matching Maxwell B^2 pressure.
+        bg_mean = result.get("Bg_fem_body_mean_T")
+        bg_rms = result.get("Bg_fem_body_rms_T")
+        bg_for_force = bg_rms if bg_rms is not None else bg_mean
+        bg_kind = "body_rms" if bg_rms is not None else "body_mean"
         single: dict[str, Any] | None = None
-        if bg_fem is not None and abs(float(bg_fem)) > 1e-12:
-            fz_from_bg = (float(bg_fem) ** 2) * ref["A_m2"] / (2.0 * MU0)
+        if bg_for_force is not None and abs(float(bg_for_force)) > 1e-12:
+            fz_from_bg = (float(bg_for_force) ** 2) * ref["A_m2"] / (2.0 * MU0)
             rel_bg = abs(fz_fem_mag - fz_from_bg) / abs(fz_from_bg)
             single = {
-                "metric": "Fz_vs_Bg_fem²A/(2μ0)",
-                "Bg_fem_T": float(bg_fem),
+                "metric": f"Fz_vs_Bg_{bg_kind}²A/(2μ0)",
+                "Bg_fem_body_mean_T": float(bg_mean) if bg_mean is not None else None,
+                "Bg_fem_body_rms_T": float(bg_rms) if bg_rms is not None else None,
+                "Bg_used_T": float(bg_for_force),
+                "Bg_used_kind": bg_kind,
                 "Fz_from_Bg_N": fz_from_bg,
                 "relError": rel_bg,
                 "within_3pct": rel_bg <= TOL_REL,
                 "note": (
-                    "单指标覆盖：用 FEM 气隙 body-mean Bz 代入教材 Maxwell 压强；"
-                    "检验力后处理与 B²A/2μ0 一致性（非独立激励标杆）"
+                    "书面单指标：用 FEM 气隙 body-rms(Bz)（=√mean(Bz²)）代入 Maxwell 压强 "
+                    "F=Bg²A/(2μ0)，检验力后处理与 B² 一致性；闭磁路下较 body-mean 更物理。"
+                    "非独立激励标杆；1D 教材对比见 compare_1d。"
                 ),
             }
 
@@ -354,7 +377,8 @@ def main() -> int:
                 "magneticEnergyJ": result.get("magneticEnergyJ"),
                 "forceXN": result.get("forceXN"),
                 "forceYN": result.get("forceYN"),
-                "Bg_fem_body_mean_T": bg_fem,
+                "Bg_fem_body_mean_T": bg_mean,
+                "Bg_fem_body_rms_T": bg_rms,
             },
             "compare_1d": {
                 "metric": "Fz_abs_vs_textbook_1D",
