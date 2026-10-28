@@ -25,6 +25,9 @@
         <router-link to="/drive" class="mo-nav-link" active-class="is-active">
           驱动
         </router-link>
+        <router-link to="/compare" class="mo-nav-link" active-class="is-active">
+          对比
+        </router-link>
       </nav>
       <div class="mo-header-right">
         <span class="mo-user">{{ auth.username }}</span>

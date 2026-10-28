@@ -161,6 +161,55 @@ export interface DriveJobPayload {
   projectId?: string
 }
 
+/** 驱动单工况结果。字段对齐 public/drive/*_sample.json 与 POST /drive/solve。 */
+export interface DriveLossesW {
+  copper?: number | null
+  iron?: number | null
+  magnetEddy?: number | null
+  bar?: number | null
+  endRing?: number | null
+}
+
+export interface DriveWaveforms {
+  t_s: number[]
+  ia?: number[]
+  ib?: number[]
+  ic?: number[]
+  torque_nm: number[]
+}
+
+export interface DriveMetrics {
+  torqueAvgNm?: number | null
+  torqueRipplePpNm?: number | null
+  /** 与 torqueRipplePpNm 同义别名 */
+  ripplePpNm?: number | null
+  pMechW?: number | null
+  pElecW?: number | null
+  /** Pmech/Pelec，无量纲 [0,1]；界面按百分数显示 */
+  efficiency?: number | null
+}
+
+export interface DriveCaseResult {
+  mode?: string
+  machineType?: string
+  source?: string
+  operatingPoint?: {
+    speedRpm?: number | null
+    torqueNm?: number | null
+    tempC?: number | null
+    slip?: number | null
+  }
+  lossesW?: DriveLossesW
+  currentsA?: {
+    rmsPhase?: number | null
+    id?: number | null
+    iq?: number | null
+  }
+  waveforms?: DriveWaveforms
+  metrics?: DriveMetrics
+  meta?: { note?: string; solver?: string; elapsed_ms?: number }
+}
+
 export interface JobCreate {
   projectId: string
   jobType: JobType
