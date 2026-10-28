@@ -60,6 +60,8 @@
 | 本执行器 | **无** browser；`:5173` 为 mo-platform 旧 web（无本 tip 面板）→ **未**做真人 UI 判 |
 | 真路径 job-artifacts UI | 需写出含 `equationMode=magnetostatic` + maxwell 标量的 artifacts（writeback / 非缺 mode 的 stub）后再喂 FE |
 
+> **补测（2026-10-28 18:52）**：主代理 computerUse @ Vite **`:5176`** tip **`32caad4`** — 见 [B2-FE-field-browser](Q5-冒烟记录-B2-FE-field-browser-32caad4.md)。fixture / `?source=fixture` / heat-proxy 标题 **目视 PASS**；magnetostatic job-artifacts **停测**（侧栏无 jobId 控件）。**不代关** L4；**未勾 F2**。
+
 ## 禁令确认
 
 | 项 | 本记录 |
