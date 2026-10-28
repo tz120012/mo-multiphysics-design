@@ -32,7 +32,7 @@ pip install -r requirements.txt
 export DATABASE_URL=postgresql+psycopg://mo:mo@127.0.0.1:5433/mo
 export REDIS_URL=redis://127.0.0.1:6380/0
 uvicorn app.main:app --host 0.0.0.0 --port 8000
-# 详见 apps/api/README.md
+# 详见 apps/api/README.md；mems 样例 docs/samples/minimal-rf-pmsm.mems
 ```
 
 ## 门禁原则

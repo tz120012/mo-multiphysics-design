@@ -11,7 +11,7 @@ from fastapi.responses import Response
 from app.config import get_settings
 from app.db import db_get_project, is_db_ready
 from app.deps.auth import require_bearer
-from app.mems_store import mems_get_or_build, mems_put
+from app.mems_store import mems_get_or_build, mems_put, validate_mems_bytes
 from app.schemas.common import MemsMeta
 from app.store import mem_get
 
@@ -49,6 +49,28 @@ def _zip_response(data: bytes, meta: dict, project_id: UUID) -> Response:
     )
 
 
+def _download_mems(project_id: UUID) -> Response:
+    """Shared GET /mems and /mems/export download path."""
+    project = _require_project(project_id)
+    data, meta = mems_get_or_build(project_id, project)
+    return _zip_response(data, meta, project_id)
+
+
+def _put_mems_bytes(project_id: UUID, data: bytes) -> MemsMeta:
+    """Shared PUT /mems and POST /mems/import validation + store."""
+    _require_project(project_id)
+    try:
+        validate_mems_bytes(data)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "bad_request", "message": str(exc)},
+        ) from exc
+    settings = get_settings()
+    meta = mems_put(project_id, data, settings.mems_schema_version)
+    return MemsMeta.model_validate(meta)
+
+
 @router.get(
     "/{project_id}/mems",
     summary="Download .mems package",
@@ -58,9 +80,7 @@ def download_mems(
     project_id: UUID,
     _: Annotated[str, Depends(require_bearer)],
 ) -> Response:
-    project = _require_project(project_id)
-    data, meta = mems_get_or_build(project_id, project)
-    return _zip_response(data, meta, project_id)
+    return _download_mems(project_id)
 
 
 @router.put(
@@ -73,7 +93,6 @@ async def upload_mems(
     request: Request,
     _: Annotated[str, Depends(require_bearer)],
 ) -> MemsMeta:
-    _require_project(project_id)
     content_type = (request.headers.get("content-type") or "").lower()
     if "multipart/form-data" in content_type:
         form = await request.form()
@@ -86,14 +105,7 @@ async def upload_mems(
         data = await file.read()  # type: ignore[union-attr]
     else:
         data = await request.body()
-    if not data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "bad_request", "message": "empty .mems body"},
-        )
-    settings = get_settings()
-    meta = mems_put(project_id, data, settings.mems_schema_version)
-    return MemsMeta.model_validate(meta)
+    return _put_mems_bytes(project_id, data)
 
 
 @router.post(
@@ -106,16 +118,8 @@ async def import_mems(
     _: Annotated[str, Depends(require_bearer)],
     file: UploadFile = File(...),
 ) -> MemsMeta:
-    _require_project(project_id)
     data = await file.read()
-    if not data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "bad_request", "message": "empty upload"},
-        )
-    settings = get_settings()
-    meta = mems_put(project_id, data, settings.mems_schema_version)
-    return MemsMeta.model_validate(meta)
+    return _put_mems_bytes(project_id, data)
 
 
 @router.get(
@@ -127,4 +131,4 @@ def export_mems(
     project_id: UUID,
     _: Annotated[str, Depends(require_bearer)],
 ) -> Response:
-    return download_mems(project_id, _)
+    return _download_mems(project_id)
