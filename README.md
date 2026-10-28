@@ -21,6 +21,20 @@
 - [03-用户故事与MVP](docs/03-用户故事与MVP.md) — 史诗、用户故事与近端优先级切片
 - [04-验收标准-Gate0与Q1](docs/04-验收标准-Gate0与Q1.md) — Gate0/Q1 可勾选验收与角色确认
 
+## 后端 API（Q1-1）
+
+```bash
+# 依赖（宿主机端口 5433 / 6380）
+make up   # 需 Docker；本机无 Docker 时请自行起 Postgres/Redis
+
+cd apps/api && python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+export DATABASE_URL=postgresql+psycopg://mo:mo@127.0.0.1:5433/mo
+export REDIS_URL=redis://127.0.0.1:6380/0
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+# 详见 apps/api/README.md
+```
+
 ## 门禁原则
 
 **未通过当前 Gate / 阶段验收，且未经 Motor 签字，不得开启下一阶段业务代码。**
