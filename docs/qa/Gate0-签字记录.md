@@ -10,3 +10,10 @@
 | 备注 | CI 占位 `.github/workflows/ci.yml`；compose Postgres:5433 / Redis:6380，避免与其他项目冲突 |
 
 签字：Motor  
+
+
+### G0-1 文档冻结（补记）
+
+- 日期：2026-10-28
+- 依据：`docs/drafts/G0-1-冻结评审.md`（架构建议冻结 + Motor 同意）
+- 契约：`docs/drafts/mems-schema-v1.md`、`docs/drafts/openapi-v1.yaml`（1.0.0-draft）
