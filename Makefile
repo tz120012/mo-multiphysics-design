@@ -9,7 +9,7 @@ help:
 	@echo "  up         — default 4 services (service DNS postgres/redis)"
 	@echo "  up-box     — Bot/box iptables-stub smoke (host.docker.internal)"
 	@echo "  up-worker  — + Celery worker profile (CELERY_ENABLED=1)"
-	@echo "  up-fem     — + worker + fem stub (Q3-3 Elmer/GetDP placeholder)"
+	@echo "  up-fem     — + analytic worker + fem toolchain + worker-fem (Q3-3)"
 
 up:
 	@test -f $(ENV_FILE) || cp .env.example $(ENV_FILE)
@@ -30,7 +30,7 @@ up-worker:
 
 up-fem:
 	@test -f $(ENV_FILE) || cp .env.example $(ENV_FILE)
-	@echo "[mo] up-fem: profiles worker,fem (Q3-3 stub)"
+	@echo "[mo] up-fem: profiles worker,fem (toolchain + worker-fem; arch 8d966d9)"
 	CELERY_ENABLED=1 $(COMPOSE) --env-file $(ENV_FILE) --profile worker --profile fem up -d --build
 	@$(MAKE) --no-print-directory health || true
 

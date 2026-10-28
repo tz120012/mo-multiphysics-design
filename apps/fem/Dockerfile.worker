@@ -1,0 +1,25 @@
+# Q3-3 Celery FEM worker image — Mo-运维
+# Elmer/GetDP/Gmsh stay in apps/fem (toolchain) image or later multi-stage FROM it.
+# This worker runs Celery queue `fem` only; never embed solvers in apps/api uvicorn.
+#
+# Stub: Python Celery + api app code + solver-fem schemas. Real Elmer binaries
+# land when Mo-有限元 replaces apps/fem/Dockerfile; worker may then FROM that image.
+FROM python:3.12-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MO_FEM_WORKDIR=/var/mo/fem \
+    SOLVER_FEM_PATH=/opt/mo/packages/solver-fem
+
+COPY apps/api/requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY apps/api/app ./app
+COPY packages/solver-fem /opt/mo/packages/solver-fem
+
+RUN mkdir -p /var/mo/fem
+
+CMD ["celery", "-A", "app.celery_app", "worker", "-Q", "fem", "-n", "fem@%h", "--loglevel=INFO"]

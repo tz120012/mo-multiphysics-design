@@ -118,16 +118,24 @@ make up && make health
 
 ## Q3-3 Celery 工人与 FEM 容器
 
+边界锁定：[Q3-轴向与FEM边界.md](./drafts/Q3-轴向与FEM边界.md)（tip `8d966d9`）。  
+**禁止** box 宿主机安装 Elmer/GetDP/Gmsh；**禁止** Elmer 进入 `apps/api` uvicorn 进程。
+
 默认 `make up` / `make up-box` **仍是四服务**（web/api/postgres/redis）。
 
 | 目标 | 命令 | 说明 |
 | --- | --- | --- |
-| 仅 Celery 工人 | `make up-worker` | compose profile `worker`；api 设 `CELERY_ENABLED=1` |
-| 工人 + FEM stub | `make up-fem` | profiles `worker,fem`；共享卷 `mo_femdata` → `/var/mo/fem` |
+| 仅 analytic Celery | `make up-worker` | profile `worker`（api 镜像）；`CELERY_ENABLED=1` |
+| FEM 栈 | `make up-fem` | profiles `worker` + `fem`：`fem` 工具链 stub + `worker-fem`（队列 `fem`） |
 
-- 容器内 FEM 工作目录：`MO_FEM_WORKDIR=/var/mo/fem`
-- Elmer/GetDP/Gmsh **只**进 `apps/fem` 镜像；禁止宿主机系统级安装（见 `docs/drafts/FEM范围.md`）
-- 真实工具链由 **Mo-有限元** 替换 stub Dockerfile；运维负责 compose / 卷 / profile
+| 服务 | 镜像 | 说明 |
+| --- | --- | --- |
+| `worker` | api 镜像 | analytic 队列（Q2-6） |
+| `fem` | `apps/fem/Dockerfile` | Elmer(+Gmsh) 工具链；GetDP 可后置 stub |
+| `worker-fem` | `apps/fem/Dockerfile.worker` | Celery `-Q fem`；共享 `/var/mo/fem` |
+
+- 工作目录：`MO_FEM_WORKDIR=/var/mo/fem`（卷 `mo_femdata`）
+- 模板/schema：`packages/solver-fem`（Mo-有限元）；Jobs `jobType=fem`（Mo-后端入队）
 
 ### Q2-L7 抽检（开 Q3 前）
 

@@ -32,3 +32,14 @@ services:
       SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
       CELERY_ENABLED: "1"
 
+  worker-fem:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DATABASE_URL: postgresql+psycopg://mo:mo@host.docker.internal:${POSTGRES_PORT:-5433}/mo
+      REDIS_URL: redis://host.docker.internal:${REDIS_PORT:-6380}/0
+      CELERY_ENABLED: "1"
+      MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
+      SOLVER_FEM_PATH: ${SOLVER_FEM_PATH:-/opt/mo/packages/solver-fem}
+      MO_FEM_DRY_RUN: ${MO_FEM_DRY_RUN:-1}
+

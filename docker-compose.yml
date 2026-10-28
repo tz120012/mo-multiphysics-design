@@ -93,8 +93,8 @@ services:
       - mo-net
 
 
-  # Optional Celery worker (Q2-6 / Q3-3). Profile: worker. Default `make up` stays 4 services.
-  # Same repo-root build context so solver-analytic is in the image.
+  # Optional Celery analytic worker (Q2-6). Profile: worker. Default `make up` stays 4 services.
+  # FEM Celery is worker-fem (profile fem) — Elmer never runs in apps/api uvicorn.
   worker:
     profiles: ["worker"]
     build:
@@ -122,8 +122,9 @@ services:
     networks:
       - mo-net
 
-  # Elmer/GetDP/Gmsh container (Q3-3). Profile: fem. Image owned with Mo-有限元.
-  # Stub image until FEM ships real Dockerfile body; do not install FEM on host.
+  # Q3-3 FEM toolchain (Elmer/GetDP/Gmsh). Profile: fem.
+  # Arch tip 8d966d9: container only — never host install; never inside apps/api process.
+  # Stub until Mo-有限元 ships real Elmer(+Gmsh) Dockerfile body; GetDP may stay stub.
   fem:
     profiles: ["fem"]
     build:
@@ -134,8 +135,48 @@ services:
       MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
     volumes:
       - mo_femdata:/var/mo/fem
-    # Idle placeholder — worker/FEM tasks will exec or queue into this volume.
+    # Idle sidecar — Celery worker-fem uses shared volume / docker exec later.
     command: ["sleep", "infinity"]
+    networks:
+      - mo-net
+
+  # Celery FEM worker (queue `fem`). Separate from analytic `worker` and from uvicorn.
+  worker-fem:
+    profiles: ["fem"]
+    build:
+      context: .
+      dockerfile: apps/fem/Dockerfile.worker
+    container_name: mo-worker-fem
+    command:
+      [
+        "celery",
+        "-A",
+        "app.celery_app",
+        "worker",
+        "-Q",
+        "fem",
+        "-n",
+        "fem@%h",
+        "--loglevel=INFO",
+      ]
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mo:mo@postgres:5432/mo}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_ENABLED: "1"
+      MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
+      SOLVER_FEM_PATH: ${SOLVER_FEM_PATH:-/opt/mo/packages/solver-fem}
+      MO_FEM_DRY_RUN: ${MO_FEM_DRY_RUN:-1}
+    volumes:
+      - mo_femdata:/var/mo/fem
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      fem:
+        condition: service_started
     networks:
       - mo-net
 
