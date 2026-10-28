@@ -1,0 +1,5 @@
+/target/
+**/*.rs.bk
+wasm-pack.log
+# Cargo.lock committed for reproducible wasm builds
+# pkg/ committed when size is small (~160KB) so FE can load immediately

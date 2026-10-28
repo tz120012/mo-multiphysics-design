@@ -1,0 +1,17 @@
+{
+  "name": "solver-analytic-wasm",
+  "type": "module",
+  "description": "Mo radial analytic solver (Wasm) — SolveRequest/Result JSON aligned with packages/solver-analytic",
+  "version": "0.1.0",
+  "license": "UNLICENSED",
+  "files": [
+    "solver_analytic_wasm_bg.wasm",
+    "solver_analytic_wasm.js",
+    "solver_analytic_wasm.d.ts"
+  ],
+  "main": "solver_analytic_wasm.js",
+  "types": "solver_analytic_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
