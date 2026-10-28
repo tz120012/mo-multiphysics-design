@@ -119,7 +119,7 @@ manifest.json
 | --- | --- |
 | `drive/` | 电调与驱动工况定义（方波 / FOC / V/f + 感应 FOC）；Q1 可空 |
 | `results/` | 二进制缓存（场量切片、效率 Map、波形）；大文件；checksum 入 manifest |
-| `history/` | Undo/Redo 命令树摘要（前端命令模式写入）；对齐 Q1-6 |
+| `history/` | Undo/Redo 线性栈摘要：`history/stack.json`（前端命令模式写入；随 PUT mems）；契约见 [history-契约-q1-6.md](./history-契约-q1-6.md) |
 | `manifest.json` | 文件清单与校验和（建议 SHA-256） |
 
 ### `manifest.json` 最小示例

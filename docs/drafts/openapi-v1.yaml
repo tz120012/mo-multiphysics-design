@@ -15,7 +15,7 @@ info:
     - FEM 不在本 API 表面暴露专用 FEM 路由，仅通过 Jobs 作业类型进入（Q3）。
     - **Gate0 无业务实现**；本文件仅为 Q1 开工契约，路由可先返回 501/空壳。
 
-    配套：`docs/drafts/mems-schema-v1.md`（`memsSchemaVersion: "1.0.0-draft"`）。
+    配套：`docs/drafts/mems-schema-v1.md`（`memsSchemaVersion: "1.0.0-draft"`）；`docs/drafts/history-契约-q1-6.md`（Q1-6 History 语义）。
     真理源：`docs/01-任务书-v2.md`、`docs/02-阶段任务拆解与门禁.md`（本草案不修改二者）。
 
 servers:
@@ -31,7 +31,7 @@ tags:
   - name: Mems
     description: Q1 `.mems` 包上下载 / 导入导出
   - name: History
-    description: Q1-6 Undo/Redo 占位
+    description: Q1-6 Undo/Redo 占位；语义见 docs/drafts/history-契约-q1-6.md（客户端权威；本 API 可空桩）
   - name: Materials
     description: Q1 薄桩；完整 CRUD → Q2
   - name: Jobs
@@ -380,7 +380,7 @@ paths:
         - $ref: "#/components/parameters/projectId"
       responses:
         "200":
-          description: History tree / linear list stub
+          description: Linear stack stub（entries + cursor；语义见 history-契约-q1-6.md）
           content:
             application/json:
               schema:
@@ -393,7 +393,9 @@ paths:
                       $ref: "#/components/schemas/HistoryEntry"
                   cursor:
                     type: integer
-                    description: Current undo cursor index
+                    description: |
+                      Index of next redo entry；invariant 0<=cursor<=len(entries).
+                      See docs/drafts/history-契约-q1-6.md.
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -410,7 +412,7 @@ paths:
         - $ref: "#/components/parameters/projectId"
       responses:
         "200":
-          description: Undo applied（or no-op at root）
+          description: Shape stub only（Q1 不强制服务端改状态；FE local-first）
           content:
             application/json:
               schema:
@@ -437,7 +439,7 @@ paths:
         - $ref: "#/components/parameters/projectId"
       responses:
         "200":
-          description: Redo applied（or no-op at tip）
+          description: Shape stub only（Q1 不强制服务端改状态；FE local-first）
           content:
             application/json:
               schema:
@@ -747,18 +749,35 @@ components:
 
     HistoryEntry:
       type: object
+      description: |
+        Command-stack entry. Semantics (linear stack, cursor, mems history/stack.json,
+        local-first Undo/Redo): docs/drafts/history-契约-q1-6.md.
+        Q1 does not require server-side stack persistence beyond shape alignment.
       required: [id, commandType, summary, createdAt]
       properties:
         id:
           type: string
+          description: UUID
         commandType:
           type: string
-          description: e.g. geometry.update
+          description: |
+            Q1 minimal set — geometry.params.set | project.meta.set | noop
+            (see history-契约-q1-6.md).
+          examples:
+            - geometry.params.set
+            - project.meta.set
+            - noop
         summary:
           type: string
+          description: One-line UI summary (zh/en)
         createdAt:
           type: string
           format: date-time
         payload:
           type: object
           additionalProperties: true
+          description: Forward params; must be replayable for real commands
+        inverse:
+          type: object
+          additionalProperties: true
+          description: Recommended in Q1 for undo; if absent FE may use snapshot strategy
