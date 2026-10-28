@@ -14,7 +14,8 @@ Gate0 **已签字**（Motor G0-6）。Q1：径向 RF+PMSM **非线性 MEC** 已�
 | ACIM 等效电路 | **Q2** | `meta.solver=acim_equiv`；Rs/Rr'/Xm/Xσ + 转差转矩 |
 | 材料适配 | **Q2** | `materials_adapter.py`：内联 / catalog id / 工程默认 |
 | 轴向多平面展开 | Q3 | 盘式径向解耦圆环积分 |
-| Wasm | Q2+ | C++ 或 Rust → WebAssembly（任务书冻结） |
+| Wasm | **Q2** | `packages/solver-analytic-wasm/`（`solve_json`）；见该包 README |
+| Sync HTTP | **Q2 可选** | `POST /api/v1/solver/analytic/solve`（Bearer）薄包装本包 `solve()` |
 
 **不做**：FEM 网格/求解、几何参数化本体、电调后处理 UI。
 

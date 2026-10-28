@@ -473,6 +473,19 @@ def resolve_materials(
                 if isinstance(p, (list, tuple)) and len(p) >= 2
             ]
 
+    # bpPoints / curves.bp — retain for loss consumers
+    bp_meta = steel_m.get("bpPoints") or mats.get("bpPoints")
+    if isinstance(bp_meta, list):
+        out.steel_bp_points = bp_meta  # type: ignore[assignment]
+    elif isinstance(steel_c.get("bp"), dict):
+        pts = steel_c["bp"].get("points")
+        if isinstance(pts, list):
+            out.steel_bp_points = [
+                {"bT": float(p[0]), "pWPerKg": float(p[1])}
+                for p in pts
+                if isinstance(p, (list, tuple)) and len(p) >= 2
+            ]
+
     bs, found = _pick_num(
         mats.get("bs_t"),
         mats.get("bsT"),
