@@ -85,6 +85,8 @@ make up && make health
 
 若宿主机 **8000/5173** 已被占用，可在 `.env` 临时改 `API_HOST_PORT` / `WEB_HOST_PORT`（**不要**改回 Postgres/Redis 宿主机 5432/6379）。
 
+> **Q3→Q4 遗留**：部分环境 `.env` 使用 `WEB_HOST_PORT=5174`。box overlay 下 nginx→`host.docker.internal:8000` 可能超时；**UI/Jobs 冒烟优先 vite 开发服 :5173**，不以 `:5174/api` 作硬口径（Q4-10 跟进）。
+
 依赖健康（不经容器 DNS）也可用：
 
 ```bash
