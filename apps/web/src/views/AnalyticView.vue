@@ -144,7 +144,7 @@
         <el-button type="primary" :loading="solving" @click="onSolve">求解</el-button>
         <el-button :disabled="solving" @click="resetToSample">恢复样例</el-button>
       </div>
-      <p class="side-hint">local-first · Wasm→sync→fixture · 不阻塞 /jobs</p>
+      <p class="side-hint">主路径 sync?solver=mec（金标）· Wasm→sync→fixture 仅失败降级 · 不阻塞 /jobs</p>
       <p v-if="solveBackendLabel" class="side-backend">路径：{{ solveBackendLabel }}</p>
     </aside>
 
@@ -263,7 +263,7 @@ let chart: ECharts | null = null
 
 const BACKEND_LABELS: Record<SolveBackend, string> = {
   wasm: 'Wasm',
-  sync: 'sync HTTP',
+  sync: 'sync HTTP (mec 金标)',
   fixture: 'fixture',
   mock: 'mock',
 }

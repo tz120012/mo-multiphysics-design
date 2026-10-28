@@ -3,11 +3,12 @@
  *
  * 交互求解降级序（钉死，见 docs/drafts/Q2-材料与解析边界.md §3.3）：
  *   1. Wasm（browser）— 包尚未到；stub tryLoad，失败则降级
- *   2. 可选 sync POST /api/v1/solver/analytic/solve — 404/501/网络失败则降级
+ *   2. sync POST /api/v1/solver/analytic/solve?solver=mec — tip 8b71df1 已接线 Python 金标；
+ *      真结果优先（meta.source=sync，保留金标 meta.mock=false）；404/501/网络失败才降级
  *   3. Jobs analytic — **禁止**阻塞 UI 等轮询才改结果（本层不 await Jobs）
- *   4. 本地 fixture/mock 兜底（PMSM/ACIM fixture 缩放；BLDC 客户端 mock）
+ *   4. 本地 fixture/mock 兜底（仅 sync 失败时；PMSM/ACIM fixture 缩放；BLDC 客户端 mock）
  *
- * Motor：下一目标接 Wasm；mock 仅作回退。
+ * Motor：主路径为 sync mec；Wasm 待包；fixture/mock 仅回退。
  */
 import { isAxiosError } from 'axios'
 import { postAnalyticSolve } from '@/api/solver'
@@ -149,7 +150,7 @@ function scalePmsmFromFixture(
       mock: true,
       source: 'fixture',
       note:
-        'PMSM：以本地 MEC fixture 为基线，按 speed/current/Br 粗比例缩放（approximate）。降级序兜底；待 Wasm/sync 真核替换。见 docs/drafts/Q2-材料与解析边界.md。',
+        'PMSM：sync/Wasm 失败后的本地 MEC fixture 粗缩放兜底（approximate）。主路径为 sync?solver=mec（8b71df1）。见 docs/drafts/Q2-材料与解析边界.md。',
       mec: base.meta.mec,
     },
     torque_nm: torque,
@@ -207,7 +208,7 @@ function scaleAcimFromFixture(
       mock: true,
       source: 'fixture',
       note:
-        'ACIM：以本地 acim_equiv fixture 为基线，按 V/freq/slip 粗比例缩放（approximate）。降级序兜底；待 Wasm/sync 真核替换。见 docs/drafts/Q2-材料与解析边界.md。',
+        'ACIM：sync/Wasm 失败后的本地 acim_equiv fixture 粗缩放兜底（approximate）。主路径为 sync?solver=mec（8b71df1）。见 docs/drafts/Q2-材料与解析边界.md。',
       acim: {
         ...(typeof base.meta.acim === 'object' && base.meta.acim ? base.meta.acim : {}),
         slip,
@@ -259,7 +260,7 @@ function mockBldc(request: SolveRequest, elapsedMs: number): SolveResult {
       elapsed_ms: elapsedMs,
       mock: true,
       source: 'mock',
-      note: 'BLDC：客户端 mock（合理数量级），待 Mo-解析真核 / Wasm。',
+      note: 'BLDC：sync/Wasm 失败后的客户端 mock 兜底（合理数量级）。',
     },
     torque_nm: torque,
     back_emf_v_peak: bemf,
@@ -312,7 +313,9 @@ function mockAcim(request: SolveRequest, elapsedMs: number): SolveResult {
 
 async function trySyncSolve(request: SolveRequest): Promise<SolveResult | null> {
   try {
-    const result = await postAnalyticSolve(request)
+    // tip 8b71df1：sync 真端已上；显式 solver=mec 打 Python 金标
+    const result = await postAnalyticSolve(request, { solver: 'mec' })
+    // source=sync；不强制改 mock，保留金标 meta.mock=false
     return tagSource(result, 'sync')
   } catch (err) {
     if (isAxiosError(err)) {
@@ -348,8 +351,8 @@ async function solveLocalFallback(request: SolveRequest, t0: number): Promise<So
 }
 
 /**
- * 径向求解入口 — 按 Wasm → sync → fixture/mock 降级。
- * **不** await Jobs HTTP；交互主路径即时出结果。
+ * 径向求解入口 — Wasm → sync(mec 金标) → fixture/mock 降级。
+ * sync 成功优先（真结果）；**不** await Jobs HTTP。
  */
 export async function solveRadial(request: SolveRequest): Promise<SolveResult> {
   assertRadialRf(request)
