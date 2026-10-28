@@ -1,0 +1,15 @@
+! Mo RF PMSM 2D Elmer case stub (Q3-4)
+! Placeholders only — real BC/materials filled by pre-process.
+
+Header
+  Mesh DB "." "mesh"
+End
+
+Simulation
+  Coordinate System = Cartesian 2D
+  Simulation Type = Steady state
+  Steady State Max Iterations = 1
+  Output File = "rf_pmsm_2d.result"
+End
+
+! Body / Equation / Material / Boundary Condition blocks: filled by Mo-有限元 pre-process.

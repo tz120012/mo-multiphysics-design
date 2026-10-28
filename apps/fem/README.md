@@ -1,12 +1,22 @@
-# apps/fem — Elmer / GetDP 容器与 FEM worker（Q3-3）
+# apps/fem — Elmer / Gmsh 容器（Q3-L2）
 
-边界：`docs/drafts/Q3-轴向与FEM边界.md`（tip `8d966d9`）。
+| 项 | 说明 |
+| --- | --- |
+| 镜像体 | 本目录 `Dockerfile`（Ubuntu 22.04 + Elmer CSC PPA + gmsh） |
+| Compose | Mo-运维：`profile fem` / `make up-fem`；卷 `mo_femdata` → `/var/mo/fem` |
+| Worker | `Dockerfile.worker` 跑 Celery `-Q fem`；求解二进制在本镜像，可由 `docker compose exec fem` 调用 |
+| 宿主机 | **禁止**安装 Elmer / GetDP / Gmsh |
 
-| 镜像 | Dockerfile | 角色 |
-| --- | --- | --- |
-| `fem` | `Dockerfile` | Elmer/GetDP/Gmsh **工具链**（当前 stub；禁宿主机安装） |
-| `worker-fem` | `Dockerfile.worker` | Celery **FEM 队列** `fem`；调用/共享 `/var/mo/fem`；**不**进 `apps/api` 进程 |
+## 本地构建（box）
 
-- Owner：容器与工人镜像 = **Mo-运维**；模板/thinning = **Mo-有限元**（`packages/solver-fem`）
-- 启动：`make up-fem` → profiles `worker`（analytic）+ `fem`（toolchain + worker-fem）
-- 工作目录：`MO_FEM_WORKDIR=/var/mo/fem`（卷 `mo_femdata`）
+```bash
+# 须在仓库根；compose 同路径
+docker build -f apps/fem/Dockerfile -t mo-fem:q3-l2 .
+docker run --rm mo-fem:q3-l2 ElmerSolver
+```
+
+GetDP：F2 Elmer-first；若 apt 无包则镜像内可缺，不阻塞 Q3。
+
+## 与 solver-fem
+
+模板与 dry-run：`packages/solver-fem/`。`MO_FEM_DRY_RUN=0` 且本镜像就绪后，工人可改调真实 Elmer。

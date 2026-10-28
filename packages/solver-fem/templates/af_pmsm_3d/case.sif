@@ -1,0 +1,11 @@
+! Mo AF PMSM 3D Elmer case stub (Q3-5 minimal path)
+Header
+  Mesh DB "." "mesh"
+End
+
+Simulation
+  Coordinate System = Cartesian 3D
+  Simulation Type = Steady state
+  Steady State Max Iterations = 1
+  Output File = "af_pmsm_3d.result"
+End
