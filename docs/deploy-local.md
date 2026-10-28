@@ -87,7 +87,7 @@ make up && make health
 
 若宿主机 **8000/5173** 已被占用，可在 `.env` 临时改 `API_HOST_PORT` / `WEB_HOST_PORT`（**不要**改回 Postgres/Redis 宿主机 5432/6379）。
 
-> **Q3→Q4 遗留**：部分环境 `.env` 使用 `WEB_HOST_PORT=5174`。box overlay 下 nginx→`host.docker.internal:8000` 可能超时；**UI/Jobs 冒烟优先 vite 开发服 :5173**，不以 `:5174/api` 作硬口径（Q4-10 跟进）。
+> **Q4+-2 已修**：box overlay 下 `nginx.box.conf` 曾用 `resolver 127.0.0.11` + 变量 `proxy_pass`，Docker DNS **不读** `extra_hosts`，导致 `:WEB_HOST_PORT/api`（常见映射 **5174**）超时。现改为字面量 `proxy_pass http://host.docker.internal:8000`（走 `/etc/hosts`）。compose Web 与 vite `:5173` 均可作 UI 冒烟；默认示例仍 `WEB_HOST_PORT=5173`。
 
 依赖健康（不经容器 DNS）也可用：
 
@@ -111,7 +111,7 @@ make up-box        # 使用 docker-compose.yml + docker-compose.box.yml
 make health-box    # 期望 db.ok=true redis.ok=true
 ```
 
-原理：`docker-compose.box.yml` 让 **api** 通过 `host.docker.internal`（`extra_hosts: host-gateway`）访问宿主机已 publish 的 **5433/6380**；**web** 挂载 `apps/web/nginx.box.conf`，把 `/api` 反代到 `host.docker.internal:8000`。
+原理：`docker-compose.box.yml` 让 **api** 通过 `host.docker.internal`（`extra_hosts: host-gateway`）访问宿主机已 publish 的 **5433/6380**；**web** 挂载 `apps/web/nginx.box.conf`，把 `/api` 与 `/health` 反代到 `host.docker.internal:8000`（**字面量** `proxy_pass`，勿再加 Docker embedded `resolver`+变量，否则超时）。
 
 正常 Docker 主机请继续：
 

@@ -83,7 +83,7 @@ make stress-jobs            # JOBS_N / POLL_SEC；analytic + fem dry-run 入队�
 | `CELERY_ENABLED` | `0` 默认；`make up-worker` / `up-fem*` 时置 `1` |
 | `MO_FEM_DRY_RUN` | **默认 `1`（stub）**；真 Elmer 仅临时命令行覆盖，见下 |
 | `SOLVER_ANALYTIC_PATH` / `SOLVER_FEM_PATH` | 镜像内 solver 包路径 |
-| `WEB_HOST_PORT` | Web 宿主机口（示例默认 **5173**；部分环境遗留 5174，见下节） |
+| `WEB_HOST_PORT` | Web 宿主机口（示例默认 **5173**；亦可 5174，见 Q4+-2） |
 | `POSTGRES_PORT` / `REDIS_PORT` / `API_HOST_PORT` | 宿主机映射，默认 5433 / 6380 / 8000 |
 
 宿主机直连 DB/Redis（API 不进 compose 时）：`127.0.0.1:5433` / `127.0.0.1:6380`。
@@ -107,11 +107,12 @@ make down-box
 - `down` **默认不删命名卷**；Postgres/Redis/FEM 数据仍在 `mo_pgdata` / `mo_redisdata` / `mo_femdata`。  
 - 需彻底清空数据时再显式 `docker volume rm`（**生产前务必确认备份**；本草稿不展开）。
 
-## 已知遗留（Q4-C2）
+## Web 反代（Q4+-2）
 
-- compose Web 若映射 **`:5174`**，在 box overlay 下 nginx → `host.docker.internal:8000` **可能超时**。  
-- **UI / Jobs 冒烟优先 vite 开发服 `:5173`**；**不以** `:5174/api` 作硬口径。  
-- 本轮 **不修复** 该反代（Q4-C2 leftover）；私有化验收以 API `:8000/health` + 文档端口表为准。
+- box overlay：`apps/web/nginx.box.conf` 用字面量 `proxy_pass http://host.docker.internal:8000`（依赖 `extra_hosts` → `/etc/hosts`）。  
+- **勿**在 box conf 使用 `resolver 127.0.0.11` + 变量 `proxy_pass` 指 `host.docker.internal`（Docker DNS 看不到 extra_hosts，会超时）。  
+- 默认 nginx（非 box）仍反代服务名 `api:8000`。  
+- 私有化验收：API `:8000/health` + compose Web（`WEB_HOST_PORT`，示例 5173）`/health` / `/api/...`；vite `:5173` 仍可用作开发冒烟。
 
 ## FEM
 
