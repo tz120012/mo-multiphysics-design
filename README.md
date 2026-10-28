@@ -15,6 +15,8 @@
 
 - [01-任务书-v2](docs/01-任务书-v2.md) — 背景目标、拓扑×机型矩阵、四大模块、里程碑与风险
 - [02-阶段任务拆解与门禁](docs/02-阶段任务拆解与门禁.md) — Gate0 → Q1 → Q2 → Q3 → Q4 门禁与角色交付
+- [本地依赖启动](docs/deploy-local.md) — `make up`（Postgres + Redis）
+- [Gate0 冒烟占位](docs/smoke-gate0.md) — `make smoke` / CI workflow
 - [轻量解析范围（草案）](docs/drafts/解析范围.md) — MEC / 多平面 / ACIM 边界与 Gate0 占位（待 Motor 审）
 - [03-用户故事与MVP](docs/03-用户故事与MVP.md) — 史诗、用户故事与近端优先级切片
 - [04-验收标准-Gate0与Q1](docs/04-验收标准-Gate0与Q1.md) — Gate0/Q1 可勾选验收与角色确认

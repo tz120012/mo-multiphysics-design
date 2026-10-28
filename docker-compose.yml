@@ -1,36 +1,54 @@
-# Gate0 placeholder — Postgres + Redis for Mo local deps
-# Do not start against other projects' networks.
+# Gate0 G0-4: Postgres + Redis deps placeholder.
+# Connection contract (Mo-运维 ↔ Mo-后端):
+#   POSTGRES_USER=mo POSTGRES_PASSWORD=mo POSTGRES_DB=mo
+#   DATABASE_URL=postgresql+psycopg://mo:mo@postgres:5432/mo
+#   REDIS_URL=redis://redis:6379/0
+# Future: API host map 8000:8000 (no api service in Gate0).
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: mo-postgres
     environment:
-      POSTGRES_USER: mo
-      POSTGRES_PASSWORD: mo
-      POSTGRES_DB: mo
+      POSTGRES_USER: ${POSTGRES_USER:-mo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mo}
+      POSTGRES_DB: ${POSTGRES_DB:-mo}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - mo_pg_data:/var/lib/postgresql/data
+      - mo_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mo -d mo"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mo} -d ${POSTGRES_DB:-mo}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    networks:
+      - mo-net
 
   redis:
     image: redis:7-alpine
     container_name: mo-redis
     ports:
-      - "6380:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - mo_redis_data:/data
+      - mo_redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 10
+    networks:
+      - mo-net
+
+  # Future (do not enable yet):
+  # api:
+  #   ports: ["8000:8000"]
+  # celery-worker / celery-beat / flower / fem — profiles: ["workers"]
 
 volumes:
-  mo_pg_data:
-  mo_redis_data:
+  mo_pgdata:
+  mo_redisdata:
+
+networks:
+  mo-net:
+    name: mo-net

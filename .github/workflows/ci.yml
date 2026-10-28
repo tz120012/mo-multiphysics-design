@@ -1,17 +1,17 @@
+# Gate0 G0-3: CI placeholder — must no-op succeed until real checks land.
 name: ci
+
 on:
   push:
     branches: [master, main]
   pull_request:
+    branches: [master, main]
   workflow_dispatch:
+
 jobs:
-  gate0-placeholder:
+  smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Gate0 CI placeholder
-        run: |
-          echo "mo-platform Gate0 CI placeholder OK"
-          test -f docs/01-任务书-v2.md
-          test -f docs/02-阶段任务拆解与门禁.md
-          bash scripts/smoke_gate0.sh || true
+      - name: Gate0 smoke placeholder
+        run: bash scripts/smoke.sh
