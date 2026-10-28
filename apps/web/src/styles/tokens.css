@@ -1,0 +1,86 @@
+/**
+ * Mo 设计令牌 — 深色工程软件风（电机 CAD/CAE 控制台）
+ * 石墨黑底 · 细分割线 · 青绿/琥珀点缀
+ */
+:root {
+  /* 背景层级 */
+  --mo-bg-base: #0e0f11;
+  --mo-bg-panel: #14161a;
+  --mo-bg-elevated: #1a1c21;
+  --mo-bg-hover: #22252b;
+  --mo-bg-input: #121418;
+
+  /* 边框 / 分割线 */
+  --mo-border: #2a2d34;
+  --mo-border-subtle: #1f2228;
+  --mo-border-focus: #2dd4bf;
+
+  /* 文字 */
+  --mo-text-primary: #e8eaed;
+  --mo-text-secondary: #9aa0a6;
+  --mo-text-muted: #6b7280;
+  --mo-text-inverse: #0e0f11;
+
+  /* 点缀色 */
+  --mo-accent: #2dd4bf;
+  --mo-accent-dim: rgba(45, 212, 191, 0.15);
+  --mo-amber: #f59e0b;
+  --mo-amber-dim: rgba(245, 158, 11, 0.15);
+  --mo-danger: #ef4444;
+  --mo-success: #22c55e;
+
+  /* 字体 */
+  --mo-font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", system-ui, sans-serif;
+  --mo-font-mono: "IBM Plex Mono", "JetBrains Mono", "Consolas", monospace;
+
+  /* 尺寸 */
+  --mo-header-h: 44px;
+  --mo-radius: 4px;
+  --mo-radius-sm: 2px;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--mo-bg-base);
+  color: var(--mo-text-primary);
+  font-family: var(--mo-font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--mo-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Element Plus 深色覆盖（克制） */
+html.dark {
+  --el-bg-color: var(--mo-bg-panel);
+  --el-bg-color-overlay: var(--mo-bg-elevated);
+  --el-bg-color-page: var(--mo-bg-base);
+  --el-text-color-primary: var(--mo-text-primary);
+  --el-text-color-regular: var(--mo-text-secondary);
+  --el-text-color-secondary: var(--mo-text-muted);
+  --el-border-color: var(--mo-border);
+  --el-border-color-light: var(--mo-border-subtle);
+  --el-color-primary: var(--mo-accent);
+  --el-fill-color-blank: var(--mo-bg-input);
+  --el-mask-color: rgba(0, 0, 0, 0.65);
+}
