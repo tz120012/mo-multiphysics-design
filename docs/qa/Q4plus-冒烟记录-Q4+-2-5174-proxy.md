@@ -1,6 +1,6 @@
 # Q4+ 冒烟记录 — Q4+-2 compose Web nginx→host 代理
 
-> 执行：Mo-运维 · 交测 tip 以本提交 `git rev-parse --short HEAD` 为准  
+> 执行：Mo-运维交测 + **Mo-测试复测** · 交测 tip **`f929dcb`**（实测时 HEAD 含该 tip）  
 > 对照：`docs/02` Q4+-2；清单 [Q4plus-冒烟清单](Q4plus-冒烟清单.md) **Q4+-B1**  
 > 时区：Asia/Shanghai
 
@@ -34,6 +34,8 @@
 
 ## 4. 复测（本机 box）
 
+### 4.1 运维自测（交测前）
+
 | 检查 | 结果 |
 | --- | --- |
 | `curl -m 5 http://127.0.0.1:5174/` | **200** |
@@ -41,18 +43,19 @@
 | `curl -m 5 http://127.0.0.1:5174/api/v1/health` | **200**；同上 |
 | 运维结论 | **可测通过**（非「书面不可行」路径） |
 
-复测命令备忘：
+### 4.2 Mo-测试复测（2026-10-28 15:28 / 15:33 Asia/Shanghai）
 
-```bash
-cd /workspace/mo-platform
-# 若改过 nginx.box.conf：
-docker compose -f docker-compose.yml -f docker-compose.box.yml up -d --force-recreate --no-deps web
-curl -sS -m 5 http://127.0.0.1:${WEB_HOST_PORT:-5174}/health
-curl -sS -m 5 http://127.0.0.1:${WEB_HOST_PORT:-5174}/api/v1/health
-```
+- 仓库：`/workspace/mo-platform`；`git fetch`/`pull` 已对齐；**`f929dcb` 为 HEAD 祖先**。  
+- `.env`：`WEB_HOST_PORT=5174`；compose 已起（`:5174`/`:8000` 监听），无需再拉起。
+
+| 检查 | HTTP | body 要点 |
+| --- | --- | --- |
+| `curl -sS -m 5 http://127.0.0.1:5174/` | **200** | HTML 壳 |
+| `curl -sS -m 5 http://127.0.0.1:5174/health` | **200** | `status=ok`；`db.ok=true`；`redis.ok=true` |
+| `curl -sS -m 5 http://127.0.0.1:5174/api/v1/health` | **200** | 同上 |
+| 测试结论 | — | **Q4+-B1 PASS**；跟踪 Q4+-2→**待产品确认**（不代签） |
 
 ## 5. 口径
 
 - **不**宣称 MVP。  
-- vite `:5173` 仍可用于 HMR 开发；compose Web 端口以 `.env` `WEB_HOST_PORT` 为准（示例默认 5173）。  
-- 请 Mo-测试勾 **Q4+-B1**；Motor 收 tip。
+- Mo-测试已勾 **Q4+-B1=PASS**；跟踪 **Q4+-2→待产品确认**；**不代签**；等产品确认。
