@@ -65,12 +65,21 @@ export interface MemsMeta {
   updatedAt: string
 }
 
+/** Q1-6 commandType 最小集（见 docs/drafts/history-契约-q1-6.md） */
+export type HistoryCommandType =
+  | 'geometry.params.set'
+  | 'project.meta.set'
+  | 'noop'
+
 export interface HistoryEntry {
   id: string
   commandType: string
   summary: string
   createdAt: string
+  /** 真实命令必有；正向参数，须可重放 */
   payload?: Record<string, unknown>
+  /** 推荐：撤销所需（inverse of payload）；缺则 FE 用 payload.before 快照 */
+  inverse?: Record<string, unknown>
 }
 
 export interface HistoryListResponse {
@@ -81,6 +90,15 @@ export interface HistoryListResponse {
 export interface HistoryCursorResponse {
   cursor: number
   entry: HistoryEntry
+}
+
+/** .mems 内 history/stack.json 落盘形状 */
+export const HISTORY_STACK_SCHEMA_VERSION = '0.1.0-q1-history' as const
+
+export interface HistoryStackDocument {
+  schemaVersion: typeof HISTORY_STACK_SCHEMA_VERSION | string
+  entries: HistoryEntry[]
+  cursor: number
 }
 
 /** UI 展示用 label（值仍为枚举） */
