@@ -1,0 +1,20 @@
+{
+  "caseId": "rf-pmsm-creator-001",
+  "pending_calibration": false,
+  "metrics": {
+    "torque": 0.1,
+    "copperLoss": 1.18358226
+  },
+  "toleranceRel": 0.05,
+  "toleranceNote": "≤5% 相对 Table 6 额定转矩 0.10 Nm @ 2000 rpm；铜耗相对 3·I²·Rs（I_n=0.21 Arms, Rs=8.9462 Ω Table 8/10）≈1.1836 W。标定报告 docs/qa/reports/标定报告-解析-20261028-Q5-3.md；待交测复现，勿勾 F1",
+  "source": {
+    "arxiv": "2501.15921",
+    "compel": "10.1108/compel-11-2024-0462",
+    "dataset_doi": "10.3217/sns1d-77m43",
+    "tables": [
+      "Table 6",
+      "Table 8",
+      "Table 10"
+    ]
+  }
+}

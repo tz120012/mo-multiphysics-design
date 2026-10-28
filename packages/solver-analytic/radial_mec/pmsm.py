@@ -163,8 +163,16 @@ def solve_radial_pmsm_mec(request: dict[str, Any]) -> dict[str, Any]:
     lq = abs((psi_q1 - psi_q0) / di)
 
     i_rms = i_pk / math.sqrt(2.0)
-    r_ph = _phase_resistance(geo, sigma)
-    copper = 1.5 * i_rms**2 * r_ph
+    # Copper: 3·I_rms²·R_ph (three-phase). Optional measured/override R from
+    # materials.rs_ohm | phase_resistance_ohm (e.g. CREATOR Table 10).
+    mats_in = request.get("materials") or {}
+    r_override = mats_in.get("rs_ohm", mats_in.get("phase_resistance_ohm"))
+    if r_override is not None:
+        r_ph = float(r_override)
+        notes.append(f"phase resistance overridden from materials.rs_ohm={r_ph:g} Ω")
+    else:
+        r_ph = _phase_resistance(geo, sigma)
+    copper = 3.0 * i_rms**2 * r_ph
 
     f_hz = abs(n_rpm) * p / 60.0
     v_tooth, v_yoke = _iron_volume(geo)

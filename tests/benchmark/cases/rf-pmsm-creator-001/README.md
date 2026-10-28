@@ -6,7 +6,7 @@
 | 极 / 槽 | **4 / 6**（非 smoke 的 10p/12s 或 demo 6p/18s） |
 | 标杆来源 | 公开文献 CREATOR：**arXiv [2501.15921](https://arxiv.org/abs/2501.15921)**；COMPEL `10.1108/compel-11-2024-0462`；数据集 DOI `10.3217/sns1d-77m43` |
 | 几何工厂 | `mo_geometry.creator_radial_pmsm_4p6s()` |
-| 校准 / golden | **pending**（几何不写真实 golden、不翻转 `pending_calibration`）；解析接手下步标定 |
+| 校准 / golden | **已标定 ≤5%**（Mo-解析）；golden `tests/benchmark/golden/rf-pmsm-creator-001.json`；`pending_calibration=false`；报告 `docs/qa/reports/标定报告-解析-20261028-Q5-3.md`；**待交测复现，勿勾 F1** |
 | NC 数据 | **未**整包入库 CREATOR NC 二进制；仅公开表标量 |
 
 ## 论文表指针
@@ -51,4 +51,4 @@ turns_per_phase = (slots / phases) * turns_per_slot
 
 - 勿拷贝 `rf-pmsm-smoke-001` 的 10p/12s（或其它）几何当本 case 输入
 - 勿入库 NC 二进制包
-- 勿在本 case 写真实 golden 或宣称 ≤5% / MVP
+- 勿勾 F1 / 勿宣称 MVP（golden 已由 Mo-解析按报告写入；交测前勿再改）

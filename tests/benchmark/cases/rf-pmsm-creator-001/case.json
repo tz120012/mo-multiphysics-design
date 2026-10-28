@@ -3,6 +3,9 @@
   "topology": "radial",
   "machine": "PMSM",
   "source": "arXiv 2501.15921 (CREATOR); COMPEL 10.1108/compel-11-2024-0462; dataset DOI 10.3217/sns1d-77m43; geometry from Table 12 (4 poles / 6 slots); rated pointer Table 6 ~0.10 Nm @ 2000 rpm",
-  "metrics": ["torque", "copperLoss"],
-  "notes": "Q5-3 geometry-side case scaffold. Golden / pending_calibration remain for Mo-解析; NC binary pack NOT vendored. Input mirrors packages/geometry creator_radial_pmsm_4p6s / examples radial_pmsm_creator_4p6s_*."
+  "metrics": [
+    "torque",
+    "copperLoss"
+  ],
+  "notes": "Q5-3 CREATOR rf-pmsm-creator-001：Mo-解析标定相对 Table 6/8/10 ≤5%（见 docs/qa/reports/标定报告-解析-20261028-Q5-3.md）；golden 已写；pending_calibration=false。NC binary pack NOT vendored。待交测复现，勿勾 F1。"
 }

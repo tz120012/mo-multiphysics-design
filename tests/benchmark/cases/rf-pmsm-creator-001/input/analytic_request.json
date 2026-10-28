@@ -10,13 +10,21 @@
     "rotor_od_m": 0.047,
     "stator_id_m": 0.0478,
     "magnet_thickness_m": 0.00435,
-    "turns_per_phase": 656
+    "turns_per_phase": 656,
+    "magnet_arc_ratio": 0.5,
+    "tooth_height_m": 0.02,
+    "stator_yoke_height_m": 0.0116,
+    "rotor_yoke_height_m": 0.01115,
+    "winding_factor": 0.866
   },
   "materials": {
     "steel_id": "M250-35A",
     "magnet_id": "sintered-ferrite-radial",
     "conductor_id": "Cu",
-    "note": "Table 7 paper labels only; not a materials-service golden binding"
+    "note": "Table 7 paper labels only; not a materials-service golden binding",
+    "br_t": 0.4,
+    "mur_pm": 1.05,
+    "rs_ohm": 8.9462
   },
   "operating_point": {
     "speed_rpm": 2000,
@@ -24,9 +32,9 @@
     "gamma_deg": 0
   },
   "meta": {
-    "status": "skeleton_pending_analytic_wiring",
-    "not_golden": true,
-    "pending_calibration": true,
+    "status": "calibrated_mec_q5_3",
+    "not_golden": false,
+    "pending_calibration": false,
     "case_id_hint": "rf-pmsm-creator-001",
     "source": {
       "arxiv": "2501.15921",
@@ -49,6 +57,28 @@
       "E0_Vpeak_at_2000rpm": 47.37
     },
     "nc_binary_vendored": false,
-    "license_note": "CC BY-NC pending user confirmation; do not vendor CREATOR NC binary pack"
+    "license_note": "CC BY-NC pending user confirmation; do not vendor CREATOR NC binary pack",
+    "engineering_assumptions": {
+      "br_t": "0.40 T — sintered ferrite typical remanence (Table 7 names grade only; not from NC pack)",
+      "mur_pm": "1.05 — ferrite recoil relative permeability typical",
+      "magnet_arc_ratio": "0.5 — Table 12 magnet span 45° / pole pitch 90°",
+      "tooth_height_m": "0.020 — Table 12 tooth height equivalent 20 mm",
+      "stator_yoke_height_m": "0.0116 — Table 12 width of back iron 11.6 mm",
+      "rotor_yoke_height_m": "0.01115 m — derived (rotor_od/2 - magnet_thickness - shaft_r)",
+      "winding_factor": "0.866 — 4p/6s concentrated tooth-wound fundamental ≈ √3/2",
+      "rs_ohm": "8.9462 Ω — Table 10 measured; overrides crude MEC fill/end estimate",
+      "mec_topology_note": "Radial SPM series MEC approximates inset/IPM path; not full IPM reluctance network"
+    },
+    "copper_reference": "3·I_rms²·Rs with I_n=0.21 Arms, Rs=8.9462 Ω → ≈1.1836 W (Table 8/10)",
+    "rated_torque_reference": "Table 6 rated torque 0.10 Nm @ 2000 rpm",
+    "calibration": {
+      "report": "docs/qa/reports/标定报告-解析-20261028-Q5-3.md",
+      "torque_nm_mec": 0.10215,
+      "copper_w_mec": 1.18358,
+      "err_torque_rel": 0.0215,
+      "err_copper_rel": 1e-06,
+      "toleranceRel": 0.05,
+      "do_not_check_F1": true
+    }
   }
 }
