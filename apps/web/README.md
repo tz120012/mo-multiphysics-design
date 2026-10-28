@@ -13,7 +13,7 @@ Vue 3 + TypeScript + Vite + Element Plus + Vue Router + Pinia 工程壳（Q1-3�
 
 前端对齐要点：
 
-- `memsSchemaVersion` = **`1.0.0`**（见 `src/api/types.ts` 常量 `MEMS_SCHEMA_VERSION`）
+- `MEMS_SCHEMA_VERSION` = **`1.0.0`**（工程列表展示同一常量）。后端 tip `8d9fc3b` 已钉契约；架构 tip `4b553f5`，`docs/drafts/Q5-5-契约1.0.0钉死.md`。读取仍接受 `1.0.0` 与 `1.0.0-draft`；新建与 mems 写入发出 `1.0.0`。钉 `1.0.0` ≠ MVP，≠ git tag `v1.0.0`。
 - `topology`: `RF` \| `AF`；`machineType`: `BLDC` \| `PMSM` \| `ACIM`
 - `VITE_API_BASE` 默认 `http://localhost:8000/api/v1`；业务调用用 `/auth/login`、`/projects` 等相对路径，**不要**再叠一层 `/api/v1`
 - API 占位：`src/api/auth.ts`、`src/api/projects.ts`（当前 `Promise.reject('not wired')`）；工程列表仍用本地假数据
