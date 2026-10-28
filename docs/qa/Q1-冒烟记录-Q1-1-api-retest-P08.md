@@ -18,3 +18,13 @@
 ## 结论
 
 **工作树复测通过 → Q1-P08 跟踪标「通过」**，注明正式关闭以**后端提交 tip 固化**为准。
+
+
+## 正式 tip 对齐（`4f8810b`）
+
+| 字段 | 内容 |
+| --- | --- |
+| 日期 | 2026-10-28 12:00 Asia/Shanghai |
+| 固化 tip | **`4f8810b`** `fix(api): align Q1 to openapi-v1; default memsSchemaVersion 1.0.0-draft` |
+| 结果 | health / 401 / POST201 + `memsSchemaVersion=1.0.0-draft` 全部 **PASS** |
+| 结论 | **P08 正式关闭**（不再仅依赖工作树） |
