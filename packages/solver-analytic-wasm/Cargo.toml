@@ -2,7 +2,7 @@
 name = "solver-analytic-wasm"
 version = "0.1.0"
 edition = "2021"
-description = "Mo radial analytic solver (Wasm) — SolveRequest/Result JSON aligned with packages/solver-analytic"
+description = "Mo analytic solver (Wasm RF+AF) — SolveRequest/Result JSON aligned with packages/solver-analytic"
 license = "UNLICENSED"
 publish = false
 

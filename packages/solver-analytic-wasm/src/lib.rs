@@ -4,6 +4,7 @@
 //! (`SolveRequest` → `SolveResult`). Export for browsers via wasm-bindgen.
 
 mod acim;
+mod axial_planes;
 mod materials;
 mod pmsm;
 
@@ -56,32 +57,40 @@ fn solve_json_inner(input: &str) -> Result<Value, (&'static str, String)> {
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
-    if topo != "RF" {
-        return Err((
-            "not_implemented",
-            format!("Wasm path is RF-only for Q2; topology={topo:?}"),
-        ));
-    }
-
     let catalog = req.get("materials_catalog");
     let materials = req.get("materials").cloned().unwrap_or(json!({}));
 
-    match mtype {
-        "PMSM" => {
+    match (topo, mtype) {
+        ("RF", "PMSM") => {
             let mat = materials::resolve(&materials, catalog, true, false);
             pmsm::solve_pmsm(&req, &mat, false).map_err(|m| ("solve_error", m))
         }
-        "BLDC" => {
+        ("RF", "BLDC") => {
             let mat = materials::resolve(&materials, catalog, true, false);
             pmsm::solve_pmsm(&req, &mat, true).map_err(|m| ("solve_error", m))
         }
-        "ACIM" => {
+        ("RF", "ACIM") => {
             let mat = materials::resolve(&materials, catalog, false, true);
             acim::solve_acim(&req, &mat).map_err(|m| ("solve_error", m))
         }
-        other => Err((
+        ("AF", "PMSM") => {
+            let mat = materials::resolve(&materials, catalog, true, false);
+            axial_planes::solve_axial_pmsm(&req, &mat).map_err(|m| ("solve_error", m))
+        }
+        ("AF", other) => Err((
+            "not_implemented",
+            format!(
+                "Wasm AF path covers PMSM only; machine_type={other:?}. \
+                 Use sync/Jobs Python axial_planes for other AF types."
+            ),
+        )),
+        (topo, _) if topo != "RF" && topo != "AF" => Err((
+            "not_implemented",
+            format!("Wasm supports topology RF|AF; got {topo:?}"),
+        )),
+        (_, other) => Err((
             "validation_error",
-            format!("unsupported machine_type={other:?}"),
+            format!("unsupported machine_type={other:?} for topology={topo:?}"),
         )),
     }
 }
@@ -161,35 +170,69 @@ fn mock_pmsm(req: &Value) -> Result<Value, (&'static str, String)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+
+    fn fixture(name: &str) -> String {
+        let path = format!("{}/fixtures/{}", env!("CARGO_MANIFEST_DIR"), name);
+        fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"))
+    }
 
     #[test]
     fn pmsm_fixture_finite() {
-        let req = r#"{
-          "schema_version":"0.0.0-gate0","topology":"RF","machine_type":"PMSM",
-          "geometry":{"poles":10,"slots":12,"stack_length_m":0.04,"airgap_m":0.0008,
-            "rotor_od_m":0.06,"stator_id_m":0.0616,"magnet_thickness_m":0.003,"turns_per_phase":48},
-          "materials":{"br_t":1.2},"operating_point":{"speed_rpm":3000,"current_a_peak":25,"gamma_deg":0}
-        }"#;
-        let out: Value = serde_json::from_str(&solve_json(req)).unwrap();
+        let req = fixture("radial_pmsm_request.json");
+        let out: Value = serde_json::from_str(&solve_json(&req)).unwrap();
+        assert!(out.get("error").is_none(), "{out}");
         assert_eq!(out["meta"]["solver"], "mec");
         assert_eq!(out["meta"]["mock"], false);
+        assert_eq!(out["meta"]["wasm"], true);
         assert!(out["torque_nm"].as_f64().unwrap().is_finite());
         assert!(out["torque_nm"].as_f64().unwrap().abs() > 0.0);
+        assert!(out["back_emf_v_peak"].as_f64().unwrap().is_finite());
     }
 
     #[test]
     fn acim_fixture_finite() {
-        let req = r#"{
-          "schema_version":"0.0.0-gate0","topology":"RF","machine_type":"ACIM",
-          "geometry":{"poles":4,"slots":36,"stack_length_m":0.12,"airgap_m":0.0005,
-            "rotor_od_m":0.119,"stator_id_m":0.120,"turns_per_phase":96,"rotor_bars":28,"bar_area_m2":5e-5},
-          "materials":{"sigma_copper":5.8e7,"sigma_bar":3.5e7},
-          "operating_point":{"speed_rpm":1450,"voltage_v_peak":311.0,"freq_hz":50.0}
-        }"#;
-        let out: Value = serde_json::from_str(&solve_json(req)).unwrap();
+        let req = fixture("radial_acim_request.json");
+        let out: Value = serde_json::from_str(&solve_json(&req)).unwrap();
+        assert!(out.get("error").is_none(), "{out}");
         assert_eq!(out["meta"]["solver"], "acim_equiv");
         assert_eq!(out["meta"]["mock"], false);
         assert!(out["losses_w"]["rotor_bar"].as_f64().unwrap().is_finite());
+    }
+
+    #[test]
+    fn af_pmsm_fixture_finite() {
+        let req = fixture("axial_pmsm_request.json");
+        let out: Value = serde_json::from_str(&solve_json(&req)).unwrap();
+        assert!(out.get("error").is_none(), "{out}");
+        assert_eq!(out["meta"]["solver"], "axial_planes");
+        assert_eq!(out["meta"]["wasm"], true);
+        assert_eq!(out["meta"]["mock"], false);
+        assert_eq!(out["meta"]["n_planes"], 4);
+        let t = out["torque_nm"].as_f64().unwrap();
+        let e = out["back_emf_v_peak"].as_f64().unwrap();
+        assert!(t.is_finite() && !t.is_nan(), "torque={t}");
+        assert!(e.is_finite() && !e.is_nan(), "back_emf={e}");
+        assert!(t.abs() > 0.0, "torque should be non-zero for fixture OP");
+        let note = out["meta"]["note"].as_str().unwrap_or("");
+        assert!(
+            note.contains("wasm stub") || note.contains("python golden"),
+            "note should mark wasm stub vs python golden: {note}"
+        );
+    }
+
+    #[test]
+    fn af_non_pmsm_clear_error() {
+        let req = r#"{
+          "schema_version":"0.0.0-gate0","topology":"AF","machine_type":"ACIM",
+          "geometry":{"poles":10,"slots":12,"stack_length_m":0.008,"airgap_m":0.001,
+            "rotor_od_m":0.12,"stator_id_m":0.04},"materials":{},
+          "operating_point":{"speed_rpm":3000,"current_a_peak":20}
+        }"#;
+        let out: Value = serde_json::from_str(&solve_json(req)).unwrap();
+        assert_eq!(out["error"]["code"], "not_implemented");
+        let msg = out["error"]["message"].as_str().unwrap_or("");
+        assert!(msg.contains("PMSM") || msg.contains("sync"), "{msg}");
     }
 
     #[test]
