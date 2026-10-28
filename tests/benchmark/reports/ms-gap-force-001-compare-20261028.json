@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "fem-calibration-compare-v0",
+  "caseId": "ms-gap-force-001",
+  "templateId": "ms_gap_force_3d",
+  "equationMode": "magnetostatic",
+  "pending_calibration": true,
+  "heatProxyCounted": false,
+  "toleranceRel": 0.03,
+  "runMode": "docker:mo-fem",
+  "elmerExit": 0,
+  "postprocess": "maxwell",
+  "textbook": {
+    "source": "非饱和气隙磁拉力（Maxwell 磁压强）: Fz = Bg²·A/(2·μ0); 一维磁路 Bg = Br·hm/(hm + g·μr_pm); 教材/手册通式（如机电能量转换 / 电磁场教材气隙力章）",
+    "Br_T": 1.0,
+    "hm_m": 0.008,
+    "g_m": 0.001,
+    "mu_r_pm": 1.05,
+    "A_m2": 0.0064,
+    "Bg_T": 0.8839779005524862,
+    "Fz_ref_N": 1989.8618690040087,
+    "mu0": 1.2566370614359173e-06
+  },
+  "fem": {
+    "axialForceN": -132.3944655091,
+    "axialForceN_abs": 132.3944655091,
+    "magneticEnergyJ": 5.104730133369,
+    "forceXN": 0.2860349546279,
+    "forceYN": 0.6546044699343,
+    "Bg_fem_body_mean_T": 0.1673755088066
+  },
+  "compare_1d": {
+    "metric": "Fz_abs_vs_textbook_1D",
+    "Fz_ref_N": 1989.8618690040087,
+    "Fz_fem_abs_N": 132.3944655091,
+    "relError": 0.9334654995045623,
+    "within_3pct": false
+  },
+  "compare_single_metric_Bg": {
+    "metric": "Fz_vs_Bg_fem²A/(2μ0)",
+    "Bg_fem_T": 0.1673755088066,
+    "Fz_from_Bg_N": 71.33849365545701,
+    "relError": 0.8558629251204063,
+    "within_3pct": false,
+    "note": "单指标覆盖：用 FEM 气隙 body-mean Bz 代入教材 Maxwell 压强；检验力后处理与 B²A/2μ0 一致性（非独立激励标杆）"
+  },
+  "claimable_fem_le_3pct": false,
+  "claimScope": "仅 verification case ms-gap-force-001 / 本模板；非完整 AF 电机；heat-proxy 不计",
+  "tipAncestorRequired": "797ce67",
+  "notes": "magnetostatic ≠ heat-proxy; do not claim MVP; F2 only after Motor sign-off on report"
+}

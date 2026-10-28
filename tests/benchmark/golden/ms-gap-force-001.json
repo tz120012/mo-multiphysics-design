@@ -1,0 +1,15 @@
+{
+  "caseId": "ms-gap-force-001",
+  "pending_calibration": true,
+  "toleranceRel": 0.03,
+  "toleranceNote": "≤3% 意向；Q5-4 报告实测相对一维教材标杆 ~93%，未关闭；heat-proxy 不计",
+  "metrics": {
+    "axialForceN": {
+      "ref": 1989.8618690040087,
+      "unit": "N",
+      "refKind": "textbook_1d_maxwell_pressure",
+      "note": "Fz=Bg²A/(2μ0), Bg=Br·hm/(hm+g·μr_pm); 非 FEM 自循环。报告结论不可宣称前勿翻转 pending。"
+    }
+  },
+  "heatProxyCounted": false
+}

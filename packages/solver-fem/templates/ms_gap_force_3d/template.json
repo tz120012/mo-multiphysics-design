@@ -1,0 +1,14 @@
+{
+  "templateId": "ms_gap_force_3d",
+  "equationMode": "magnetostatic",
+  "topology": "AF",
+  "machineType": "PMSM",
+  "dim": "3d",
+  "solverKernel": "elmer",
+  "meshProfile": "ms_gap_force_3d_verif",
+  "pending_calibration": true,
+  "magnetostaticPathReady": true,
+  "postprocess": "maxwell",
+  "verification": true,
+  "notes": "Q5-4 verification: iron+PM+airgap+iron; textbook Fz≈Bg²A/(2μ0). NOT heat-proxy. pending_calibration until calibration report closes."
+}

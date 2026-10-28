@@ -1,0 +1,29 @@
+{
+  "id": "ms-gap-force-001",
+  "topology": "axial",
+  "machine": "PMSM",
+  "dim": "3d",
+  "kind": "fem-magnetostatic-verification",
+  "equationMode": "magnetostatic",
+  "templateId": "ms_gap_force_3d",
+  "source": {
+    "type": "textbook_formula",
+    "formula": "Fz = Bg^2 * A / (2 * mu0); Bg = Br * hm / (hm + g * mu_r_pm)",
+    "assumptions": "non-saturated; iron reluctance neglected; fringing neglected; open-domain FEM will deviate",
+    "refs": [
+      "机电能量转换 / 电磁场教材气隙磁拉力通式（Maxwell 磁压强）",
+      "一维磁路：Bg = Br·hm/(hm+g·μr_pm)（μr_pm≈1.05）"
+    ],
+    "params": {
+      "Br_T": 1.0,
+      "hm_m": 0.008,
+      "g_m": 0.001,
+      "mu_r_pm": 1.05,
+      "A_m2": 0.0064,
+      "Bg_T": 0.8839779005524862,
+      "Fz_ref_N": 1989.8618690040087
+    }
+  },
+  "metrics": ["axialForceN"],
+  "notes": "Q5-4 verification；≠ heat-proxy；pending_calibration；见 docs/qa/reports/标定报告-FEM-20261028-Q5-4.md"
+}
