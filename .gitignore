@@ -41,6 +41,7 @@ Thumbs.db
 
 # Wasm / solver artifacts
 *.wasm
+!packages/solver-analytic-wasm/pkg/**/*.wasm
 *.o
 *.a
 *.out
