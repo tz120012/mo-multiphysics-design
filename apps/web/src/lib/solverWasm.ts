@@ -1,40 +1,70 @@
 /**
- * Wasm 解析内核 stub（Q2）。
+ * Wasm 解析内核（Q2）。
  *
- * 未来包：`packages/solver-analytic-wasm`（Rust → wasm32，wasm-pack）。
+ * 包：`packages/solver-analytic-wasm`（Rust → wasm32，wasm-pack --target web）。
+ * 构建：`cd packages/solver-analytic-wasm && ./build.sh` → `pkg/`（仓库可含构建产物；亦可本地 ./build.sh）。
  * 裁决：docs/drafts/Q2-材料与解析边界.md §4。
  *
- * 当前：包尚未到 → isWasmAvailable()=false；tryLoad 失败；solveWithWasm 返回 null。
- * 适配层据此降级到 sync → fixture/mock。
+ * 未构建 / 加载失败 → isWasmAvailable()=false；solveWithWasm 返回 null，适配层降级 sync/fixture。
  */
 import type { SolveRequest, SolveResult } from '@/types/solver'
 
+type WasmModule = {
+  default: (input?: RequestInfo | URL | BufferSource | WebAssembly.Module) => Promise<unknown>
+  solve_json: (input: string) => string
+}
+
 let loadAttempted = false
 let available = false
+let solveJsonFn: ((input: string) => string) | null = null
 
-/** 是否已成功加载 Wasm 模块（Q2 stub 恒为 false） */
+/** 是否已成功加载 Wasm 模块 */
 export function isWasmAvailable(): boolean {
   return available
 }
 
 /**
- * 尝试加载 Wasm glue。包未发布时立即失败并标记不可用。
+ * 尝试加载 Wasm glue（优先加载已提交 pkg/；缺失时可 ./build.sh）。
  * @returns true 若可用
  */
 export async function tryLoadWasm(): Promise<boolean> {
   if (loadAttempted) return available
   loadAttempted = true
-  // TODO: dynamic import('@mo/solver-analytic-wasm') once packages/solver-analytic-wasm ships
-  available = false
-  return false
+  try {
+    // Alias → packages/solver-analytic-wasm/pkg (vite.config.ts); fails soft if pkg missing.
+    const mod = (await import(
+      /* @vite-ignore */
+      '@mo/solver-analytic-wasm/solver_analytic_wasm.js'
+    )) as WasmModule
+    await mod.default()
+    if (typeof mod.solve_json !== 'function') {
+      available = false
+      return false
+    }
+    solveJsonFn = mod.solve_json
+    available = true
+    return true
+  } catch {
+    available = false
+    solveJsonFn = null
+    return false
+  }
 }
 
 /**
- * 用 Wasm 求解。不可用时返回 null（勿 throw，便于降级）。
+ * 用 Wasm 求解。不可用或求解失败时返回 null（勿 throw，便于降级）。
  */
-export async function solveWithWasm(_request: SolveRequest): Promise<SolveResult | null> {
+export async function solveWithWasm(request: SolveRequest): Promise<SolveResult | null> {
   const ok = await tryLoadWasm()
-  if (!ok) return null
-  // Placeholder for future wasm bindgen call with SolveRequest/SolveResult JSON
-  throw new Error('solver-analytic-wasm not wired yet')
+  if (!ok || !solveJsonFn) return null
+  try {
+    const raw = solveJsonFn(JSON.stringify(request))
+    const result = JSON.parse(raw) as SolveResult & { error?: { code?: string; message?: string } }
+    if (result && typeof result === 'object' && 'error' in result && result.error) {
+      return null
+    }
+    return result as SolveResult
+  } catch {
+    return null
+  }
 }
