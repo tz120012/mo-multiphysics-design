@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "0.1.0-q1",
+  "topology": "AF",
+  "machineType": "PMSM",
+  "config": "RFMR",
+  "units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "pmsm": {
+    "innerDiameter": 40.0,
+    "outerDiameter": 120.0,
+    "diskCount": 3,
+    "airgap": 1.0,
+    "diskThickness": 8.0,
+    "magnetSectorAngle": 150.0,
+    "slotCount": 12,
+    "poleCount": 10
+  }
+}

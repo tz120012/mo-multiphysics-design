@@ -7,7 +7,7 @@
 | --- | --- |
 | 几何参数 `schemaVersion` | `0.1.0-q1` |
 | 网格描述 `schemaVersion` | `0.1.0-q1` |
-| 对齐 | `docs/drafts/mems-schema-v0.md`、`docs/drafts/几何范围.md` |
+| 对齐 | `docs/drafts/mems-schema-v1.md`、`docs/drafts/geometry-mems-字段对照.md`、`docs/drafts/几何范围.md` |
 
 ## Q1 vs Q2
 
@@ -52,6 +52,12 @@ from mo_geometry import (
 - `validate_*` → `list[str]` 错误（含可选 `warning:` 前缀软约束）
 - `to_mems_*_fragment` → 可写入 `geometry/params.json` 的稳定 dict
 - `build_*_mesh_descriptor` → 前端可转 Three.js `BufferGeometry` 的图元 JSON
+
+## 样例 JSON（免 Python）
+
+见 [`examples/`](examples/)：径向 PMSM/ACIM、轴向 AF-PMSM 的 `params` + `mesh` 快照，供 Mo-前端先接 Three.js。
+
+字段对照：[`docs/drafts/geometry-mems-字段对照.md`](../../docs/drafts/geometry-mems-字段对照.md)。
 
 ## 前端如何消费 mesh descriptor
 
