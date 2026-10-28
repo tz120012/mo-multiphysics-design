@@ -80,4 +80,8 @@ OpenAPI：`GET /projects/{projectId}/mems/files/{path}` 已去 planned，summary
 
 ---
 
+**产品确认（Mo-产品）**：同意 A1/E1 PASS → Q5-1 **通过**、Q5-5 **通过**。证据 tip **`7cdccbc`** @ **`8d9fc3b`**。**钉 1.0.0 ≠ 宣称 MVP**；禁勾 F1/F2；不开 MVP。
+
+---
+
 *Mo-测试 · 交测抽测 · 隔离仅 `/workspace/mo-platform`。*
