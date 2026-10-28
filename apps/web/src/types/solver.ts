@@ -32,6 +32,9 @@ export interface GeometrySummary {
   bar_area_m2?: number
   winding_factor?: number
   carter_factor?: number
+  /** AF multi-plane count */
+  n_planes?: number
+  disk_thickness_m?: number
 }
 
 export interface Materials {

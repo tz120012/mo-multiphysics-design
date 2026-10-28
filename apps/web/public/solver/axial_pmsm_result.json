@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.0.0-gate0",
+  "meta": {
+    "solver": "axial_planes",
+    "elapsed_ms": 1.183,
+    "mock": false,
+    "n_planes": 4,
+    "note": "AF PMSM axial multi-plane unfold v0 (concentric rings + series MEC per plane, analytic steel \u03bc(B)). Engineering first cut \u2014 not calibrated to \u22645%; pending_calibration for golden benchmarks. Defaults: annulus from rotor_od_m (outer \u00d8) / stator_id_m (inner \u00d8) \u2014 AF stub mapping; disk_thickness_m taken from stack_length_m (AF axial thickness); magnet_arc_ratio defaulted to 0.7; carter_factor defaulted to 1.15; winding_factor defaulted to 0.93; tooth_height_m (axial) estimated as 0.0028 m; stator_yoke_height_m (axial) estimated as 0.003755 m; rotor_yoke_height_m (axial) estimated as 0.00338 m; disk_count defaulted to 1 (single airgap equivalent)",
+    "axial": {
+      "inner_radius_m": 0.03,
+      "outer_radius_m": 0.06,
+      "disk_thickness_m": 0.008,
+      "disk_count": 1,
+      "flux_pole_sum_wb": 0.00029003343312618046,
+      "B_airgap_mean_t": 0.7815492832837129,
+      "B_tooth_mean_t": 1.0941689965971981,
+      "B_stator_yoke_mean_t": 2.574515286111054,
+      "B_rotor_yoke_mean_t": 2.860572540123393,
+      "F_pm_a": 3637.8272706718935,
+      "F_net_a": 3637.8272706718935,
+      "psi_pm_wb": 0.009710319341064522,
+      "converged": true,
+      "max_iterations": 15,
+      "tol": 0.0001,
+      "planes": [
+        {
+          "index": 0,
+          "r_mean_m": 0.03375,
+          "dr_m": 0.0075,
+          "flux_pole_wb": 6.275154936295673e-05,
+          "B_airgap_t": 0.9018441384670715,
+          "converged": true,
+          "iterations": 15
+        },
+        {
+          "index": 1,
+          "r_mean_m": 0.041249999999999995,
+          "dr_m": 0.0075,
+          "flux_pole_wb": 7.180552607988469e-05,
+          "B_airgap_t": 0.844334871784554,
+          "converged": true,
+          "iterations": 10
+        },
+        {
+          "index": 2,
+          "r_mean_m": 0.04875,
+          "dr_m": 0.0075,
+          "flux_pole_wb": 7.655339337587736e-05,
+          "B_airgap_t": 0.7616766416006558,
+          "converged": true,
+          "iterations": 6
+        },
+        {
+          "index": 3,
+          "r_mean_m": 0.056249999999999994,
+          "dr_m": 0.0075,
+          "flux_pole_wb": 7.892296430746168e-05,
+          "B_airgap_t": 0.6805525613983969,
+          "converged": true,
+          "iterations": 11
+        }
+      ]
+    },
+    "materials_sources": {
+      "br_t": "inline",
+      "mur_pm": "meta:demo-N35",
+      "sigma_copper": "meta:Cu",
+      "sigma_bar": "default",
+      "bs_t": "meta",
+      "mur0": "inline/curves/meta"
+    }
+  },
+  "torque_nm": 2.330476641855485,
+  "back_emf_v_peak": 24.404694324719348,
+  "losses_w": {
+    "copper": 19.77204254079618,
+    "iron": 42.24028380430782,
+    "magnet_eddy": 0.04642312638219898
+  },
+  "inductance_h": {
+    "ld": 9.038543433863289e-06,
+    "lq": 1.9705118201208927e-05
+  }
+}

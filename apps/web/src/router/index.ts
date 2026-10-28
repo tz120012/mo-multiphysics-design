@@ -32,6 +32,16 @@ const routes: RouteRecordRaw[] = [
         name: 'analytic',
         component: () => import('@/views/AnalyticView.vue'),
       },
+      {
+        path: 'axial',
+        name: 'axial',
+        component: () => import('@/views/AxialWorkflowView.vue'),
+      },
+      {
+        path: 'field',
+        name: 'field',
+        component: () => import('@/views/FieldVizView.vue'),
+      },
     ],
   },
   {

@@ -1,0 +1,33 @@
+{
+  "jobId": "00000000-0000-4000-8000-000000000001",
+  "status": "succeeded",
+  "solverKernel": "elmer",
+  "topology": "RF",
+  "machineType": "PMSM",
+  "dim": "2d",
+  "scalars": {
+    "torqueNm": 0.0,
+    "dryRun": true,
+    "pending_calibration": true
+  },
+  "artifacts": [
+    {
+      "path": "results/fem/00000000-0000-4000-8000-000000000001/scalars.json",
+      "role": "scalars",
+      "format": "json"
+    },
+    {
+      "path": "results/fem/00000000-0000-4000-8000-000000000001/slice.gltf",
+      "role": "slice",
+      "format": "gltf"
+    },
+    {
+      "path": "results/fem/00000000-0000-4000-8000-000000000001/preview.png",
+      "role": "preview",
+      "format": "png"
+    }
+  ],
+  "createdAt": "2026-10-28T00:00:00Z",
+  "updatedAt": "2026-10-28T00:00:00Z",
+  "notes": "static fixture for Mo-\u524d\u7aef Q3-6 mock"
+}

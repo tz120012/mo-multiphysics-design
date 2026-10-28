@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "fem-scalars-v0",
+  "torqueNm": 0.0,
+  "notes": "fixture dry-run; pending_calibration",
+  "dryRun": true
+}
