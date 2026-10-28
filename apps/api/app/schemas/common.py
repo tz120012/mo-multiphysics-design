@@ -81,7 +81,23 @@ class JobStatus(str, Enum):
     cancelled = "cancelled"
 
 
+class FemJobPayload(BaseModel):
+    """Q3 FEM job payload — aligns packages/solver-fem/api/fem-job-payload.schema.json."""
+
+    topology: str = Field(..., pattern="^(RF|AF)$")
+    machineType: str = Field(..., pattern="^(BLDC|PMSM|ACIM)$")
+    dim: str = Field(..., pattern="^(2d|3d)$")
+    solverKernel: str = Field(..., pattern="^(elmer|getdp)$")
+    meshProfile: str = Field(..., min_length=1)
+    operatingPoint: dict[str, Any]
+    # Materials stay typed as object|array (Q2 materials / .mems) — no reshape.
+    materials: dict[str, Any] | list[Any]
+    projectId: UUID | None = None
+    templateId: str | None = None
+
+
 class JobCreate(BaseModel):
+
     projectId: UUID
     jobType: JobType
     payload: dict[str, Any] | None = None

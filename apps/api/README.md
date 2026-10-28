@@ -186,7 +186,9 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 
 ### Jobs analytic poll (Q2-6 optional Celery)
 
-`jobType=analytic`: set `CELERY_ENABLED=1` **and** run a worker with reachable Redis (`REDIS_URL`) to enqueue (`queued`→`running`→`succeeded`). Otherwise the API **degrades** to an in-process daemon thread with the same status transitions (default; API shape unchanged). Redis down / enqueue error also degrades. `fem` / `optimize` stay `queued` placeholders (Q3/Q4).
+`jobType=analytic`: set `CELERY_ENABLED=1` **and** run a worker with reachable Redis (`REDIS_URL`) to enqueue (`queued`→`running`→`succeeded`). Otherwise the API **degrades** to an in-process daemon thread with the same status transitions (default; API shape unchanged). Redis down / enqueue error also degrades.
+
+`jobType=fem` (Q3): same Celery gate; tasks go to queue **`fem`** (compose `worker-fem`). Payload must satisfy `FemJobPayload` required fields (`topology`, `machineType`, `dim`, `solverKernel`, `meshProfile`, `operatingPoint`, `materials`) — missing → **422**. On success `resultRef` is `solver/fem/jobs/{jobId}/manifest.json` (mems-relative thinned manifest; F1). Stub task does **not** run Elmer. `optimize` stays `queued` placeholder (Q4).
 
 ```bash
 # Need a project id — reuse $PID from mems smoke or create one
@@ -201,6 +203,48 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
   echo "$ST" | python3 -c 'import sys,json; raise SystemExit(0 if json.load(sys.stdin)["status"] in ("succeeded","failed") else 1)' && break
   sleep 0.2
 done
+```
+
+### Jobs fem poll (Q3)
+
+```bash
+# Need $TOKEN and $PID (project id) from above
+FEM_PAYLOAD=$(cat <<JSON
+{"projectId":"$PID","jobType":"fem","payload":{
+  "topology":"RF",
+  "machineType":"PMSM",
+  "dim":"2d",
+  "solverKernel":"elmer",
+  "meshProfile":"rf_pmsm_2d_default",
+  "operatingPoint":{"speedRpm":1500,"torqueNm":1.0},
+  "materials":{"magnet":"NdFeB-N42","steel":"M270-35A"}
+}}
+JSON
+)
+JOB=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "$FEM_PAYLOAD" \
+  "$BASE/jobs")
+echo "$JOB" | python3 -m json.tool
+# 422 if required FemJobPayload fields missing:
+# curl ... -d "{"projectId":"$PID","jobType":"fem","payload":{}}" ...
+
+JID=$(echo "$JOB" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  ST=$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/jobs/$JID")
+  echo "$ST" | python3 -c 'import sys,json; j=json.load(sys.stdin); print(j["status"], j.get("resultRef"))'
+  echo "$ST" | python3 -c 'import sys,json; raise SystemExit(0 if json.load(sys.stdin)["status"] in ("succeeded","failed") else 1)' && break
+  sleep 0.2
+done
+# Expect resultRef like: solver/fem/jobs/<uuid>/manifest.json
+```
+
+Celery FEM worker (queue `fem`, compose profile):
+
+```bash
+# Host: Redis on 6380; API + worker both need CELERY_ENABLED=1
+celery -A app.celery_app worker -Q fem -n fem@%h --loglevel=INFO
+# Or: make up-fem  (ops: mo-worker-fem + fem stub)
 ```
 
 ### Celery worker (optional)

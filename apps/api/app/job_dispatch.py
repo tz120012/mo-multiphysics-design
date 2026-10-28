@@ -1,4 +1,4 @@
-"""Enqueue analytic jobs via Celery when Redis is up; else in-process degrade (Q2-6)."""
+"""Enqueue analytic/FEM jobs via Celery when Redis is up; else in-process degrade (Q2-6 / Q3)."""
 
 from __future__ import annotations
 
@@ -36,6 +36,26 @@ def _in_process_analytic(job_id: UUID, payload: dict[str, Any] | None) -> None:
     threading.Thread(target=_run, name=f"analytic-{job_id}", daemon=True).start()
 
 
+def _in_process_fem(job_id: UUID, payload: dict[str, Any] | None) -> None:
+    """Fake async FEM: same status transitions; stub manifest + mems-relative resultRef."""
+
+    def _run() -> None:
+        try:
+            from app.tasks.fem import _complete_fem_job
+
+            time.sleep(0.02)
+            _complete_fem_job(str(job_id), payload)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("in-process fem failed: %s", exc)
+            job_update(
+                job_id,
+                status="failed",
+                error={"code": "fem_failed", "message": str(exc)},
+            )
+
+    threading.Thread(target=_run, name=f"fem-{job_id}", daemon=True).start()
+
+
 def try_enqueue_analytic(job_id: UUID, payload: dict[str, Any] | None) -> str:
     """
     Attempt Celery enqueue. Returns mode: "celery" | "in_process".
@@ -53,7 +73,30 @@ def try_enqueue_analytic(job_id: UUID, payload: dict[str, Any] | None) -> str:
             run_analytic_job.delay(str(job_id), payload)
             return "celery"
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Celery enqueue failed, degrading to in-process: %s", exc)
+            logger.warning("Celery analytic enqueue failed, degrading to in-process: %s", exc)
 
     _in_process_analytic(job_id, payload)
+    return "in_process"
+
+
+def try_enqueue_fem(job_id: UUID, payload: dict[str, Any] | None) -> str:
+    """
+    Enqueue FEM on Celery queue `fem` (ops worker-fem). Returns "celery" | "in_process".
+
+    Same CELERY_ENABLED + Redis gate as analytic; degrade to daemon thread stub
+    (no Elmer). resultRef contract: solver/fem/jobs/{jobId}/manifest.json
+    """
+    from app.config import get_settings
+
+    settings = get_settings()
+    if settings.celery_enabled and redis_available():
+        try:
+            from app.tasks.fem import run_fem_job
+
+            run_fem_job.delay(str(job_id), payload)
+            return "celery"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Celery fem enqueue failed, degrading to in-process: %s", exc)
+
+    _in_process_fem(job_id, payload)
     return "in_process"
