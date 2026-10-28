@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mo.local/schemas/solver-fem/fem-manifest-v0.json",
+  "title": "Mo FEM job manifest v0 (Q3)",
+  "description": "Written to solver/fem/jobs/{jobId}/manifest.json. Browser consumes thinned artifacts only.",
+  "type": "object",
+  "required": [
+    "jobId",
+    "status",
+    "solverKernel",
+    "topology",
+    "machineType",
+    "dim",
+    "scalars",
+    "artifacts"
+  ],
+  "properties": {
+    "jobId": { "type": "string", "format": "uuid" },
+    "status": {
+      "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+    },
+    "solverKernel": { "enum": ["elmer", "getdp"] },
+    "topology": { "enum": ["RF", "AF"] },
+    "machineType": { "enum": ["BLDC", "PMSM", "ACIM"] },
+    "dim": { "enum": ["2d", "3d"] },
+    "scalars": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Key scalars for list UI / analytic compare"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "role", "format"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path relative to .mems root, e.g. results/fem/{jobId}/surface.glb"
+          },
+          "role": {
+            "enum": ["scalars", "surface", "slice", "preview", "other"]
+          },
+          "format": {
+            "enum": ["json", "gltf", "glb", "png", "webp", "other"]
+          },
+          "bytes": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": true
+}

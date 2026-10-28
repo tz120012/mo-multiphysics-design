@@ -1,8 +1,8 @@
 # FEM 范围草案（Mo-有限元）
 
-> 状态：Gate0 草案，**非**冻结文档。配套 `01-任务书-v2`、`02-阶段任务拆解与门禁`。  
-> 作者：Mo-有限元 · tip 基准 `703fcb72` · 日期 2026-10-28  
-> 约束：仅 `/workspace/mo-platform`；**禁止**系统级安装 Elmer/GetDP/Gmsh（与 Mo-运维容器化后再装）。
+> 状态：Gate0 批注保留；**Q3 范围以架构锁定为准** → [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md)。  
+> 作者：Mo-有限元（原稿）· Mo-架构 Q3 指针更新 · 日期 2026-10-28  
+> 约束：仅 `/workspace/mo-platform`；**禁止**系统级安装 Elmer/GetDP/Gmsh（容器内 only）。
 
 ---
 
@@ -24,7 +24,7 @@
 - [x] 确认主交付落在 **Q3**；Q4 含轴向磁拉力/变形与热闭环协作
 - [x] Gate0 **不**安装 FEM 工具到宿主机；不写业务求解代码
 - [x] 草案落盘 `docs/drafts/FEM范围.md`
-- [x] `packages/solver-fem`：Gate0 不立，Q1 与架构定名后再建（Motor 批注）
+- [x] `packages/solver-fem`：Gate0 不立（Motor 批注）→ **Q3 已授权立包** `packages/solver-fem/`（见 Q3-轴向与FEM边界）
 - [x] 等 G0-6 签字后，再与运维做容器/安装（仍禁止宿主机系统级安装）
 
 ---
@@ -69,14 +69,17 @@
 
 ---
 
-## 5. `.mems` 中 FEM 约定（建议，待架构冻结）
+## 5. `.mems` 中 FEM 约定（**Q3 已锁定**）
+
+权威：[Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) §5；[mems-schema-v1.md](./mems-schema-v1.md)。
 
 ```
-solver/fem/          # 工况定义、网格句柄、结果索引
-results/             # 场量切片、精简云图等二进制缓存
+solver/fem/jobs/{jobId}/manifest.json
+results/fem/{jobId}/   # JSON scalars + glTF/GLB + PNG（浏览器路径）
 ```
 
 回传原则：原始网格/全场默认不进浏览器；只回传切片、等值面、关键标量与索引。
+`packages/solver-fem/` **现已授权**（模板 / schema / thinning；不含 Elmer 二进制）。
 
 ---
 
@@ -99,12 +102,12 @@ results/             # 场量切片、精简云图等二进制缓存
 
 Gate0 checklist **通过**。拍板如下：
 
-1. **`packages/solver-fem` 空目录**：Gate0 **不立**；Q1 与架构定名后再建。  
-2. **Gmsh**：作为 FEM **容器内**标准网格前端（可选开关可后加）；**禁止**宿主机系统级安装。  
-3. **径向 2D 首样顺序**：**PMSM 先行**跑通 → 再 ACIM → 再 BLDC。
+1. **`packages/solver-fem`**：Gate0 **不立** → **Q3 已立**（架构锁定授权）。  
+2. **Gmsh**：作为 FEM **容器内**标准网格前端；**禁止**宿主机系统级安装。  
+3. **径向 2D 首样顺序**：**PMSM 先行** → ACIM → BLDC（不重开）。
 
-后续：等 **G0-6** Motor 签字后开闸；Elmer/GetDP/Gmsh 安装与容器与 **Mo-运维** 在开闸后做。隔离范围不变（仅 `mo-platform`）。
+Q2 已通过并开 Q3（tip `5059b51`）。Elmer/GetDP/Gmsh 与 Celery 工人由 **Mo-运维** 容器化交付；边界细节以 [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) 为准。
 
 ---
 
-*草案结束。批注已入库意图；升格正式 docs 或并入 Q3 开工包由 Motor 决定。*
+*Gate0 草案 + Motor 批注保留；Q3 开工以架构锁定文档为准。*

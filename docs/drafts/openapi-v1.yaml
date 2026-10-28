@@ -3,24 +3,30 @@ info:
   title: Mo Platform API
   version: 1.0.0-draft
   description: |
-    Mo 电机多物理场智能设计平台 — Q1/Q2 API 边界草案（OpenAPI 3.1）。
+    Mo 电机多物理场智能设计平台 — Q1/Q2/Q3 API 边界草案（OpenAPI 3.1）。
 
     **契约口径（前后端对齐）：**
     - Q1：鉴权占位、项目 CRUD、`.mems` 下载/上传/导入/导出、history undo/redo 占位。
     - Materials（**Q2-1 架构锁定**）：list/get（category）+ POST/PUT/DELETE；种子只读；类型化 `curves`；
       `materialsSchemaVersion: "0.1.0-q2"`。详见 docs/drafts/Q2-材料与解析边界.md。
-    - Analytic（**Q2-2 / Q2-6**）双轨：交互主路径 = 客户端 Wasm（Rust→wasm32）；可选 sync
+    - Analytic（**Q2-2 / Q2-6**）双轨：交互主路径 = 客户端 Wasm（Rust→wasm32，**径向**）；可选 sync
       `POST /solver/analytic/solve`；批处理 = Jobs `jobType=analytic`（Celery，不可用时可进程内降级）。
-    - Jobs：POST/GET（`analytic` | `fem` | `optimize`）；交互 UI **不得**阻塞于 Jobs 轮询。
+    - **轴向解析（Q3-1）**：同一 `solve.schema.json`（`topology: AF`，MVP=PMSM）；Python 金标
+      `packages/solver-analytic/axial_planes/`；AF UI 可用 sync **或** Jobs analytic（**不**强制 Wasm AF 硬门禁）。
+    - Jobs：POST/GET（`analytic` | `fem` | `optimize`）；交互 UI **不得**阻塞于 Jobs 长轮询为唯一 UX。
+    - FEM（**Q3 主路径**）：仅 `jobType=fem` 异步；payload 见 `FemJobPayload`；`resultRef` → `.mems`
+      `solver/fem/jobs/{jobId}/manifest.json` + `results/fem/{jobId}/` 精简产物。详见
+      docs/drafts/Q3-轴向与FEM边界.md。
 
     **实现边界：**
-    - **不强制**服务端托管唯一解析内核；Python `packages/solver-analytic` = 金标/CI；Wasm = 交互主路径。
-    - 可选 sync solve 为 Q2 stub（Bot/CI/FE 降级）；Wasm 先到不阻塞 MVP。
-    - FEM 仅经 Jobs（Q3）；无专用 FEM 路由。
+    - **不强制**服务端托管唯一解析内核；Python `packages/solver-analytic` = 金标/CI；径向 Wasm = 交互主路径。
+    - 可选 sync solve 供 Bot/CI/FE 降级与 **AF** 在 Wasm AF 落地前使用。
+    - FEM **禁止**嵌入 `apps/api` 进程；Elmer/GetDP/Gmsh 仅容器（`packages/solver-fem` = 模板/schema，非二进制）。
     - api `version` 保持 `1.0.0-draft`；材料子版本见 Material.`materialsSchemaVersion`。
 
-    配套：`docs/drafts/Q2-材料与解析边界.md`；`docs/drafts/mems-schema-v1.md`；`docs/drafts/history-契约-q1-6.md`；
-    `packages/solver-analytic/api/solve.schema.json`（SolveRequest/SolveResult 真理源）。
+    配套：`docs/drafts/Q3-轴向与FEM边界.md`；`docs/drafts/Q2-材料与解析边界.md`；`docs/drafts/mems-schema-v1.md`；
+    `docs/drafts/history-契约-q1-6.md`；`packages/solver-analytic/api/solve.schema.json`；
+    `packages/solver-fem/api/*.schema.json`。
     真理源：`docs/01-任务书-v2.md`、`docs/02-阶段任务拆解与门禁.md`（本草案不修改二者）。
 
 servers:
@@ -40,9 +46,9 @@ tags:
   - name: Materials
     description: Q2-1 CRUD + 种子只读；typed curves；见 Q2-材料与解析边界.md
   - name: Solver
-    description: 可选同步解析（Q2 stub）；交互主路径仍为客户端 Wasm
+    description: 可选同步解析；径向交互主路径=Wasm；轴向 AF 可用本端直至 Wasm AF
   - name: Jobs
-    description: analytic=Q2-6 可选批处理（Celery/进程内降级）；fem/optimize→Q3/Q4
+    description: analytic=Q2-6 可选批处理；fem=Q3 主路径（Celery FEM worker）；optimize→Q4
 
 paths:
   /health:
@@ -647,13 +653,18 @@ paths:
   /jobs:
     post:
       tags: [Jobs]
-      summary: Enqueue job（analytic=Q2-6 批处理；fem/optimize→Q3/Q4）
+      summary: Enqueue job（analytic 可选；fem=Q3 主路径；optimize→Q4）
       description: |
-        Celery 异步作业入口（Redis 不可用时可进程内假异步，契约形状不变）。
-        - `jobType=analytic`：**可选 Q2-6** 批处理 / Benchmark；**不得**作为 UI 交互主路径。
-          成功后快照写入 `.mems` `solver/analytic/`（mems PUT 或 `resultRef`）。
-        - `fem` / `optimize`：Q3/Q4 占位。
-        交互秒级求解 → Wasm（或可选 sync `/solver/analytic/solve`）。
+        Celery 异步作业入口（analytic：Redis 不可用时可进程内假异步，契约形状不变）。
+        - `jobType=analytic`：**可选**批处理 / Benchmark / **轴向 AF**（Wasm AF 未就绪时）；
+          径向交互主路径仍为 Wasm。成功后快照 → `.mems` `solver/analytic/`。
+        - `jobType=fem`：**Q3 主路径**（非可选）。payload **必须**符合 `FemJobPayload`
+         （topology、machineType、dim、solverKernel、meshProfile、operatingPoint、materials；
+          可选 templateId）。**禁止**在 api 进程内跑 Elmer/GetDP。
+          成功后 `resultRef` → `solver/fem/jobs/{jobId}/manifest.json`；精简产物在
+          `results/fem/{jobId}/`（JSON scalars + glTF/GLB + PNG）。见 Q3-轴向与FEM边界.md。
+        - `optimize`：Q4 占位。
+        交互 FEM：**fire → poll/subscribe → 进度**；不得以阻塞长轮询为唯一 UX。
       operationId: createJob
       security:
         - bearerAuth: []
@@ -662,17 +673,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [projectId, jobType]
-              properties:
-                projectId:
-                  type: string
-                  format: uuid
-                jobType:
-                  $ref: "#/components/schemas/JobType"
-                payload:
-                  type: object
-                  additionalProperties: true
+              $ref: "#/components/schemas/JobCreate"
       responses:
         "202":
           description: Accepted
@@ -685,12 +686,15 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "501":
-          description: Not implemented yet（Gate0 / early Q1）
+          description: Not implemented yet（fem worker 未接线时）
 
   /jobs/{jobId}:
     get:
       tags: [Jobs]
       summary: Poll job status / result（Q2/Q3）
+      description: |
+        返回 Job（含 status、resultRef、error）。FEM 成功时 resultRef 指向 manifest；
+        浏览器再经 Mems GET 拉取 `results/fem/{jobId}/` 精简产物。
       operationId: getJob
       security:
         - bearerAuth: []
@@ -712,6 +716,45 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /jobs/{jobId}/artifacts:
+    get:
+      tags: [Jobs]
+      summary: List job artifacts（optional stub；Q3 MVP 可用 resultRef + mems GET）
+      description: |
+        **Q3 MVP 可不实现**（501）。优先使用 Job.resultRef → manifest.artifacts[] +
+        Mems 包内相对路径。本路由为后续对象存储 / 签名下载预留。
+      operationId: listJobArtifacts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Artifact list（future）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                    format: uuid
+                  artifacts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FemArtifact"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "501":
+          description: Not implemented（Q3 MVP 允许）
 
 components:
   securitySchemes:
@@ -1086,7 +1129,127 @@ components:
     JobType:
       type: string
       enum: [analytic, fem, optimize]
-      description: analytic=Q2-6 可选批处理（非 UI 主路径）；fem≈Q3；optimize≈Q4
+      description: |
+        analytic=可选批处理 / AF 解析（径向 UI 主路径仍为 Wasm）；
+        fem=Q3 主路径（始终异步）；optimize≈Q4
+
+    JobCreate:
+      type: object
+      required: [projectId, jobType]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        jobType:
+          $ref: "#/components/schemas/JobType"
+        payload:
+          description: |
+            jobType=analytic：自由对象或 SolveRequest 子集。
+            jobType=fem：必须符合 FemJobPayload（实现可渐进强制校验）。
+          oneOf:
+            - $ref: "#/components/schemas/FemJobPayload"
+            - type: object
+              additionalProperties: true
+
+    FemJobPayload:
+      type: object
+      description: |
+        Q3 FEM 作业载荷。真理源亦见 packages/solver-fem/api/fem-job-payload.schema.json
+        与 docs/drafts/Q3-轴向与FEM边界.md。
+      required: [topology, machineType, dim, solverKernel, meshProfile, operatingPoint, materials]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+          description: Optional echo of top-level projectId
+        topology:
+          type: string
+          enum: [RF, AF]
+        machineType:
+          type: string
+          enum: [BLDC, PMSM, ACIM]
+        dim:
+          type: string
+          enum: [2d, 3d]
+        solverKernel:
+          type: string
+          enum: [elmer, getdp]
+          description: Q3 建议 Elmer-first；GetDP 可 stub（开放分叉 F2）
+        meshProfile:
+          type: string
+          minLength: 1
+          description: e.g. rf_pmsm_2d_default | af_pmsm_3d_min
+        operatingPoint:
+          type: object
+          additionalProperties: true
+          description: Inline OP or ref object into .mems / project
+        materials:
+          description: Material refs（Q2 materials / .mems materials/）
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: array
+              items:
+                type: object
+                additionalProperties: true
+        templateId:
+          type: string
+          description: Optional id under packages/solver-fem/templates/
+
+    FemArtifact:
+      type: object
+      required: [path, role, format]
+      properties:
+        path:
+          type: string
+          description: Relative to .mems root
+        role:
+          type: string
+          enum: [scalars, surface, slice, preview, other]
+        format:
+          type: string
+          enum: [json, gltf, glb, png, webp, other]
+        bytes:
+          type: integer
+          minimum: 0
+
+    FemManifest:
+      type: object
+      description: |
+        solver/fem/jobs/{jobId}/manifest.json — packages/solver-fem/api/fem-manifest.schema.json
+      required: [jobId, status, solverKernel, topology, machineType, dim, scalars, artifacts]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed, cancelled]
+        solverKernel:
+          type: string
+          enum: [elmer, getdp]
+        topology:
+          type: string
+          enum: [RF, AF]
+        machineType:
+          type: string
+          enum: [BLDC, PMSM, ACIM]
+        dim:
+          type: string
+          enum: [2d, 3d]
+        scalars:
+          type: object
+          additionalProperties: true
+        artifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/FemArtifact"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     Job:
       type: object
@@ -1105,7 +1268,11 @@ components:
           enum: [queued, running, succeeded, failed, cancelled]
         resultRef:
           type: string
-          description: Optional pointer into `.mems` solver/analytic/ or results/ / object store
+          description: |
+            Pointer into `.mems` or future object store.
+            analytic → solver/analytic/…
+            fem（推荐）→ solver/fem/jobs/{jobId}/manifest.json
+              （artifacts 列 results/fem/{jobId}/…）
         error:
           $ref: "#/components/schemas/Error"
         createdAt:

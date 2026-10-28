@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mo.local/schemas/solver-fem/fem-job-payload-v0.json",
+  "title": "Mo FemJobPayload v0 (Q3)",
+  "description": "POST /jobs payload when jobType=fem. Align with docs/drafts/Q3-轴向与FEM边界.md and openapi-v1.yaml.",
+  "type": "object",
+  "required": [
+    "topology",
+    "machineType",
+    "dim",
+    "solverKernel",
+    "meshProfile",
+    "operatingPoint",
+    "materials"
+  ],
+  "properties": {
+    "projectId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional echo of Job.projectId for worker-side checks"
+    },
+    "topology": { "enum": ["RF", "AF"] },
+    "machineType": { "enum": ["BLDC", "PMSM", "ACIM"] },
+    "dim": { "enum": ["2d", "3d"] },
+    "solverKernel": { "enum": ["elmer", "getdp"] },
+    "meshProfile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "e.g. rf_pmsm_2d_default | af_pmsm_3d_min"
+    },
+    "operatingPoint": {
+      "description": "Inline operating point object or { \"$ref\": \"...\" } into .mems / project",
+      "type": "object",
+      "additionalProperties": true
+    },
+    "materials": {
+      "description": "Material refs aligned with Q2 materials API / .mems materials/",
+      "type": ["object", "array"],
+      "additionalProperties": true
+    },
+    "templateId": {
+      "type": "string",
+      "description": "Optional id under packages/solver-fem/templates/"
+    }
+  },
+  "additionalProperties": true
+}

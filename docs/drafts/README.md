@@ -1,4 +1,4 @@
-# docs/drafts — Gate0 / Q1 / Q2 架构草案
+# docs/drafts — Gate0 / Q1 / Q2 / Q3 架构草案
 
 本目录存放 **Mo-架构** 在不改动冻结源的前提下提交的契约与评审草稿。
 
@@ -19,6 +19,8 @@
 | [history-契约-q1-6.md](./history-契约-q1-6.md) | Q1-6 Undo/Redo **最小契约**（客户端权威线性栈 + `history/stack.json`） |
 | [裁决-Q2-材料typed-curves与Motor采纳.md](./裁决-Q2-材料typed-curves与Motor采纳.md) | Motor 采纳 `3c34f1c`；typed curves 目标 + meta 过渡追认 |
 | [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) | **Q2 锁定**：Materials API CRUD + Wasm/analytic 双轨部署边界 |
+| [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) | **Q3 锁定**：轴向解析 + `solver-fem` 授权 + Jobs fem + 结果精简 |
 
 其他范围笔记（几何 / 解析 / FEM / 驱动后处理等）可并存于本目录，**均不替代** 01/02。
 Q2 解析开放项（Rust 偏好）已在 [解析范围.md](./解析范围.md) §6 勾选关闭，细节以 Q2 边界草案为准。
+Q3 FEM / 轴向细节以 [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) 为准；[FEM范围.md](./FEM范围.md) 为有限元侧笔记并已指针升级。

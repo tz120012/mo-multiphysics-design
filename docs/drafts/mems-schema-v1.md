@@ -110,8 +110,8 @@ manifest.json
 
 | 路径 | 职责 |
 | --- | --- |
-| `solver/analytic/` | 解析输入/输出快照（MEC / 多平面 / ACIM 等效电路）；由 **FE Wasm（主）** / 可选 sync API / Jobs analytic worker 写入；契约见 [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) |
-| `solver/fem/` | FEM 工况、网格句柄、结果索引；**不在 Gate0/Q1 实现求解**，仅保留目录与空索引 JSON |
+| `solver/analytic/` | 解析输入/输出快照（MEC / **轴向多平面** / ACIM 等效电路）；径向：**FE Wasm（主）** / sync / Jobs；轴向 AF：sync 或 Jobs（Wasm AF 非 Q3 硬门禁）；契约见 [Q2-材料与解析边界.md](./Q2-材料与解析边界.md)、[Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) |
+| `solver/fem/` | FEM 工况与结果索引；Q3：`jobs/{jobId}/manifest.json`（+ 可选 `cases/`、`index.json`）；包授权 `packages/solver-fem/`；详见 [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) |
 
 ---
 
@@ -120,7 +120,7 @@ manifest.json
 | 路径 | 说明 |
 | --- | --- |
 | `drive/` | 电调与驱动工况定义（方波 / FOC / V/f + 感应 FOC）；Q1 可空 |
-| `results/` | 二进制缓存（场量切片、效率 Map、波形）；大文件；checksum 入 manifest |
+| `results/` | 二进制缓存；Q3 FEM 精简产物固定子树 **`results/fem/{jobId}/`**（JSON scalars + glTF/GLB + PNG；软顶 ~5–20 MB/作业浏览器路径）；另含效率 Map、波形等；checksum 入 manifest |
 | `history/` | Undo/Redo 线性栈摘要：`history/stack.json`（前端命令模式写入；随 PUT mems）；契约见 [history-契约-q1-6.md](./history-契约-q1-6.md) |
 | `manifest.json` | 文件清单与校验和（建议 SHA-256） |
 
@@ -175,7 +175,7 @@ manifest.json
 | --- | --- |
 | **API（Mo-后端）** | 持久化 `.mems` blob + 元数据（Project / MemsMeta）；提供 upload/download/import/export |
 | **Wasm（Rust→wasm32）/ `packages/solver-analytic`（Python 金标）** | 写入 `solver/analytic/` 快照；不直接改 Project 行（经 API 或本地包回写）；Q2 形态见 [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) |
-| **FEM worker（Q3）** | 写入 `solver/fem/` 与 `results/` 索引/切片；经 Jobs 异步回传 |
+| **FEM worker（Q3）** | 经 Jobs `jobType=fem` 异步；写 `solver/fem/jobs/{jobId}/manifest.json` + `results/fem/{jobId}/` 精简产物；模板/schema 在 `packages/solver-fem/`；容器归 Mo-运维 |
 | **前端** | Undo/Redo 写入 `history/`；几何参数变更经命令模式；本地可先改再 PUT 整包 |
 
 ---
