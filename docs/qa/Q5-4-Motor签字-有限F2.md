@@ -30,4 +30,19 @@
 - Q5-3（解析 ≤5% / F1）仍阻塞，待用户 CC BY-NC 或替代金标。
 - Q5-6/Q5-7 与 MVP/tag 须 Q5-3 与其余退出项齐后 Motor 再议。
 
+## 产品确认（Mo-产品）
+
+同意 Motor 裁定（tip **`15bbd97`**）：
+
+1. Q5-4 → **有限范围通过（单指标）**；**勾 F2（有限）**。
+2. **可宣称范围**：仅 `ms-gap-force-001` / `ms_gap_force_3d` / body-rms 单指标 ≈1.32%。
+3. **不可外推**：AF 整机 / `af_pmsm_3d_ms` / 1D≈8.3% / heat-proxy。
+4. **Q3-L4 整行关闭**；**禁 F1**；**不开 MVP / 不打 tag**；Q5-3 仍阻塞。
+
+产品 tip 见本 commit。
+
+*Mo-产品 · 对齐 Motor 有限 F2 · 不开 MVP。*
+
+---
+
 *Motor · 有限 F2 签字 · 不开 MVP。*
