@@ -1,11 +1,12 @@
-.PHONY: help up up-box up-worker up-fem up-fem-box down down-box logs ps restart smoke health health-box build
+.PHONY: help up up-box up-worker up-fem up-fem-box down down-box logs ps restart smoke stress health health-box build
 
 COMPOSE ?= docker compose
 ENV_FILE ?= .env
 COMPOSE_BOX := $(COMPOSE) -f docker-compose.yml -f docker-compose.box.yml
 
 help:
-	@echo "Targets: up up-box up-worker up-fem up-fem-box build down down-box logs ps restart smoke health health-box"
+	@echo "Targets: up up-box up-worker up-fem up-fem-box build down down-box logs ps restart smoke stress health health-box"
+	@echo "  stress     — curl parallel GET /health (scripts/stress-smoke.sh; Q4-10)"
 	@echo "  up         — default 4 services (service DNS postgres/redis)"
 	@echo "  up-box     — Bot/box iptables-stub smoke (host.docker.internal)"
 	@echo "  up-worker  — + Celery worker profile (CELERY_ENABLED=1)"
@@ -63,6 +64,9 @@ restart:
 
 smoke:
 	bash scripts/smoke.sh
+
+stress:
+	bash scripts/stress-smoke.sh
 
 health:
 	@echo "== compose ps =="

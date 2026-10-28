@@ -3,6 +3,8 @@
 **维护：Mo-运维。** 仅 `/workspace/mo-platform`。  
 目标：一次 `make up` 拉起 **web + api + Postgres + Redis**，health / db / redis 变绿。
 
+私有化 / on-prem 路径见草稿：[deploy-private.md](./deploy-private.md)（Q4-10）。
+
 ## 前提
 
 - Docker Compose **v2**
@@ -65,7 +67,7 @@ make health             # curl /health，检查 db.ok / redis.ok
 ## CI / 冒烟
 
 - `.github/workflows/ci.yml` → `scripts/smoke.sh`（占位 exit 0）
-- 本地：`make smoke`
+- 本地：`make smoke`；压测骨架：`make stress`（见 [deploy-private.md](./deploy-private.md)）
 
 ## 故障排查
 

@@ -12,6 +12,8 @@ test -f apps/api/Dockerfile
 test -f apps/web/Dockerfile
 test -f apps/web/nginx.box.conf
 test -f docs/deploy-local.md
+test -f docs/deploy-private.md
+test -f scripts/stress-smoke.sh
 
 echo "[mo-platform] smoke: compose defines postgres/redis/api/web"
 grep -qE '^[[:space:]]*postgres:' docker-compose.yml
