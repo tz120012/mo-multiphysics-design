@@ -2,7 +2,7 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| [`minimal-rf-pmsm.mems`](./minimal-rf-pmsm.mems) | 最小 RF+PMSM 样例包：`memsSchemaVersion=1.0.0-draft`；`geometry/params.json` `schemaVersion=0.1.0-q1`；权威极数 `rotor.poleCount`（正偶数，电气极对数=`poleCount/2` 派生） |
+| [`minimal-rf-pmsm.mems`](./minimal-rf-pmsm.mems) | 最小 RF+PMSM 样例包：`memsSchemaVersion=1.0.0`；`geometry/params.json` `schemaVersion=0.1.0-q1`；权威极数 `rotor.poleCount`（正偶数，电气极对数=`poleCount/2` 派生） |
 
 ## Import 冒烟
 

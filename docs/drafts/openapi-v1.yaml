@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mo Platform API
-  version: 1.0.0-draft
+  version: 1.0.0
   description: |
     Mo 电机多物理场智能设计平台 — Q1/Q2/Q3 API 边界草案（OpenAPI 3.1）。
 
@@ -22,8 +22,8 @@ info:
     - **不强制**服务端托管唯一解析内核；Python `packages/solver-analytic` = 金标/CI；径向 Wasm = 交互主路径。
     - 可选 sync solve 供 Bot/CI/FE 降级与 **AF** 在 Wasm AF 落地前使用。
     - FEM **禁止**嵌入 `apps/api` 进程；Elmer/GetDP/Gmsh 仅容器（`packages/solver-fem` = 模板/schema，非二进制）。
-    - api `version` 暂仍 `1.0.0-draft`（升格 → `1.0.0` 见 `docs/drafts/Q5-5-契约1.0.0钉死.md` checklist）；材料子版本见 Material.`materialsSchemaVersion`（本项不强制 bump）。
-    - **Q5-1**：`GET /projects/{projectId}/mems/files/{path}` 工程包成员只读（边界见 `docs/drafts/Q5-1-mems-files边界.md`）；实现未齐时 path 标 `x-status: planned-q5-1`。
+    - api `version` / `memsSchemaVersion` 钉为 **`1.0.0`**（Q5-5；曾用 `1.0.0-draft`；读侧过渡双接受 draft∪1.0.0，新写只出 1.0.0；见 `docs/drafts/Q5-5-契约1.0.0钉死.md`）。材料子版本见 Material.`materialsSchemaVersion`（本项不 bump）。
+    - **Q5-1**：`GET /projects/{projectId}/mems/files/{path}` 工程包成员只读（边界见 `docs/drafts/Q5-1-mems-files边界.md`）；实现已交付（去掉 planned 标记）。
 
     配套：`docs/drafts/Q3-轴向与FEM边界.md`；`docs/drafts/Q2-材料与解析边界.md`；`docs/drafts/mems-schema-v1.md`；
     `docs/drafts/history-契约-q1-6.md`；`docs/drafts/Q5-1-mems-files边界.md`；`docs/drafts/Q5-5-契约1.0.0钉死.md`；
@@ -288,7 +288,7 @@ paths:
             X-Mems-Schema-Version:
               schema:
                 type: string
-                example: "1.0.0-draft"
+                example: "1.0.0"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -405,7 +405,6 @@ paths:
         artifacts 可选 zip-member 回落保留为内部解析，**不**把本路径叙述成 `/field` 替代。
         边界：`docs/drafts/Q5-1-mems-files边界.md`。
       operationId: getMemsFile
-      x-status: planned-q5-1
       security:
         - bearerAuth: []
       parameters:
@@ -784,9 +783,13 @@ paths:
           径向交互主路径仍为 Wasm。成功后快照 → `.mems` `solver/analytic/`。
         - `jobType=fem`：**Q3 主路径**（非可选）。payload **必须**符合 `FemJobPayload`
          （topology、machineType、dim、solverKernel、meshProfile、operatingPoint、materials；
-          可选 templateId）。**禁止**在 api 进程内跑 Elmer/GetDP。
+          可选 templateId、`equationMode`、`dryRun`）。**禁止**在 api 进程内跑 Elmer/GetDP。
+          **Q5-2**：`equationMode`=`heat_proxy`|`magnetostatic`；缺省 + dryRun=false → heat_proxy 兼容；
+          `templateId=af_pmsm_3d_ms` 暗示 magnetostatic。**heat-proxy ≠ magnetostatic**；
+          stub/未校准路径须 `pending_calibration: true`；不得用 heat-proxy 冒充轴向力/真磁静力学；
+          **禁止**宣称 FEM ≤3%（待 Q5-4 标定）。见 Q4plus-5-磁静力学与轴向真值.md。
           成功后 `resultRef` → `solver/fem/jobs/{jobId}/manifest.json`；精简产物在
-          `results/fem/{jobId}/`（JSON scalars + glTF/GLB + PNG）。见 Q3-轴向与FEM边界.md。
+          `results/fem/{jobId}/`（scalars.json + slice.gltf + preview.png）。见 Q3-large与FEM边界.md。
         - `jobType=drive`：Q4-1…4（BLDC 方波 / PMSM FOC / ACIM V/f+FOC / Map）；见 DriveJobPayload。
         - `optimize`：Q4-9 异步；校验 OptimizeJobPayload；resultRef=`solver/optimize/jobs/{jobId}/manifest.json`；cancel 幂等。
         交互 FEM：**fire → poll/subscribe → 进度**；不得以阻塞长轮询为唯一 UX。
@@ -1035,7 +1038,7 @@ components:
           enum: [ok]
         version:
           type: string
-          example: "1.0.0-draft"
+          example: "1.0.0"
         time:
           type: string
           format: date-time
@@ -1076,7 +1079,7 @@ components:
           enum: [BLDC, PMSM, ACIM]
         memsSchemaVersion:
           type: string
-          example: "1.0.0-draft"
+          example: "1.0.0"
         createdAt:
           type: string
           format: date-time
@@ -1109,7 +1112,7 @@ components:
           format: uuid
         memsSchemaVersion:
           type: string
-          example: "1.0.0-draft"
+          example: "1.0.0"
         sizeBytes:
           type: integer
           minimum: 0
@@ -1390,8 +1393,10 @@ components:
     FemJobPayload:
       type: object
       description: |
-        Q3 FEM 作业载荷。真理源亦见 packages/solver-fem/api/fem-job-payload.schema.json
-        与 docs/drafts/Q3-轴向与FEM边界.md。
+        Q3/Q5-2 FEM 作业载荷。真理源亦见 packages/solver-fem/api/fem-job-payload.schema.json、
+        docs/drafts/Q3-FEM与FEM边界.md（见 Q3-large与FEM边界.md）、docs/drafts/Q4plus-5-磁静力学与轴向真值.md。
+        **heat-proxy ≠ magnetostatic**；未校准路径 `pending_calibration: true`；
+        不得用 heat-proxy 假造 axialForceN；**禁止**宣称 FEM ≤3%（Q5-4）。
       required: [topology, machineType, dim, solverKernel, meshProfile, operatingPoint, materials]
       properties:
         projectId:
@@ -1430,7 +1435,22 @@ components:
                 additionalProperties: true
         templateId:
           type: string
-          description: Optional id under packages/solver-fem/templates/
+          description: |
+            Optional id under packages/solver-fem/templates/.
+            `af_pmsm_3d_ms` implies equationMode=magnetostatic when equationMode omitted.
+        equationMode:
+          type: string
+          enum: [heat_proxy, magnetostatic]
+          description: |
+            Q5-2 方程模式。缺省 + dryRun=false → heat_proxy（Q3 E2E 兼容）；
+            不得默认为 magnetostatic。stub 须回显；magnetostatic 时
+            magnetostaticPathReady=false、力相关标量可为 null。
+            **heat-proxy ≠ magnetostatic**；禁止宣称 FEM ≤3%（待 Q5-4）。
+        dryRun:
+          type: boolean
+          description: |
+            Optional dry-run flag echoed into manifest scalars。Worker 门控仍以
+            MO_FEM_DRY_RUN 为准（!=0 → stub；=0 → packages/solver-fem.run_job）。
 
 
     OptimizeJobPayload:

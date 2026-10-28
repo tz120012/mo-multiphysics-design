@@ -137,12 +137,16 @@ def _meta(project_id: UUID, data: bytes, version: str, updated_at: datetime) -> 
     }
 
 
-def validate_mems_bytes(data: bytes) -> None:
-    """Q1 shell checks for PUT/import. Raises ValueError with a clear message.
+# Q5-5: read/validate accepts both; new writes emit 1.0.0 only (settings default).
+ACCEPTED_MEMS_SCHEMA_VERSIONS = frozenset({"1.0.0", "1.0.0-draft"})
 
-    Rejects non-zip / empty / missing project.json. Does **not** run a full
-    schema engine; optional soft note if geometry/params.json lacks poleCount
-    is left to Q1-2 validators.
+
+def validate_mems_bytes(data: bytes) -> None:
+    """PUT/import checks. Raises ValueError with a clear message.
+
+    Rejects non-zip / empty / missing project.json. If project.json carries
+    memsSchemaVersion, accept `1.0.0` or `1.0.0-draft` (Q5-5 dual-accept);
+    reject other values. Does **not** run a full schema engine.
     """
     if not data:
         raise ValueError("empty .mems body")
@@ -154,6 +158,19 @@ def validate_mems_bytes(data: bytes) -> None:
         names = set(zf.namelist())
         if "project.json" not in names:
             raise ValueError(".mems zip missing required project.json")
+        try:
+            raw = zf.read("project.json")
+            proj = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError, KeyError) as exc:
+            raise ValueError("project.json is not valid JSON") from exc
+        if not isinstance(proj, dict):
+            raise ValueError("project.json must be a JSON object")
+        ver = proj.get("memsSchemaVersion")
+        if ver is not None and str(ver) not in ACCEPTED_MEMS_SCHEMA_VERSIONS:
+            raise ValueError(
+                f"unsupported memsSchemaVersion: {ver!r} "
+                f"(accepted: {sorted(ACCEPTED_MEMS_SCHEMA_VERSIONS)})"
+            )
 
 
 def mems_get_or_build(project_id: UUID, project: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:

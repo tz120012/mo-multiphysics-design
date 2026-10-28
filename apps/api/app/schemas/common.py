@@ -83,7 +83,12 @@ class JobStatus(str, Enum):
 
 
 class FemJobPayload(BaseModel):
-    """Q3 FEM job payload — aligns packages/solver-fem/api/fem-job-payload.schema.json."""
+    """Q3/Q5-2 FEM job payload — aligns packages/solver-fem/api/fem-job-payload.schema.json.
+
+    equationMode: heat_proxy | magnetostatic (Q5-2). Missing + dryRun=false →
+    heat_proxy compat. templateId=af_pmsm_3d_ms implies magnetostatic when omitted.
+    heat-proxy ≠ magnetostatic; never invent axialForceN from heat-proxy.
+    """
 
     topology: str = Field(..., pattern="^(RF|AF)$")
     machineType: str = Field(..., pattern="^(BLDC|PMSM|ACIM)$")
@@ -95,6 +100,15 @@ class FemJobPayload(BaseModel):
     materials: dict[str, Any] | list[Any]
     projectId: UUID | None = None
     templateId: str | None = None
+    equationMode: str | None = Field(
+        default=None,
+        pattern="^(heat_proxy|magnetostatic)$",
+        description="Q5-2: heat_proxy | magnetostatic; omit → heat_proxy compat unless templateId implies magnetostatic",
+    )
+    dryRun: bool | None = Field(
+        default=None,
+        description="Optional dry-run flag; MO_FEM_DRY_RUN env remains the worker gate",
+    )
 
 
 

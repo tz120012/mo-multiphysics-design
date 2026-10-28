@@ -1,4 +1,4 @@
-"""Mo FastAPI application entry (Q1 aligned to openapi-v1 draft)."""
+"""Mo FastAPI application entry (aligned to openapi-v1 / memsSchemaVersion 1.0.0)."""
 
 from contextlib import asynccontextmanager
 
@@ -41,7 +41,7 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description=(
             "Mo motor multi-physics design platform API (Q1/Q2). "
-            "Aligned with docs/drafts/openapi-v1.yaml (1.0.0-draft). "
+            "Aligned with docs/drafts/openapi-v1.yaml (1.0.0; Q5-5 pin). "
             "Auth is Bearer-token placeholder; materials seed (Q2-1); analytic jobs optional Celery (Q2-6); projects CRUD uses Postgres when "
             "DATABASE_URL is reachable, else memory."
         ),

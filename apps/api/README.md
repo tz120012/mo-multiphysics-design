@@ -1,12 +1,12 @@
 # Mo API (`apps/api`)
 
-Q1/Q2 FastAPI shell aligned with `docs/drafts/openapi-v1.yaml` (`1.0.0-draft`).
+Q1/Q2 FastAPI shell aligned with `docs/drafts/openapi-v1.yaml` (`1.0.0`).
 
 - Contract base: **`/api/v1`** (OpenAPI `servers.url`)
 - Health: **`GET /api/v1/health`** (preferred); root **`GET /health`** is a probe alias
 - Auth stubs: `/api/v1/auth/login|logout|me`
 - Projects CRUD (PUT primary; PATCH compat), mems / history / materials / jobs stubs
-- Default `memsSchemaVersion`: **`1.0.0-draft`**
+- Default `memsSchemaVersion`: **`1.0.0`**
 
 ## Requirements
 
@@ -100,7 +100,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   "$BASE/projects/$PID/mems/import"
 
 # 3c) Import repo sample (Q1-2 minimal RF+PMSM; dual-track versions + rotor.poleCount)
-#     docs/samples/minimal-rf-pmsm.mems — memsSchemaVersion=1.0.0-draft,
+#     docs/samples/minimal-rf-pmsm.mems — memsSchemaVersion=1.0.0,
 #     geometry/params.json schemaVersion=0.1.0-q1, rotor.poleCount (positive even)
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -F "file=@../../docs/samples/minimal-rf-pmsm.mems;type=application/zip" \

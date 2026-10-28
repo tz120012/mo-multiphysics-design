@@ -1,4 +1,9 @@
-"""Mems package download / upload / import / export (Q1 shell)."""
+"""Mems package download / upload / import / export + member GET (Q5-1).
+
+Boundary: whole-zip I/O and GET .../mems/files/{path} for arbitrary package
+members (e.g. geometry/params.json after workdir GC). Thinned FEM/optimize
+products stay on Jobs artifacts (L4 / Q4+-3 canonical) — not a /field substitute.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +13,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import Response
 
+from app.artifacts_resolve import media_type_for, normalize_rel_path, read_mems_member
 from app.config import get_settings
 from app.db import db_get_project, is_db_ready
 from app.deps.auth import require_bearer
@@ -132,3 +138,49 @@ def export_mems(
     _: Annotated[str, Depends(require_bearer)],
 ) -> Response:
     return _download_mems(project_id)
+
+
+@router.get(
+    "/{project_id}/mems/files/{member_path:path}",
+    summary="Get one .mems zip member by relative path (Q5-1)",
+    response_class=Response,
+)
+def get_mems_file(
+    project_id: UUID,
+    member_path: str,
+    _: Annotated[str, Depends(require_bearer)],
+) -> Response:
+    """Serve bytes of one zip member from the project's stored `.mems`.
+
+    Path is zip-relative; reject `..`, absolute, or empty (400). Missing
+    project / mems / member → 404. Content-Type inferred from extension;
+    unknown → application/octet-stream.
+
+    Not a replacement for Jobs artifacts thinned FEM/optimize (/field) channel.
+    """
+    project = _require_project(project_id)
+    try:
+        rel = normalize_rel_path(member_path)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "bad_path", "message": str(exc)},
+        ) from exc
+
+    # Ensure a zip exists (minimal build if never uploaded) so default members
+    # like geometry/params.json are readable after project create.
+    mems_get_or_build(project_id, project)
+    data = read_mems_member(project_id, rel)
+    if data is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "mems_member_not_found",
+                "message": f"Member not found in project .mems: {rel}",
+            },
+        )
+    return Response(
+        content=data,
+        media_type=media_type_for(rel),
+        headers={"X-Mo-Mems-Path": rel},
+    )

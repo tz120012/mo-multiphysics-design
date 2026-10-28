@@ -1,8 +1,8 @@
-# `.mems` 工程包边界草案（schema v1 / `1.0.0-draft`）
+# `.mems` 工程包边界（schema v1 / `1.0.0`）
 
 | 项 | 值 |
 | --- | --- |
-| Schema | `1.0.0-draft`（对应 `project.json` 字段 `memsSchemaVersion`） |
+| Schema | `1.0.0`（对应 `project.json` 字段 `memsSchemaVersion`；Q5-5 钉死；曾用 `1.0.0-draft`） |
 | 依据 | `docs/01-任务书-v2.md` §6；`docs/02` Q1-2 |
 | 状态 | **Q1 正式草案口径**；Q1 验收前可修订，破坏性变更走 Gate |
 | 日期 | 2026-10-28 |
@@ -41,7 +41,7 @@ manifest.json
 | --- | --- | --- |
 | `id` | string (UUID) | 工程稳定 ID |
 | `name` | string | 显示名称 |
-| `memsSchemaVersion` | string | Q1 草案固定为 `"1.0.0-draft"`；破坏性变更必须 bump |
+| `memsSchemaVersion` | string | 固定为 `"1.0.0"`（Q5-5）；读侧过渡接受 `1.0.0`∪`1.0.0-draft`；破坏性变更必须 bump |
 | `topology` | enum | `RF` \| `AF` |
 | `machineType` | enum | `BLDC` \| `PMSM` \| `ACIM` |
 | `units` | object | 单位制（长度、角度、磁密等约定） |
@@ -56,7 +56,7 @@ manifest.json
 {
   "id": "11111111-2222-4333-8444-555555555555",
   "name": "demo-rf-pmsm",
-  "memsSchemaVersion": "1.0.0-draft",
+  "memsSchemaVersion": "1.0.0",
   "topology": "RF",
   "machineType": "PMSM",
   "units": {
@@ -128,7 +128,7 @@ manifest.json
 
 ```json
 {
-  "memsSchemaVersion": "1.0.0-draft",
+  "memsSchemaVersion": "1.0.0",
   "generatedAt": "2026-10-28T03:00:00Z",
   "files": [
     {
@@ -185,7 +185,7 @@ manifest.json
 1. 任何删除/重命名必填字段、更改枚举语义、更改容器顶层布局 → **bump `memsSchemaVersion`**。
 2. 须附迁移说明（旧包 → 新包）并经 **Gate 评审**（架构建议 + Motor 确认）。
 3. 仅新增可选字段可为同主版本内的兼容扩展（仍建议次版本号递增并在 OpenAPI/MemsMeta 声明）。
-4. Q1 验收可将 `1.0.0-draft` 钉为 `1.0.0`（去掉 `-draft`）而不改布局，则不视为破坏性变更。
+4. Q5-5 已将 `1.0.0-draft` 钉为 `1.0.0`（去掉 `-draft`）且不改布局 → **兼容升格**（见 `Q5-5-契约1.0.0钉死.md`）。
 
 ---
 
@@ -194,7 +194,7 @@ manifest.json
 见同目录 `openapi-v1.yaml`：
 
 - Q1 对齐：鉴权占位、项目 CRUD、`.mems` 上下载/导入导出、history undo/redo 占位
-- Materials / Jobs / 可选 sync solve：见 **Q2 锁定** [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) 与 `openapi-v1.yaml`（api 版本仍 `1.0.0-draft`）
+- Materials / Jobs / 可选 sync solve：见 **Q2 锁定** [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) 与 `openapi-v1.yaml`（api 版本 **`1.0.0`**；Q5-5）
 
 ---
 

@@ -1,7 +1,8 @@
-"""Jobs enqueue / poll (Q2-6 analytic; Q3 fem; Q4 drive/optimize).
+"""Jobs enqueue / poll (Q2-6 analytic; Q3 fem; Q4 drive/optimize; Q5-2 equationMode).
 
 L4 / Q4+-3: GET artifacts list + single-file = canonical thinned FEM/optimize channel
-(F1 worker disk / resultRef / optional .mems zip member). mems/files deferred (F5=A).
+(F1 worker disk / resultRef / optional .mems zip member). Arbitrary package member
+read is GET .../mems/files/{path} (Q5-1) — separate from this /field channel.
 Optimize: Celery queue `optimize` or in-process daemon — never NSGA on request thread.
 """
 
@@ -255,7 +256,7 @@ def get_job_artifact(
     Resolution: MO_OPT/FEM workdir mems_shadow/{rel} → workdir/{rel} →
     payload-embedded manifest.json → optional project .mems zip member.
     Path traversal (`..`) rejected. Full-field VTU is not the default path.
-    Independent GET .../mems/files/{path} is Q4+-3b (not this gate).
+    Arbitrary package members: GET .../mems/files/{path} (Q5-1) — not this route.
     """
     job = _require_job(job_id)
     try:

@@ -2,7 +2,8 @@
 
 Canonical single-file channel for thinned FEM/optimize products (Q4+-3 / Motor F5=A):
 GET /jobs/{id}/artifacts and .../artifacts/{path}. Whole-zip mems stays package I/O;
-GET .../mems/files/{path} is deferred (Q4+-3b).
+GET .../mems/files/{path} (Q5-1) is a separate arbitrary-member read — not a substitute
+for this thinned /field channel.
 
 Resolve order: MO_OPT/FEM workdir mems_shadow → workdir → payload embed → optional
 project .mems zip member (read_mems_member). Does not serve full-field VTU by default.
@@ -264,9 +265,10 @@ def _as_project_uuid(project_id: UUID | str | None) -> UUID | None:
 
 
 def read_mems_member(project_id: UUID | str | None, rel: str) -> bytes | None:
-    """Optional: read member from stored project `.mems` zip when disk miss.
+    """Read member from stored project `.mems` zip.
 
-    Used by Jobs artifacts GET (Q4+-3); does not add a public mems/files route.
+    Used by Jobs artifacts GET (Q4+-3 zip fallback) and by Q5-1
+    GET .../mems/files/{path} (public member read; not a thinned /field substitute).
     """
     pid = _as_project_uuid(project_id)
     if pid is None:

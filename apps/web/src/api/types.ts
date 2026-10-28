@@ -1,6 +1,6 @@
 /**
- * 手写最小类型，对齐 docs/drafts/openapi-v1.yaml（1.0.0-draft）
- * 与 docs/drafts/mems-schema-v1.md（memsSchemaVersion: 1.0.0-draft）
+ * 手写最小类型，对齐 docs/drafts/openapi-v1.yaml（1.0.0；Q5-5）
+ * 与 docs/drafts/mems-schema-v1.md（memsSchemaVersion: 1.0.0；读侧可过渡接受 1.0.0-draft）
  */
 
 /** 径向 RF / 轴向 AF */
@@ -10,7 +10,7 @@ export type Topology = 'RF' | 'AF'
 export type MachineType = 'BLDC' | 'PMSM' | 'ACIM'
 
 /** 当前 MEMS 包 schema 版本（契约锁定） */
-export const MEMS_SCHEMA_VERSION = '1.0.0-draft' as const
+export const MEMS_SCHEMA_VERSION = '1.0.0' as const
 export type MemsSchemaVersion = typeof MEMS_SCHEMA_VERSION
 
 export interface LoginRequest {

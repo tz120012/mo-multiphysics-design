@@ -1,4 +1,10 @@
-"""FEM job Celery task. Gates on MO_FEM_DRY_RUN; never runs Elmer/GetDP in-process."""
+"""FEM job Celery task. Gates on MO_FEM_DRY_RUN; never runs Elmer/GetDP in-process.
+
+Q5-2: stub/success scalars echo equationMode (heat_proxy | magnetostatic);
+pending_calibration always true until calibrated; magnetostaticPathReady false
+and force scalars null on magnetostatic stub — never invent axialForceN from
+heat-proxy. Real Elmer magnetostatic path owned by packages/solver-fem.
+"""
 
 from __future__ import annotations
 
@@ -13,15 +19,65 @@ from typing import Any, Callable
 from app.celery_app import celery_app
 from app.jobs_store import job_update
 
+# Align with packages/solver-fem/run_job.MAGNETOSTATIC_TEMPLATE_IDS
+_MAGNETOSTATIC_TEMPLATE_IDS = frozenset({"af_pmsm_3d_ms"})
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def resolve_equation_mode(payload: dict[str, Any] | None, *, dry_run: bool) -> str:
+    """Return heat_proxy | magnetostatic (API stub + validation-side helper).
+
+    Missing equationMode + dryRun=false → heat_proxy (Q3 E2E compat).
+    templateId af_pmsm_3d_ms implies magnetostatic when equationMode omitted.
+    """
+    p = payload or {}
+    raw = p.get("equationMode")
+    if raw is not None:
+        mode = str(raw).strip().lower().replace("-", "_")
+        if mode in {"heat_proxy", "heatproxy"}:
+            return "heat_proxy"
+        if mode in {"magnetostatic", "magneto_static", "ms"}:
+            return "magnetostatic"
+        # Invalid values should be rejected at FemJobPayload validation; fail-safe:
+        return "heat_proxy"
+    tid = str(p.get("templateId") or "")
+    if tid in _MAGNETOSTATIC_TEMPLATE_IDS:
+        return "magnetostatic"
+    if dry_run:
+        return "heat_proxy"
+    return "heat_proxy"
+
+
 def build_stub_manifest(job_id: str, payload: dict[str, Any] | None) -> dict[str, Any]:
-    """Minimal shape matching packages/solver-fem/api/fem-manifest.schema.json."""
+    """Minimal shape matching packages/solver-fem/api/fem-manifest.schema.json.
+
+    Q5-2 honesty: echo equationMode; pending_calibration; magnetostatic stub
+    sets magnetostaticPathReady=false and null force scalars (no heat-proxy fake).
+    """
     p = payload or {}
     ts = _now_iso()
+    equation_mode = resolve_equation_mode(p, dry_run=True)
+    scalars: dict[str, Any] = {
+        "dryRun": True,
+        "pending_calibration": True,
+        "equationMode": equation_mode,
+        "notes": (
+            "API stub; Elmer/GetDP run only in FEM worker/container; "
+            "heat-proxy ≠ magnetostatic; pending_calibration — do NOT claim FEM ≤3%"
+        ),
+    }
+    if equation_mode == "magnetostatic":
+        scalars["magnetostaticPathReady"] = False
+        # Force-related: never invent from heat-proxy
+        scalars["axialForceN"] = None
+        scalars["torqueNm"] = None
+    else:
+        # heat_proxy stub compat (Q3): placeholder torque; still pending_calibration
+        scalars["torqueNm"] = 0.0
+        scalars["axialForceN"] = None
     return {
         "jobId": job_id,
         "status": "succeeded",
@@ -29,12 +85,7 @@ def build_stub_manifest(job_id: str, payload: dict[str, Any] | None) -> dict[str
         "topology": p.get("topology", "RF"),
         "machineType": p.get("machineType", "PMSM"),
         "dim": p.get("dim", "2d"),
-        "scalars": {
-            "torqueNm": 0.0,
-            "dryRun": True,
-            "pending_calibration": True,
-            "notes": "API stub; Elmer/GetDP run only in FEM worker/container",
-        },
+        "scalars": scalars,
         "artifacts": [],
         "createdAt": ts,
         "updatedAt": ts,
@@ -108,7 +159,11 @@ def _complete_fem_stub(job_id: str, payload: dict[str, Any] | None) -> dict[str,
 
 
 def _complete_fem_via_run_job(job_id: str, payload: dict[str, Any] | None) -> dict[str, Any]:
-    """MO_FEM_DRY_RUN=0: call solver-fem.run_job; fail the job on errors (no silent stub)."""
+    """MO_FEM_DRY_RUN=0: call solver-fem.run_job; fail the job on errors (no silent stub).
+
+    equationMode is passed through payload; magnetostatic real path not ready
+    raises FemSolveError → job failed (never falls back to heat stub that lies).
+    """
     try:
         run_job = _import_run_job()
         result = run_job(job_id, payload, _work_root(), dry_run=False)
@@ -133,6 +188,7 @@ def _complete_fem_via_run_job(job_id: str, payload: dict[str, Any] | None) -> di
         "run_job": {
             "jobDir": result.get("jobDir"),
             "dryRun": result.get("dryRun"),
+            "equationMode": result.get("equationMode"),
             "resultRef": result.get("resultRef"),
             "manifestPath": result.get("manifestPath"),
             "elmerExit": result.get("elmerExit"),
