@@ -2,7 +2,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 状态 | **Q3 架构锁定草案**（Mo-架构裁决；勿擅自重开除非与 01/02 矛盾） |
+| 状态 | **Q3 架构锁定**（Motor 已采纳 `8d966d9`；F1/F2 已拍板；勿擅自重开除非与 01/02 矛盾） |
 | 日期 | 2026-10-28（Asia/Shanghai） |
 | 作者 | Mo-架构（Mo-架构 worker） |
 | 依据 | `docs/01-任务书-v2.md` §2 / §3 模块二·三 / §6；`docs/02` Q3-1…Q3-7 |
@@ -10,7 +10,7 @@
 | 配套 | [openapi-v1.yaml](./openapi-v1.yaml)、[mems-schema-v1.md](./mems-schema-v1.md)、[解析范围.md](./解析范围.md)、[FEM范围.md](./FEM范围.md)、`packages/solver-analytic/api/solve.schema.json`、`packages/solver-fem/` |
 | 冻结源 | **不修改** `docs/01` / `docs/02` 正文 |
 
-> 本文件锁定：轴向多平面解析契约与部署路径；`packages/solver-fem` 授权与所有权；Jobs `jobType=fem` 必选异步形态；结果精简回传路径与格式；各角色 Q3 验收条。开放分叉见 §8（升级 Motor，不由架构擅自拍板）。
+> 本文件锁定：轴向多平面解析契约与部署路径；`packages/solver-fem` 授权与所有权；Jobs `jobType=fem` 必选异步形态；结果精简回传路径与格式；各角色 Q3 验收条。**F1/F2 见 §8（Motor 已拍板）。**
 
 ---
 
@@ -93,7 +93,7 @@ packages/solver-fem/
 | 径向 2D | **PMSM → ACIM → BLDC** |
 | 轴向 3D | **AF PMSM** 最小可重复作业（Q3-5） |
 
-### 3.3 内核落地建议（分叉见 §8）
+### 3.3 内核落地（与 §8 F2 一致：Elmer-first）
 
 | 内核 | Q3 MVP 建议 |
 | --- | --- |
@@ -244,12 +244,14 @@ solver/fem/index.json                   # 工程级作业索引（可选）
 
 ---
 
-## 8. 开放分叉（升级 Motor，架构不擅自发明答案）
+## 8. Motor 已拍板（F1 / F2 · 2026-10-28 Asia/Shanghai）
 
-| # | 分叉 | 架构建议（非最终拍板） |
+> Motor 采纳 tip `8d966d9` 边界稿，并按架构建议锁定下列分叉。**不再开放。**
+
+| # | 议题 | **Motor 拍板** |
 | --- | --- | --- |
-| F1 | **大 FEM blob**：Q3 MVP 对象存储 vs **仅 mems-zip** | **建议** Q3 MVP：精简产物进 mems + `resultRef`；超软顶的全场留 worker 磁盘；对象存储 + 签名 URL 作 fast-follow |
-| F2 | **GetDP** 是否 Q3 MVP 必验 | **建议** Elmer-first 跑通 Q3-4/5；GetDP 保留枚举与模板 stub，双核同验不阻塞 Q3 签字 |
+| **F1** | 大 FEM blob 存储 | Q3 MVP = **mems-zip + `resultRef`（仅精简件）**；超软顶全场留 **worker 磁盘**；对象存储 + 签名 URL = **fast-follow**，**不挡** Q3 签字 |
+| **F2** | GetDP 是否 Q3 MVP 必验 | **Elmer-first** 跑通 Q3-4/5；GetDP 保留枚举 + 模板 stub；**双核同验不阻塞** Q3 |
 
 ---
 
@@ -264,4 +266,4 @@ solver/fem/index.json                   # 工程级作业索引（可选）
 
 ---
 
-*草案结束。升格或改内核/格式钉选须 Motor 确认；01/02 正文勿改。*
+*锁定结束。F1/F2 已由 Motor 拍板（§8）；其余升格或改内核/格式钉选仍须 Motor 确认；01/02 正文勿改。*
