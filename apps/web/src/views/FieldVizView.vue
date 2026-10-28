@@ -1,9 +1,9 @@
 <template>
-  <div class="field-viz">
+  <div class="field-viz" :data-field-source="loading ? 'loading' : dataSource">
     <aside class="field-side">
       <h2 class="side-title">场量 · 精简可视化</h2>
       <p class="side-desc">
-        Q3-6 · F1 §5 · source={{ loading ? '…' : dataSource }} · {{ artifactBase }}
+        Q3-6 · F1 §5 · <span data-field-source-label>source={{ loading ? '…' : dataSource }}</span> · {{ artifactBase }}
       </p>
 
       <dl v-if="queryJobId || queryResultRef || job" class="meta-list job-meta">
@@ -85,7 +85,7 @@
       </div>
 
       <p class="hint">
-        仅消费精简 JSON / glTF / PNG（docs/drafts/Q3-轴向与FEM边界.md §5）。禁止默认 VTK/全场。
+        仅消费精简 JSON / glTF / PNG（docs/drafts/Q3-轴向与FEM边界.md §5）。禁止默认 VTK/全场。不宣称误差达标，不宣称 MVP。
       </p>
     </aside>
 
@@ -139,12 +139,32 @@ const queryResultRef = computed(() =>
 const queryProjectId = computed(() =>
   typeof route.query.projectId === 'string' ? route.query.projectId.trim() : '',
 )
+/** 显式 `?source=fixture`：联调/演示强制 public fixture，跳过 artifacts list/get。 */
+const forceFixture = computed(() => {
+  const raw = route.query.source
+  const text = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  return (text || '').trim().toLowerCase() === 'fixture'
+})
 
+/**
+ * `/field` 数据源（Q4+-3 L2，docs/drafts/Q4+-3-mems单文件与artifacts收口.md §2）。
+ *
+ * 1. `?source=fixture`（大小写不敏感）：强制 public fixture，不请求 Jobs artifacts。
+ *    无 jobId → `fixture`；有 jobId → `job-fixture`。
+ * 2. 无 jobId：`fixture`（`FEM_MANIFEST_FIXTURE_BASE`）。
+ * 3. 有 jobId：`GET /api/v1/jobs/{id}/artifacts`，再 GET `.../artifacts/{path}`
+ *    （manifest / scalars / slice|surface / preview）。
+ *    列表非空，或上述关键 GET 成功 → `job-artifacts`（页眉 `source=` 可见）。
+ * 4. `job-fixture` 仅当列表失败或为空，且 manifest 与 scalars/slice/preview 均 404 或不可达。
+ *    列表非空时，单文件失败仍保持 `job-artifacts`，不改吃 fixture。
+ * 5. 不走 mems 整包，也不调用 mems/files（Q4+-3b / F5-A）。
+ *    状态注记只写「不宣称误差达标」；不宣称 MVP，不写精度达标。
+ */
 type FieldDataSource = 'fixture' | 'job-fixture' | 'job-artifacts'
 
 const job = ref<Job | null>(null)
 const jobError = ref<string | null>(null)
-/** fixture：无 jobId。job-fixture：有 job 但列表空/404/拉取失败。job-artifacts：F1 精简件。 */
+/** fixture：无 jobId。job-fixture：有 jobId 但未吃到精简件。job-artifacts：Jobs artifacts。 */
 const dataSource = ref<FieldDataSource>('fixture')
 const artifactBase = ref<string>(FEM_MANIFEST_FIXTURE_BASE)
 const degradeReason = ref<string | null>(null)
@@ -172,18 +192,19 @@ const displayResultRef = computed(
 )
 
 const loadingHint = computed(() =>
-  queryJobId.value ? '正在读取任务与精简产物…' : '正在加载 dry-run fixture…',
+  forceFixture.value || !queryJobId.value ? '正在加载 dry-run fixture…' : '正在读取任务与精简产物…',
 )
 
 const sourceHint = computed(() => {
   if (dataSource.value === 'job-artifacts') {
-    return '来源 job-artifacts：已按 manifest 拉取 scalars / slice / preview 精简件。不宣称误差达标。'
+    return '来源 job-artifacts：已请求 GET /jobs/{id}/artifacts 及单文件精简件。不宣称误差达标。'
   }
   if (dataSource.value === 'job-fixture') {
     const why = degradeReason.value ? `（${degradeReason.value}）` : ''
     return `已降级 public fixture${why}。当前场数据不是该 job 的精简产物。不宣称误差达标。`
   }
-  return 'dry-run：未带 jobId，使用 public fixture。不宣称误差达标。'
+  const why = forceFixture.value ? '（显式 ?source=fixture）' : ''
+  return `dry-run：未带 jobId，使用 public fixture${why}。不宣称误差达标。`
 })
 
 let renderer: THREE.WebGLRenderer | null = null
@@ -342,19 +363,25 @@ function pickMeshArtifact(arts: FemArtifact[]): FemArtifact | undefined {
   return pickArtifact(arts, 'slice', MESH_FORMATS) ?? pickArtifact(arts, 'surface', MESH_FORMATS)
 }
 
-function pickManifestPath(listed: JobArtifactsList, jobId: string): string {
-  const candidates = [
-    listed.resultRef,
+/** resultRef → 默认 manifest。列表为空时按序尝试，直到关键 GET 成功或全部 404/不可达。 */
+function manifestPathCandidates(listed: JobArtifactsList | null, jobId: string): string[] {
+  const raw = [
+    listed?.resultRef,
     job.value?.resultRef,
     queryResultRef.value,
     `solver/fem/jobs/${jobId}/manifest.json`,
   ]
-  for (const candidate of candidates) {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const candidate of raw) {
     const text = (candidate || '').trim().replace(/\\/g, '/').replace(/^\/+/, '')
     if (!text || text.split('/').includes('..')) continue
-    return text
+    if (seen.has(text)) continue
+    seen.add(text)
+    out.push(text)
   }
-  return `solver/fem/jobs/${jobId}/manifest.json`
+  if (out.length === 0) out.push(`solver/fem/jobs/${jobId}/manifest.json`)
+  return out
 }
 
 function asScalars(value: unknown): FemScalarsArtifact | null {
@@ -555,7 +582,7 @@ async function loadGltfBytes(data: ArrayBuffer, signal: AbortSignal) {
 
 /**
  * public fixture：manifest → scalars / slice|surface / preview。
- * 无 jobId，或 job 产物 404 / 空列表 / 拉取失败时走这里。
+ * 仅无 jobId、显式 ?source=fixture，或列表空/失败且关键 GET 404/不可达时进入。
  */
 async function loadFromBase(base: string, source: 'fixture' | 'job-fixture', signal: AbortSignal) {
   throwIfAborted(signal)
@@ -607,46 +634,70 @@ function listFailReason(e: unknown): string {
     }
     return `产物列表 404：${msg}`
   }
+  if (axios.isAxiosError(e) && !e.response) return '产物列表不可达'
   return `产物列表失败：${errorMessage(e)}`
 }
 
+/** 列表空/失败时，须关键 GET 也 404 或不可达才允许降级 fixture。 */
+function emptyDegradeReason(listError: unknown, manifestError: unknown): string {
+  const listPart = listError ? listFailReason(listError) : '产物列表为空'
+  if (!manifestError) return `${listPart}，且关键 GET 未取到`
+  if (axios.isAxiosError(manifestError) && !manifestError.response) {
+    return `${listPart}，且 manifest GET 不可达`
+  }
+  if (axios.isAxiosError(manifestError) && manifestError.response?.status === 404) {
+    return `${listPart}，且 manifest GET 404`
+  }
+  return `${listPart}，且 manifest GET 失败：${errorMessage(manifestError)}`
+}
+
 /**
- * F1：list → manifest（resultRef）→ scalars / slice|surface / preview。
- * 列表 404、空列表，或 manifest 与三件套都拿不到时返回 false，由调用方降级 fixture。
+ * F1 / Q4+-3：list → manifest（resultRef 或默认路径）→ scalars / slice|surface / preview。
+ * 返回 false 仅当列表失败或为空，且关键 GET 均 404/不可达。
+ * 列表非空时即使单文件失败也保持 job-artifacts。
  */
 async function tryLoadJobArtifacts(jobId: string, signal: AbortSignal): Promise<boolean> {
-  let listed: JobArtifactsList
+  let listed: JobArtifactsList | null = null
+  let listError: unknown = null
   try {
     listed = await listJobArtifacts(jobId, signal)
   } catch (e) {
     if (isAbortError(e, signal)) throw e
-    degradeReason.value = listFailReason(e)
-    return false
+    listError = e
   }
   if (!stillCurrent(signal)) return false
 
-  if (listed.resultRef && job.value && !job.value.resultRef) {
+  if (listed?.resultRef && job.value && !job.value.resultRef) {
     job.value = { ...job.value, resultRef: listed.resultRef }
   }
 
-  const listedArts = coerceArtifacts(Array.isArray(listed.artifacts) ? listed.artifacts : [])
-  if (listedArts.length === 0) {
-    degradeReason.value = '产物列表为空'
-    return false
-  }
+  const listedArts = listed
+    ? coerceArtifacts(Array.isArray(listed.artifacts) ? listed.artifacts : [])
+    : []
 
+  const candidates = manifestPathCandidates(listed, jobId)
+  const toTry = listedArts.length > 0 ? candidates.slice(0, 1) : candidates
   let manifestObj: FemManifest | null = null
-  try {
-    const raw = await getJobArtifact(jobId, pickManifestPath(listed, jobId), signal)
-    if (!stillCurrent(signal)) return false
-    manifestObj = coerceManifest(raw)
-  } catch (e) {
-    if (isAbortError(e, signal)) throw e
-    manifestObj = null
+  let manifestError: unknown = null
+  for (const path of toTry) {
+    try {
+      const raw = await getJobArtifact(jobId, path, signal)
+      if (!stillCurrent(signal)) return false
+      const parsed = coerceManifest(raw)
+      if (parsed) {
+        manifestObj = parsed
+        manifestError = null
+        break
+      }
+      manifestError = new Error('manifest 形状无效')
+    } catch (e) {
+      if (isAbortError(e, signal)) throw e
+      manifestError = e
+    }
   }
   if (!stillCurrent(signal)) return false
 
-  if (manifestObj && manifestObj.artifacts.length === 0) {
+  if (manifestObj && manifestObj.artifacts.length === 0 && listedArts.length > 0) {
     manifestObj = { ...manifestObj, artifacts: listedArts }
   }
   const arts = manifestObj && manifestObj.artifacts.length > 0 ? manifestObj.artifacts : listedArts
@@ -670,8 +721,9 @@ async function tryLoadJobArtifacts(jobId: string, signal: AbortSignal): Promise<
   const scalarsBody = asScalars(scalarsRes)
   const previewBlob = previewRes instanceof Blob && previewRes.size > 0 ? previewRes : null
   const meshBlob = meshRes instanceof Blob && meshRes.size > 0 ? meshRes : null
-  if (!manifestObj && !scalarsBody && !previewBlob && !meshBlob) {
-    degradeReason.value = 'manifest、scalars、slice、preview 均未取到'
+  const gotKey = Boolean(manifestObj || scalarsBody || previewBlob || meshBlob)
+  if (listedArts.length === 0 && !gotKey) {
+    degradeReason.value = emptyDegradeReason(listError, manifestError)
     return false
   }
 
@@ -683,10 +735,15 @@ async function tryLoadJobArtifacts(jobId: string, signal: AbortSignal): Promise<
   artifactRows.value = arts
   scalarsArtifact.value = scalarsBody
 
-  const problems: string[] = []
-  if (scalarsArt && !scalarsBody) problems.push('scalars.json')
-  if (previewArt && !previewBlob) problems.push('preview')
-  if (problems.length) loadError.value = `部分产物未取到：${problems.join('、')}`
+  if (!gotKey) {
+    loadError.value =
+      '产物列表非空，但 manifest、scalars、slice、preview 均未取到。保持 source=job-artifacts，未降级 fixture。'
+  } else {
+    const problems: string[] = []
+    if (scalarsArt && !scalarsBody) problems.push('scalars.json')
+    if (previewArt && !previewBlob) problems.push('preview')
+    if (problems.length) loadError.value = `部分产物未取到：${problems.join('、')}`
+  }
 
   if (previewBlob && previewArt) {
     const mime = previewArt.format === 'webp' ? 'image/webp' : 'image/png'
@@ -729,58 +786,65 @@ async function resolveJobThenLoad() {
 
   const id = queryJobId.value
   try {
-    if (!id) {
+    if (forceFixture.value || !id) {
+      if (forceFixture.value && id) degradeReason.value = '显式 ?source=fixture'
       await loadFixtureDegraded(signal)
       return
     }
 
     artifactBase.value = '…'
-    let j = await getJob(id, signal)
-    throwIfAborted(signal)
-    job.value = j
-    if (!isJobTerminal(j.status)) {
-      try {
-        j = await pollJob(id, {
-          intervalMs: 1200,
-          timeoutMs: 60_000,
-          signal,
-          onUpdate: (u) => {
-            if (stillCurrent(signal)) job.value = u
-          },
-        })
-        if (stillCurrent(signal)) job.value = j
-      } catch (e) {
-        if (isAbortError(e, signal)) return
-        if (e instanceof JobPollTimeoutError) {
-          if (e.job && stillCurrent(signal)) job.value = e.job
-          jobError.value = `轮询超时（最后状态 ${e.job?.status ?? job.value?.status ?? 'unknown'}）`
-        } else {
-          jobError.value = `轮询失败：${errorMessage(e)}`
+    try {
+      let j = await getJob(id, signal)
+      throwIfAborted(signal)
+      job.value = j
+      if (!isJobTerminal(j.status)) {
+        try {
+          j = await pollJob(id, {
+            intervalMs: 1200,
+            timeoutMs: 60_000,
+            signal,
+            onUpdate: (u) => {
+              if (stillCurrent(signal)) job.value = u
+            },
+          })
+          if (stillCurrent(signal)) job.value = j
+        } catch (e) {
+          if (isAbortError(e, signal)) return
+          if (e instanceof JobPollTimeoutError) {
+            if (e.job && stillCurrent(signal)) job.value = e.job
+            jobError.value = `轮询超时（最后状态 ${e.job?.status ?? job.value?.status ?? 'unknown'}）`
+          } else {
+            jobError.value = `轮询失败：${errorMessage(e)}`
+          }
         }
       }
-    }
-
-    if (!stillCurrent(signal)) return
-
-    if (job.value?.status === 'succeeded') {
-      const ok = await tryLoadJobArtifacts(id, signal)
+    } catch (e) {
+      if (isAbortError(e, signal)) return
       if (!stillCurrent(signal)) return
-      if (ok) return
-    } else {
-      const status = job.value?.status ?? 'unknown'
-      if (job.value?.error?.message) {
-        jobError.value = jobError.value || job.value.error.message
-      }
-      degradeReason.value = degradeReason.value || `任务状态为 ${status}，未使用精简产物`
+      jobError.value = `读取任务失败：${errorMessage(e)}`
     }
 
     if (!stillCurrent(signal)) return
+
+    const ok = await tryLoadJobArtifacts(id, signal)
+    if (!stillCurrent(signal)) return
+    if (ok) return
+
+    const bits: string[] = []
+    if (degradeReason.value) bits.push(degradeReason.value)
+    if (job.value && job.value.status !== 'succeeded') {
+      if (job.value.error?.message) jobError.value = jobError.value || job.value.error.message
+      bits.push(`任务状态 ${job.value.status}`)
+    } else if (!job.value && jobError.value) {
+      bits.push('任务元数据不可达')
+    }
+    degradeReason.value = bits.join('；') || '精简产物不可达'
     await loadFixtureDegraded(signal)
   } catch (e) {
     if (isAbortError(e, signal)) return
     if (!stillCurrent(signal)) return
-    jobError.value = `读取任务失败：${errorMessage(e)}`
-    degradeReason.value = degradeReason.value || '读取任务失败'
+    jobError.value = jobError.value || `读取任务失败：${errorMessage(e)}`
+    degradeReason.value = degradeReason.value || '精简产物不可达'
     try {
       await loadFixtureDegraded(signal)
     } catch (e2) {
@@ -792,7 +856,7 @@ async function resolveJobThenLoad() {
   }
 }
 
-watch([queryJobId, queryResultRef], () => {
+watch([queryJobId, queryResultRef, forceFixture], () => {
   void resolveJobThenLoad()
 })
 

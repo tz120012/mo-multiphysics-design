@@ -74,6 +74,20 @@ pnpm preview
 | `src/types/mesh.ts` | mesh descriptor 类型（0.1.0-q1） |
 | `public/mesh/` | 自 `packages/geometry/examples` 复制的权威 fixture |
 
+## `/field` 数据源（Q4+-3）
+
+页眉可见 `source=`。规则在 `src/views/FieldVizView.vue` 注释，对齐 `docs/drafts/Q4+-3-mems单文件与artifacts收口.md` §2。说明见 `docs/qa/Q4plus-FE-field-source.md`。
+
+| 条件 | UI source | 数据 |
+| --- | --- | --- |
+| 无 `jobId` | `fixture` | public `/fem/rf_pmsm_2d_dryrun` |
+| `?source=fixture` 且无 `jobId` | `fixture` | 同上，不请求 artifacts |
+| `?jobId=` 且 `?source=fixture` | `job-fixture` | 同上（强制 fixture） |
+| `?jobId=` 且 artifacts 列表非空，或 manifest/scalars/slice/preview GET 成功 | `job-artifacts` | `GET /api/v1/jobs/{id}/artifacts` 与 `.../artifacts/{path}` |
+| `?jobId=` 且列表空或失败，同时关键 GET 404/不可达 | `job-fixture` | 降级 public fixture |
+
+不使用 mems 整包或 `mems/files`。状态注记只写「不宣称误差达标」，不宣称 MVP。
+
 ## 已知限制
 
 - 鉴权接真 API（`POST /auth/login`）；token 存 `accessToken`
