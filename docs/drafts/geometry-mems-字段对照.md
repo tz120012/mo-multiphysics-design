@@ -2,7 +2,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 状态 | **草案** |
+| 状态 | **草案**（极数 / 双轨版本 **已裁决**；其余项仍草案） |
 | 对齐 | `docs/drafts/mems-schema-v1.md`（`1.0.0-draft`）；实现 `packages/geometry`（`GEOMETRY_SCHEMA_VERSION = 0.1.0-q1`） |
 | 范围 | 仅 `geometry/params.json` 与 `project.json` 拓扑/机型镜像；**无 CAD / STEP / DXF** |
 | 日期 | 2026-10-28 |
@@ -57,7 +57,7 @@
 | 斜槽角 | `stator.skewAngle` | number \| `null` | 可选 |
 | 转子内外径 | `rotor.innerDiameter` / `outerDiameter` | number | |
 | 磁钢拓扑 | `rotor.magnetTopology` | `SPM`\|`IPM` | 表贴/内置占位；ACIM 仍保留兼容 |
-| 极数 | `rotor.poleCount` | int | mems「极对数」相关：当前存**极数**；极对数 = poleCount/2（调用方换算） |
+| 极数 | `rotor.poleCount` | int（正偶数） | **规范字段极数**；极对数 = `poleCount/2`（派生，勿双写） |
 | 气隙 / 轴向有效长 | `airgap` / `axialActiveLength` | number | |
 | 单位 | `units` | object | |
 | **ACIM 导条** | `acim` | object；`machineType=ACIM` **必填** | 见下表 |
@@ -87,7 +87,7 @@
 | 盘数 | `pmsm.diskCount` | int | |
 | 气隙 / 盘厚 | `pmsm.airgap` / `diskThickness` | number | mems「轴向厚度」→ `diskThickness` |
 | 磁钢扇区角 | `pmsm.magnetSectorAngle` | number (0,180] deg | 绕组/磁钢分区占位之一 |
-| 槽 / 极 | `pmsm.slotCount` / `poleCount` | int | |
+| 槽 / 极 | `pmsm.slotCount` / `poleCount` | int；`poleCount` 正偶数 | 极对数 = `poleCount/2`（派生） |
 | 单位 | `units` | object | |
 
 ---
@@ -131,10 +131,15 @@
 
 ---
 
-## 7. 已知待对齐（非阻塞）
+## 7. 架构裁决 / 已知待对齐
 
-1. mems 文案「极对数」vs 实现 `poleCount`（极数）— 建议架构在字段级 JSON Schema 中二选一钉死。  
-2. `geometry.schemaVersion`（`0.1.0-q1`）与 `memsSchemaVersion`（`1.0.0-draft`）双轨 — 样例包生成时两处都写。  
+### 架构裁决（2026-10-28 · Mo-架构）
+
+1. **极数 `poleCount`**：几何 JSON 规范字段为 `poleCount`（极数，正偶数）；电气极对数 = `poleCount / 2`（派生，勿在 geometry/params 双写冲突源）。RF `rotor.poleCount`、AF `pmsm.poleCount` 同规则。ACIM `acim.cagePolePairs` 可保持笼型文献**极对数**（Q1 不改名；并存时 soft-check `cagePolePairs == rotor.poleCount/2`）。详见 [裁决-geometry-mems-poleCount.md](./裁决-geometry-mems-poleCount.md)。
+2. **双轨版本 KEEP**：`memsSchemaVersion`（整包）与 `geometry/params.json` 的 `schemaVersion`（几何子 schema，当前 `0.1.0-q1`）并行；本文为本对照权威，直至 Q1-2 JSON Schema 落地。**勿**把完整字段表并入 `mems-schema-v1`。
+
+### 仍待对齐（非阻塞）
+
 3. 轴向「绕组分区」除 `magnetSectorAngle` 外的绕组字段 — Q1 未建，后续扩展为可选。
 
 ---

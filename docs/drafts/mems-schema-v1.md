@@ -80,18 +80,19 @@ manifest.json
 ### 径向 RF
 
 - 转子型式：`inner` \| `outer`
-- 定/转子槽极：槽数、极对数、槽形（直/斜/扇形）
+- 定/转子槽极：槽数、**极数** `poleCount`（正偶数；电气**极对数** = `poleCount / 2`，派生量，勿在 geometry/params 双写冲突源）、槽形（直/斜/扇形）
 - 齿轭、气隙、叠长、内外径
 - 磁钢拓扑（表贴/内置等占位枚举）
-- **ACIM**：导条截面、槽形、端环截面与材料引用占位字段（可无求解值；对齐 Q1-7）
+- **ACIM**：导条截面、槽形、端环截面与材料引用占位字段（可无求解值；对齐 Q1-7）；`acim.cagePolePairs` 可保持笼型文献用语**极对数**（Q1 不改名；若与 `rotor.poleCount` 并存，校验器 soft-check `cagePolePairs == rotor.poleCount/2`）
 
 ### 轴向 AF
 
 - 盘式结构：`RFMR`（单定双转）\| `FRMF`（双定单转）
 - 内外径、盘数、气隙、轴向厚度
 - 绕组与磁钢分区参数占位
+- **极数**：`pmsm.poleCount`（正偶数；极对数 = `poleCount / 2`，同径向规则）
 
-字段级 JSON Schema 在 Q1-2 样例包中细化；本草案钉边界与命名空间。
+字段级 JSON Schema 在 Q1-2 样例包中细化；本草案钉边界与命名空间。字段级映射权威见同目录 [geometry-mems-字段对照.md](./geometry-mems-字段对照.md)。
 
 ---
 
@@ -146,7 +147,27 @@ manifest.json
 
 ---
 
-## 7. 所有权（Ownership）
+## 7. 几何子 schema 与字段对照
+
+**双轨版本（KEEP）**：
+
+| 字段 | 位置 | 职责 |
+| --- | --- | --- |
+| `memsSchemaVersion` | `project.json` / `manifest.json` | 整包契约 |
+| `schemaVersion` | `geometry/params.json` | 几何子 schema（当前 `0.1.0-q1`） |
+
+字段级映射权威在 Q1-2 JSON Schema 落地前，以同目录 **[geometry-mems-字段对照.md](./geometry-mems-字段对照.md)** 为准；**勿**把完整字段表并入本文。
+
+**极数规则（`poleCount`）**：
+
+- 几何 JSON 规范字段为 **`poleCount`（极数，正偶数）**；电气极对数 = `poleCount / 2`（派生，勿双写冲突源）。
+- RF：`rotor.poleCount`；AF：`pmsm.poleCount`。
+- ACIM：`acim.cagePolePairs` 可保持极对数（笼型文献）；与 `rotor.poleCount` 并存时 soft-check `cagePolePairs == rotor.poleCount/2`（已知不对称，本提交不改名）。
+- 裁决备忘：[裁决-geometry-mems-poleCount.md](./裁决-geometry-mems-poleCount.md)。
+
+---
+
+## 8. 所有权（Ownership）
 
 | 组件 | 职责 |
 | --- | --- |
@@ -157,7 +178,7 @@ manifest.json
 
 ---
 
-## 8. 破坏性变更策略
+## 9. 破坏性变更策略
 
 1. 任何删除/重命名必填字段、更改枚举语义、更改容器顶层布局 → **bump `memsSchemaVersion`**。
 2. 须附迁移说明（旧包 → 新包）并经 **Gate 评审**（架构建议 + Motor 确认）。
@@ -166,7 +187,7 @@ manifest.json
 
 ---
 
-## 9. 与 OpenAPI 的衔接
+## 10. 与 OpenAPI 的衔接
 
 见同目录 `openapi-v1.yaml`：
 
