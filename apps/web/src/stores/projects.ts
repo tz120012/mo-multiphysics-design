@@ -1,59 +1,70 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import {
+  MEMS_SCHEMA_VERSION,
+  type MachineType,
+  type Project,
+  type ProjectCreate,
+  type Topology,
+} from '@/api/types'
 
-export interface ProjectItem {
-  id: string
-  name: string
-  topology: string
-  machineType: string
-  updatedAt: string
-  status: 'draft' | 'ready' | 'running'
+/** 列表 UI 本地装饰字段（非 OpenAPI Project） */
+export type ProjectListItem = Project & {
+  /** 本地假状态，后端契约暂无此字段 */
+  uiStatus?: 'draft' | 'ready' | 'running'
 }
 
-/** 示例假数据 — Q1 不调真实 API */
-const SEED: ProjectItem[] = [
+const SEED: ProjectListItem[] = [
   {
-    id: 'prj-001',
+    id: '11111111-1111-4111-8111-111111111101',
     name: 'eVTOL 主推进 PMSM-120kW',
-    topology: '径向磁通',
+    topology: 'RF',
     machineType: 'PMSM',
-    updatedAt: '2026-10-26 14:22',
-    status: 'ready',
+    memsSchemaVersion: MEMS_SCHEMA_VERSION,
+    createdAt: '2026-10-24T10:00:00+08:00',
+    updatedAt: '2026-10-26T14:22:00+08:00',
+    uiStatus: 'ready',
   },
   {
-    id: 'prj-002',
+    id: '11111111-1111-4111-8111-111111111102',
     name: '多旋翼 BLDC-5kW 演示',
-    topology: '径向磁通',
+    topology: 'RF',
     machineType: 'BLDC',
-    updatedAt: '2026-10-25 09:10',
-    status: 'draft',
+    memsSchemaVersion: MEMS_SCHEMA_VERSION,
+    createdAt: '2026-10-23T09:00:00+08:00',
+    updatedAt: '2026-10-25T09:10:00+08:00',
+    uiStatus: 'draft',
   },
   {
-    id: 'prj-003',
+    id: '11111111-1111-4111-8111-111111111103',
     name: '轴向涵道 ACIM-80kW',
-    topology: '径向磁通',
+    topology: 'AF',
     machineType: 'ACIM',
-    updatedAt: '2026-10-24 18:45',
-    status: 'running',
+    memsSchemaVersion: MEMS_SCHEMA_VERSION,
+    createdAt: '2026-10-22T18:00:00+08:00',
+    updatedAt: '2026-10-24T18:45:00+08:00',
+    uiStatus: 'running',
   },
 ]
 
 export const useProjectsStore = defineStore('projects', () => {
-  const items = ref<ProjectItem[]>([...SEED])
+  const items = ref<ProjectListItem[]>([...SEED])
 
-  function addProject(payload: Pick<ProjectItem, 'name' | 'topology' | 'machineType'>) {
-    const now = new Date()
-    const pad = (n: number) => String(n).padStart(2, '0')
-    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+  function addProject(payload: ProjectCreate) {
+    const now = new Date().toISOString()
     items.value.unshift({
-      id: `prj-${Date.now()}`,
+      id: crypto.randomUUID(),
       name: payload.name,
       topology: payload.topology,
       machineType: payload.machineType,
-      updatedAt: stamp,
-      status: 'draft',
+      memsSchemaVersion: MEMS_SCHEMA_VERSION,
+      createdAt: now,
+      updatedAt: now,
+      uiStatus: 'draft',
     })
   }
 
   return { items, addProject }
 })
+
+export type { Topology, MachineType, ProjectCreate }

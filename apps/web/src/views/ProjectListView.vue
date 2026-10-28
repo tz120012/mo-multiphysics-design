@@ -3,7 +3,9 @@
     <div class="project-toolbar">
       <div>
         <h2 class="page-title">工程列表</h2>
-        <p class="page-desc">本地假数据 · 未接后端 API</p>
+        <p class="page-desc">
+          本地假数据 · 未接后端 · memsSchemaVersion={{ memsVersion }}
+        </p>
       </div>
       <el-button type="primary" @click="dialogVisible = true">新建工程</el-button>
     </div>
@@ -11,14 +13,29 @@
     <div class="project-table-wrap">
       <el-table :data="projects.items" stripe empty-text="暂无工程" style="width: 100%">
         <el-table-column prop="name" label="名称" min-width="220" />
-        <el-table-column prop="machineType" label="机型" width="100" />
-        <el-table-column prop="topology" label="拓扑" width="120" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column label="机型" width="100">
           <template #default="{ row }">
-            <span class="status-pill" :data-status="row.status">{{ statusLabel(row.status) }}</span>
+            {{ MACHINE_TYPE_LABELS[row.machineType as MachineType] }}
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="160" />
+        <el-table-column label="拓扑" width="120">
+          <template #default="{ row }">
+            {{ TOPOLOGY_LABELS[row.topology as Topology] }}
+            <span class="enum-code">({{ row.topology }})</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <span class="status-pill" :data-status="row.uiStatus || 'draft'">
+              {{ statusLabel(row.uiStatus) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="更新时间" width="180">
+          <template #default="{ row }">
+            {{ formatTime(row.updatedAt) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default>
             <el-button text type="primary" disabled title="Q1-4/5 工作区占位">打开</el-button>
@@ -40,15 +57,22 @@
         </el-form-item>
         <el-form-item label="机型" prop="machineType">
           <el-select v-model="form.machineType" placeholder="选择机型" style="width: 100%">
-            <el-option label="PMSM" value="PMSM" />
-            <el-option label="BLDC" value="BLDC" />
-            <el-option label="ACIM" value="ACIM" />
+            <el-option
+              v-for="(label, value) in MACHINE_TYPE_LABELS"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="拓扑" prop="topology">
           <el-select v-model="form.topology" placeholder="选择拓扑" style="width: 100%">
-            <el-option label="径向磁通" value="径向磁通" />
-            <el-option label="轴向磁通" value="轴向磁通" />
+            <el-option
+              v-for="(label, value) in TOPOLOGY_LABELS"
+              :key="value"
+              :label="`${label} (${value})`"
+              :value="value"
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -64,16 +88,24 @@
 import { reactive, ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { useProjectsStore, type ProjectItem } from '@/stores/projects'
+import {
+  MACHINE_TYPE_LABELS,
+  MEMS_SCHEMA_VERSION,
+  TOPOLOGY_LABELS,
+  type MachineType,
+  type Topology,
+} from '@/api/types'
+import { useProjectsStore } from '@/stores/projects'
 
 const projects = useProjectsStore()
+const memsVersion = MEMS_SCHEMA_VERSION
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 
 const form = reactive({
   name: '',
-  machineType: 'PMSM',
-  topology: '径向磁通',
+  machineType: 'PMSM' as MachineType,
+  topology: 'RF' as Topology,
 })
 
 const rules: FormRules = {
@@ -82,15 +114,25 @@ const rules: FormRules = {
   topology: [{ required: true, message: '请选择拓扑', trigger: 'change' }],
 }
 
-function statusLabel(s: ProjectItem['status']) {
-  const map = { draft: '草稿', ready: '就绪', running: '计算中' } as const
-  return map[s]
+function statusLabel(s?: string) {
+  const map: Record<string, string> = { draft: '草稿', ready: '就绪', running: '计算中' }
+  return map[s || 'draft'] || '草稿'
+}
+
+function formatTime(iso: string) {
+  try {
+    const d = new Date(iso)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  } catch {
+    return iso
+  }
 }
 
 function resetForm() {
   form.name = ''
   form.machineType = 'PMSM'
-  form.topology = '径向磁通'
+  form.topology = 'RF'
 }
 
 async function onCreate() {
@@ -130,6 +172,7 @@ async function onCreate() {
   margin: 4px 0 0;
   color: var(--mo-text-muted);
   font-size: 12px;
+  font-family: var(--mo-font-mono);
 }
 
 .project-table-wrap {
@@ -137,6 +180,13 @@ async function onCreate() {
   border: 1px solid var(--mo-border);
   border-radius: var(--mo-radius);
   overflow: hidden;
+}
+
+.enum-code {
+  color: var(--mo-text-muted);
+  font-family: var(--mo-font-mono);
+  font-size: 11px;
+  margin-left: 2px;
 }
 
 .status-pill {
