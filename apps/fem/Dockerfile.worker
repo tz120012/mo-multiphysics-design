@@ -1,22 +1,55 @@
-# Q3-3 Celery FEM worker image — Mo-运维
-# Elmer/GetDP/Gmsh stay in apps/fem (toolchain) image or later multi-stage FROM it.
-# This worker runs Celery queue `fem` only; never embed solvers in apps/api uvicorn.
+# Q3 Celery FEM worker — Python + Elmer/Gmsh/GetDP toolchain in one image.
+# Mo-有限元 owns solver wiring; Mo-运维 owns compose (profile fem).
+# Never install Elmer on the host; never run Elmer inside apps/api uvicorn.
 #
-# Stub: Python Celery + api app code + solver-fem schemas. Real Elmer binaries
-# land when Mo-有限元 replaces apps/fem/Dockerfile; worker may then FROM that image.
-FROM python:3.12-slim
+# Default MO_FEM_DRY_RUN=1 (stub artifacts). Set 0 for real ElmerSolver E2E.
+FROM ubuntu:22.04
 
-WORKDIR /app
+LABEL org.mo.service=worker-fem \
+      org.mo.stage=q3-e2e-elmer \
+      org.mo.kernels="elmer,gmsh,getdp,celery"
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     MO_FEM_WORKDIR=/var/mo/fem \
     SOLVER_FEM_PATH=/opt/mo/packages/solver-fem \
-    MO_FEM_DRY_RUN=1
+    PYTHONPATH=/opt/mo/packages/solver-fem \
+    MO_FEM_DRY_RUN=1 \
+    LANG=C.UTF-8
+
+WORKDIR /app
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      gnupg \
+      software-properties-common \
+      bash \
+      curl \
+      python3 \
+      python3-pip \
+      python3-venv \
+      libopenblas0 \
+      libgomp1 \
+ && add-apt-repository -y ppa:elmer-csc-ubuntu/elmer-csc-ppa \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      elmerfem-csc \
+      gmsh \
+      getdp \
+ && rm -rf /var/lib/apt/lists/* \
+ && ln -sf /usr/bin/python3 /usr/bin/python \
+ && command -v ElmerSolver \
+ && command -v ElmerGrid \
+ && command -v gmsh \
+ && command -v getdp \
+ && ldd "$(command -v ElmerSolver)" | tee /tmp/ldd-elmer.txt \
+ && ! grep -q "not found" /tmp/ldd-elmer.txt
 
 COPY apps/api/requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY apps/api/app ./app
 COPY packages/solver-fem /opt/mo/packages/solver-fem

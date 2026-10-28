@@ -133,40 +133,41 @@ make up && make health
 | --- | --- | --- |
 | `worker` | api 镜像 | analytic 队列（Q2-6） |
 | `fem` | `apps/fem/Dockerfile` | Q3-L2：ElmerSolver / Gmsh / GetDP（宿主机禁止安装） |
-| `worker-fem` | `apps/fem/Dockerfile.worker` | Celery `-Q fem`；共享 `/var/mo/fem` |
+| `worker-fem` | `apps/fem/Dockerfile.worker` | Celery `-Q fem` + **内置** Elmer/Gmsh/GetDP；共享 `/var/mo/fem` |
 
 - 工作目录：`MO_FEM_WORKDIR=/var/mo/fem`（卷 `mo_femdata`）
 - 模板/schema：`packages/solver-fem`（Mo-有限元）；Jobs `jobType=fem`（Mo-后端入队）
+- `MO_FEM_DRY_RUN=0` 时 worker 内 `gmsh → ElmerGrid → ElmerSolver`（heat-proxy E2E；**勿宣称 ≤3%**）
 - 默认 **`MO_FEM_DRY_RUN=1`**（compose / `.env.example`）；真 Elmer 端到端见下节。
+- sidecar `mo-fem` 仍保留作工具链对照 / exec；作业路径以 **worker-fem** 为准。
 
 ### Q3-L2 真 Elmer 联调（临时关 dry-run）
 
-默认保持 dry-run，避免无 fixture 时误跑重求解。测试端到端时：
+默认保持 dry-run。测真 Elmer 前先 **rebuild** `worker-fem`（镜像含 Elmer），再用 `sudo env` 传入变量（裸 `sudo` 会丢掉 shell 环境）：
 
 ```bash
-# box（本机 Bot）—— 只 recreate worker-fem
-MO_FEM_DRY_RUN=0 CELERY_ENABLED=1 sudo docker compose \
-  -f docker-compose.yml -f docker-compose.box.yml \
-  --env-file .env --profile worker --profile fem \
-  up -d --force-recreate --no-deps worker-fem
+# 重建 worker（含 Elmer 工具链）
+sudo docker compose -f docker-compose.yml -f docker-compose.box.yml \
+  --profile fem build worker-fem
 
-# 正常 Docker 主机（无 box overlay）
-MO_FEM_DRY_RUN=0 CELERY_ENABLED=1 docker compose \
+# box：临时 DRY_RUN=0
+sudo env MO_FEM_DRY_RUN=0 CELERY_ENABLED=1 docker compose \
+  -f docker-compose.yml -f docker-compose.box.yml \
   --env-file .env --profile worker --profile fem \
   up -d --force-recreate --no-deps worker-fem
 
 # 核对
 docker exec mo-worker-fem printenv MO_FEM_DRY_RUN   # 期望 0
-docker exec mo-fem ElmerSolver                      # 无 case 时缺 STARTINFO、exit 1 属预期
+docker exec mo-worker-fem which ElmerSolver gmsh
 
 # 测完改回默认 dry-run
-MO_FEM_DRY_RUN=1 CELERY_ENABLED=1 sudo docker compose \
+sudo env MO_FEM_DRY_RUN=1 CELERY_ENABLED=1 docker compose \
   -f docker-compose.yml -f docker-compose.box.yml \
   --env-file .env --profile worker --profile fem \
   up -d --force-recreate --no-deps worker-fem
 ```
 
-未改 `.env` 时，命令行 `MO_FEM_DRY_RUN=0` 仅作用于本次 recreate；默认仍是 `1`。
+未改 `.env` 时，命令行 `MO_FEM_DRY_RUN=0` 仅作用于本次 recreate；默认仍是 `1`。成功标志：`manifest.scalars.dryRun=false` 且 `elmerExit=0`（heat-proxy，pending_calibration）。
 
 ### Q2-L7 抽检（开 Q3 前）
 

@@ -1,15 +1,67 @@
-! Mo RF PMSM 2D Elmer case stub (Q3-4)
-! Placeholders only — real BC/materials filled by pre-process.
-
+! Mo RF PMSM 2D Elmer case — Q3 E2E heat-proxy (pending_calibration)
+! Not a magnetostatic motor solve; do NOT claim FEM ≤3%.
 Header
   Mesh DB "." "mesh"
 End
 
 Simulation
+  Max Output Level = 3
   Coordinate System = Cartesian 2D
   Simulation Type = Steady state
   Steady State Max Iterations = 1
   Output File = "rf_pmsm_2d.result"
+  Post File = "rf_pmsm_2d.vtu"
 End
 
-! Body / Equation / Material / Boundary Condition blocks: filled by Mo-有限元 pre-process.
+Body 1
+  Target Bodies(1) = 1
+  Name = "Body1"
+  Equation = 1
+  Material = 1
+End
+
+Equation 1
+  Name = "HeatEquation"
+  Active Solvers(1) = 1
+End
+
+Solver 1
+  Equation = Heat Equation
+  Procedure = "HeatSolve" "HeatSolver"
+  Variable = Temperature
+  Exec Solver = Always
+  Stabilize = True
+  Optimize Bandwidth = True
+  Steady State Convergence Tolerance = 1.0e-5
+  Nonlinear System Convergence Tolerance = 1.0e-7
+  Nonlinear System Max Iterations = 20
+  Nonlinear System Newton After Iterations = 3
+  Nonlinear System Newton After Tolerance = 1.0e-3
+  Nonlinear System Relaxation Factor = 1
+  Linear System Solver = Iterative
+  Linear System Iterative Method = BiCGStab
+  Linear System Max Iterations = 500
+  Linear System Convergence Tolerance = 1.0e-10
+  Linear System Preconditioning = ILU0
+  Linear System Abort Not Converged = False
+  Linear System Residual Output = 10
+End
+
+Material 1
+  Name = "Material1"
+  Density = 1.0
+  Heat Conductivity = 1.0
+  Heat Capacity = 1.0
+End
+
+Boundary Condition 1
+  Target Boundaries(1) = 1
+  Name = "cold"
+  Temperature = 0.0
+End
+
+Boundary Condition 2
+  Target Boundaries(1) = 2
+  Name = "hot"
+  Temperature = 1.0
+End
