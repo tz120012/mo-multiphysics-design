@@ -50,13 +50,40 @@ export type FemManifest = {
   /** FE mock 扩展；生产 manifest 可不含 */
   mock?: boolean
   note?: string
+} & FemPostprocessFields
+
+/**
+ * Q5-2 可选后处理标量（FEM tip `797ce67`）。
+ * 出现在 F1 `scalars.json` 和/或 `manifest.scalars`；旧 fixture 可缺任意键。
+ * `pending_calibration` 缺省视为未校准。axialForceN / magneticEnergyJ 在校准关闭前不是已校准结果。
+ */
+export type FemPostprocessFields = {
+  /** `magnetostatic` | `heat_proxy`；缺省按 heat-proxy 兼容路径理解 */
+  equationMode?: string
+  magnetostaticPathReady?: boolean
+  /** 校准关闭前为 true；缺键时 UI 仍按未校准展示 */
+  pending_calibration?: boolean
+  dryRun?: boolean
+  elmerExit?: number | null
+  /** 轴向力（N）。真路径可有数值，校准关闭前须带 pending_calibration。 */
+  axialForceN?: number | null
+  bearingLoadN?: number | null
+  deflectionHintMm?: number | null
+  /** 后处理名，真路径为 `maxwell` */
+  postprocess?: string | null
+  torqueNm?: number | null
+  /** 磁能（J）。FEM tip 797ce67 真路径写入；旧产物可缺。 */
+  magneticEnergyJ?: number | null
+  lossesW?: Record<string, unknown>
 }
 
 /** role=scalars 产物 JSON（可含比 manifest.scalars 更完整的块） */
-export type FemScalarsArtifact = {
+export type FemScalarsArtifact = FemPostprocessFields & {
   torque_nm?: number
   back_emf_v_peak?: number
   losses_w?: Record<string, number>
   note?: string
+  notes?: string
+  schemaVersion?: string
   [key: string]: unknown
 }
