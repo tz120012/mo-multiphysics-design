@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mo.local/schemas/solver-opt/pareto-results-v0.json",
+  "title": "ParetoResults",
+  "description": "results/optimize/{jobId}/pareto.json — fronts / individuals / variable & objective vectors. No full-field FEM.",
+  "type": "object",
+  "required": ["seed", "objectiveIds", "fronts", "individuals"],
+  "additionalProperties": true,
+  "properties": {
+    "seed": { "type": "integer" },
+    "generations": { "type": "integer" },
+    "objectiveIds": { "type": "array", "items": { "type": "string" } },
+    "variableIds": { "type": "array", "items": { "type": "string" } },
+    "fronts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rank", "indices"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 0 },
+          "indices": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
+        }
+      }
+    },
+    "individuals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "x", "f"],
+        "properties": {
+          "id": { "type": "string" },
+          "x": { "type": "array", "items": { "type": "number" } },
+          "f": { "type": "array", "items": { "type": "number" } },
+          "rank": { "type": "integer" },
+          "feasible": { "type": "boolean" }
+        }
+      }
+    },
+    "digest": {
+      "type": "object",
+      "description": "Deterministic summary for seed fixture golden compare",
+      "properties": {
+        "paretoCount": { "type": "integer" },
+        "fMin": { "type": "array", "items": { "type": "number" } },
+        "fMax": { "type": "array", "items": { "type": "number" } }
+      }
+    }
+  }
+}

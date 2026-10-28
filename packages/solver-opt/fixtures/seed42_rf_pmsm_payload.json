@@ -1,0 +1,64 @@
+{
+  "projectId": "00000000-0000-4000-8000-000000000042",
+  "memsRef": "fixtures/seed42_rf_pmsm",
+  "evaluatorProfile": "analytic",
+  "baseSolveRequest": {
+    "schema_version": "0.0.0-gate0",
+    "topology": "RF",
+    "machine_type": "PMSM",
+    "geometry": {
+      "poles": 10,
+      "slots": 12,
+      "stack_length_m": 0.04,
+      "airgap_m": 0.0008,
+      "rotor_od_m": 0.06,
+      "stator_id_m": 0.0616,
+      "magnet_thickness_m": 0.003,
+      "turns_per_phase": 48
+    },
+    "materials": {
+      "steel_id": "demo-steel",
+      "magnet_id": "demo-N35",
+      "conductor_id": "Cu",
+      "br_t": 1.2
+    },
+    "operating_point": {
+      "speed_rpm": 3000,
+      "current_a_peak": 25,
+      "gamma_deg": 0
+    }
+  },
+  "variables": [
+    {
+      "id": "magnet_thickness_m",
+      "path": "geometry.magnet_thickness_m",
+      "type": "continuous",
+      "bounds": [0.002, 0.005]
+    },
+    {
+      "id": "turns_per_phase",
+      "path": "geometry.turns_per_phase",
+      "type": "integer",
+      "bounds": [36, 60]
+    }
+  ],
+  "objectives": [
+    { "id": "obj_torque", "sense": "maximize", "metricId": "abs_torque" },
+    { "id": "obj_loss", "sense": "minimize", "metricId": "copper_iron_loss" }
+  ],
+  "constraints": [
+    {
+      "id": "magnet_min",
+      "type": "inequality",
+      "expr": "geometry.magnet_thickness_m >= 0.002",
+      "note": "MVP: bounds already enforce; listed for contract shape"
+    },
+    {
+      "id": "turns_band",
+      "type": "inequality",
+      "expr": "36 <= geometry.turns_per_phase <= 60",
+      "note": "integer knob band"
+    }
+  ],
+  "nsga": { "popSize": 8, "generations": 3, "seed": 42 }
+}

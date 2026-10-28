@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mo.local/schemas/solver-opt/optimize-manifest-v0.json",
+  "title": "OptimizeManifest",
+  "description": "solver/optimize/jobs/{jobId}/manifest.json — thinned summary (Q3 F1 spirit).",
+  "type": "object",
+  "required": ["jobId", "status", "evaluatorProfile", "nsga", "summary", "artifacts"],
+  "additionalProperties": true,
+  "properties": {
+    "jobId": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+    },
+    "evaluatorProfile": {
+      "type": "string",
+      "enum": ["analytic", "analytic+drive", "analytic+fem"]
+    },
+    "nsga": {
+      "type": "object",
+      "properties": {
+        "popSize": { "type": "integer" },
+        "generations": { "type": "integer" },
+        "seed": { "type": "integer" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["generationsRun", "paretoCount"],
+      "properties": {
+        "generationsRun": { "type": "integer" },
+        "paretoCount": { "type": "integer", "minimum": 0 },
+        "evaluations": { "type": "integer" },
+        "note": { "type": "string" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "kind"],
+        "properties": {
+          "path": { "type": "string" },
+          "kind": { "type": "string" }
+        }
+      }
+    },
+    "resultRef": { "type": "string" }
+  }
+}

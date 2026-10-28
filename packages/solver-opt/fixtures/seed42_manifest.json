@@ -1,0 +1,23 @@
+{
+  "jobId": "fixture-seed42",
+  "status": "succeeded",
+  "evaluatorProfile": "analytic",
+  "nsga": {
+    "popSize": 8,
+    "generations": 3,
+    "seed": 42
+  },
+  "summary": {
+    "generationsRun": 3,
+    "paretoCount": 8,
+    "evaluations": 32,
+    "note": "analytic-only MVP stub; not accuracy-gated"
+  },
+  "artifacts": [
+    {
+      "path": "results/optimize/fixture-seed42/pareto.json",
+      "kind": "pareto"
+    }
+  ],
+  "resultRef": "solver/optimize/jobs/fixture-seed42/manifest.json"
+}
