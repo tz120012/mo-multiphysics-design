@@ -5,8 +5,10 @@
 | 日期 | 2026-10-28 15:25 Asia/Shanghai |
 | 产品 tip | **`31c6597`**（`docs(qa): Q4+-1 G3 校准计划正式稿`） |
 | 解析确认 tip | **`5df616d`**（`docs(qa): G3 校准计划解析确认栏 + 入口脚本`；叠产品稿） |
+| G3 并表 tip | **`81699d3`**（`docs(qa): 保留解析 §6.1 并引用 tip 5df616d`；含 31c6597/5df616d 链） |
 | 架构叠层 | **`83d2e6e`**（`docs(arch): Q4+-3 mems/artifacts 收口裁决`；不挡 A1/A2） |
-| 仓库 HEAD（实测时） | **`5df616d`**（含产品稿 + 解析确认；`31c6597`/`5df616d` 均为祖先） |
+| 对照 tip（本轮） | **`81699d3`**（Motor 指定；`31c6597`/`5df616d`/`81699d3` 均为祖先） |
+| 仓库 HEAD（写记录时） | 以本 commit 证据 tip 为准（见文末） |
 | 执行 | Mo-测试 |
 | 范围 | **仅文档债** Q4+-A1 / Q4+-A2；对照 [G3-校准计划](G3-校准计划.md)；**不**代签数值门禁；**不**勾 F1/F2；**不开宣称 MVP** |
 
@@ -14,6 +16,7 @@
 
 - `git merge-base --is-ancestor 31c6597 HEAD` → exit 0。
 - `git merge-base --is-ancestor 5df616d HEAD` → exit 0。
+- `git merge-base --is-ancestor 81699d3 HEAD` → exit 0。
 - 工作目录：`/workspace/mo-platform`。
 - 未改 `packages/` / `apps/` 业务代码；本记录与跟踪/清单更新仅 `docs/qa`。
 - 工作树另有他人 WIP（geometry / FEM / drafts 等）；**未** `git add` 那些路径。
@@ -26,7 +29,7 @@
 | 含 golden 路径表 | **PASS** | §2.2 解析首批 3 case（`rf-bldc/pmsm/acim-smoke-001`）+ 建议 `af-pmsm-smoke-001`；§2.3 FEM heat-proxy 指针 2 条；根约定 `tests/benchmark/` |
 | golden 路径可抽查 | **PASS** | 实测存在：`tests/benchmark/cases/{rf-bldc,rf-pmsm,rf-acim}-smoke-001/` 与对应 `golden/*.json`；heat-proxy golden 亦在 |
 | 含关闭条件且可执行表述 | **PASS** | §4.1 文档债；§4.2 解析 ≤5%；§4.3 FEM ≤3%；§4.4 与 MVP 关系 |
-| §6 解析确认四项入库 | **PASS** | tip **`5df616d`**：golden 沿用 / 首组优先 `rf-pmsm-smoke-001` / §4.2 可执行 / 来源类型已认·具体引用待填 |
+| §6 解析确认四项入库 | **PASS** | tip **`5df616d`**（并表保留于 **`81699d3`**）：golden 沿用 / 首组优先 `rf-pmsm-smoke-001` / §4.2 可执行 / 来源类型已认·具体引用待填 |
 
 **A1 结论：PASS**（文档债；稿≠标定报告）。
 
@@ -62,7 +65,7 @@
 | 项 | 变更 |
 | --- | --- |
 | [Q4plus-验收跟踪](Q4plus-验收跟踪.md) | Q4+-1 → **通过（文档债）**；备注 A1/A2 PASS；禁勾精度仍有效 |
-| [Q4plus-冒烟清单](Q4plus-冒烟清单.md) | Q4+-A1 / Q4+-A2 → **PASS**（注明 tip `5df616d` / 产品 `31c6597`）；F1/F2 **不勾** |
+| [Q4plus-冒烟清单](Q4plus-冒烟清单.md) | Q4+-A1 / Q4+-A2 → **PASS**（注明 tip `81699d3` / `5df616d` / 产品 `31c6597`）；F1/F2 **不勾** |
 | Q4+-6 | 仍未全开；注明「A1/A2 已补记录」 |
 
 ## 结论
@@ -74,7 +77,7 @@
 | Q4+-F1 / F2 | **禁止勾选**（本稿≠标定报告） |
 | MVP | **不开宣称** |
 
-证据 tip：本记录入库 commit 的 short SHA（见跟踪变更日志）。
+证据 tip：本 commit short SHA（`git rev-parse --short HEAD`）；对照链 `31c6597`→`5df616d`→`81699d3`。
 
 **产品确认（Mo-产品）**：同意 A1/A2 PASS → Q4+-1 **通过（文档债）**；**不**代签数值门禁；**不开宣称 MVP**。
 
