@@ -17,6 +17,7 @@ _PKG = Path(__file__).resolve().parent
 if str(_PKG) not in sys.path:
     sys.path.insert(0, str(_PKG))
 
+from axial_planes import solve_axial_pmsm_planes  # noqa: E402
 from machines.acim_equiv import solve_radial_acim_equiv  # noqa: E402
 from radial_mec import solve_radial_pmsm_mec  # noqa: E402
 
@@ -96,6 +97,15 @@ def solve(request: dict[str, Any], *, solver: str | None = None) -> dict[str, An
         raise ValueError(f"mock solver has no path for topology={topo!r} machine_type={mtype!r}")
 
     if kind == "mec":
+        if topo == "AF" and mtype == "PMSM":
+            return solve_axial_pmsm_planes(request)
+        if topo == "AF" and mtype in ("BLDC", "ACIM"):
+            raise ValueError(
+                f"AF+{mtype} not implemented yet (Q3 MVP is AF+PMSM only); "
+                "see packages/solver-analytic/axial_planes/README.md"
+            )
+        if topo == "AF":
+            raise ValueError(f"unsupported AF machine_type={mtype!r}")
         if topo == "RF" and mtype == "PMSM":
             return solve_radial_pmsm_mec(request)
         if topo == "RF" and mtype == "BLDC":
@@ -105,10 +115,6 @@ def solve(request: dict[str, Any], *, solver: str | None = None) -> dict[str, An
         if mtype == "ACIM":
             raise NotImplementedError(
                 f"ACIM equivalent-circuit solve requires topology=RF; got topology={topo!r}"
-            )
-        if topo == "AF":
-            raise NotImplementedError(
-                "Axial (AF) multi-plane solve is Q3; radial solvers are RF-only"
             )
         raise ValueError(f"unsupported combination topology={topo!r} machine_type={mtype!r}")
 
@@ -125,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         elif a in ("-h", "--help"):
             print(
                 "usage: solve.py [--solver=mec|mock] [request.json]\n"
-                "  RF+PMSM/BLDC → MEC; RF+ACIM → acim_equiv (see smoke/fixtures/)",
+                "  RF+PMSM/BLDC → MEC; RF+ACIM → acim_equiv; AF+PMSM → axial_planes",
                 file=sys.stderr,
             )
             return 0
