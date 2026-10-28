@@ -6,7 +6,7 @@
 > 范围：发布候选加固——校准计划、`:5174`、mems/artifacts·FE、live 几何/AF Wasm、磁静力学 FEM/轴向真值  
 > **误差**：解析 ≤5% / FEM ≤3% 均为 **待校准**——**校准书面关闭前不得勾「≤5%/≤3% 达标」**  
 > **MVP**：本清单**不开宣称 MVP 已达成**；Motor 分批签字；全关后方可议该宣称  
-> **现状**：A1/A2 **PASS**（对照 tip **`81699d3`** / `5df616d` / 产品 **`31c6597`**；记录 [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)）；**B1 PASS**（`f929dcb`；[Q4plus-冒烟记录-Q4+-2-5174-proxy](Q4plus-冒烟记录-Q4+-2-5174-proxy.md)）；C1 **PASS** / C2 **部分 PASS（后端；FE 另线未关）**（业务 tip **`6144f91`** @ 裁决 **`83d2e6e`**；记录 [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)）；D1/D2 **PASS**（几何 `ad66ff9` / Wasm `166c319`；[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)）；E1/E2 **PASS**（FEM tip **`9ffa4b2`**；记录 [Q4plus-冒烟记录-E1-E2-magnetostatic](Q4plus-冒烟记录-E1-E2-magnetostatic.md)）；其余区仍待 tip；**F1/F2 禁勾**；**不开宣称 MVP**
+> **现状**：A1/A2 **PASS**（对照 tip **`81699d3`** / `5df616d` / 产品 **`31c6597`**；记录 [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)）；**B1 PASS**（`f929dcb`；[Q4plus-冒烟记录-Q4+-2-5174-proxy](Q4plus-冒烟记录-Q4+-2-5174-proxy.md)）；C1 **PASS** / C2 **PASS（后端 + FE）**（后端 **`6144f91`** @ **`83d2e6e`**；FE tip **`4794565`** / merge **`6a32d9d`**；记录 [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)、[Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)）；D1/D2 **PASS**（几何 `ad66ff9` / Wasm `166c319`；[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)）；E1/E2 **PASS**（FEM tip **`9ffa4b2`**；记录 [Q4plus-冒烟记录-E1-E2-magnetostatic](Q4plus-冒烟记录-E1-E2-magnetostatic.md)）；其余区仍待 tip；**F1/F2 禁勾**；**不开宣称 MVP**
 
 ## 状态说明
 
@@ -34,7 +34,7 @@
 | ID | 检查项 | 通过标准（就绪后） | 现状 |
 | --- | --- | --- | --- |
 | Q4+-C1 | Jobs artifacts = L4 精简单文件权威（**无**独立 mems/files；mems/files=Q4+-3b） | OpenAPI/源码注记可抽；pytest；可选 compose list/get | **PASS**（tip **`6144f91`** @ 裁决 **`83d2e6e`** / F5=A；pytest **10 passed**；关 Q3-L4「无 mems 单文件 GET」**子项**；见 [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)） |
-| Q4+-C2 | artifacts / FE 对齐 | 后端注记锁定；FE 非仅 fixture（`source=job-artifacts`）可抽 | **部分 PASS（后端）**（OpenAPI/router L4/Q4+-3 注记齐）；**FE `source=job-artifacts` 另线——勿标 FE 已关**；见记录 |
+| Q4+-C2 | artifacts / FE 对齐 | 后端注记锁定；FE 非仅 fixture（`source=job-artifacts`）可抽 | **PASS（后端 + FE）**（后端 OpenAPI/router 注记齐 @ **`6144f91`**；FE tip **`4794565`** / merge **`6a32d9d`**：四场景 `job-artifacts`/`job-fixture`/`fixture` 全 PASS；见 [Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)） |
 
 ## D. live 几何 / AF Wasm（对照 Q4+-4）
 
@@ -67,15 +67,16 @@
 ## 执行方式（骨架）
 
 1. 各角色 tip / 交测后，Mo-测试按区实跑并改「现状」。  
-2. A1/A2、C1、D1/D2 、E1/E2 已有 PASS；C2 后端 PASS / FE 另线；其余区在对应 tip 入库前保持 TODO。  
+2. A1/A2、B1、C1、C2（后端+FE）、D1/D2 、E1/E2 已有 PASS；其余区在对应 tip 入库前保持 TODO。  
 3. 不得勾选 F1/F2；不得宣称 MVP 已达成。  
-4. 证据附于 [Q4plus-验收跟踪](Q4plus-验收跟踪.md) 与分项冒烟记录（A1/A2：[Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)；C1/C2：[Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)；D1/D2：[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)；E1/E2：[Q4plus-冒烟记录-E1-E2-magnetostatic](Q4plus-冒烟记录-E1-E2-magnetostatic.md)）。
+4. 证据附于 [Q4plus-验收跟踪](Q4plus-验收跟踪.md) 与分项冒烟记录（A1/A2：[Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)；C1/C2 后端：[Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)；C2 FE：[Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)；D1/D2：[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)；E1/E2：[Q4plus-冒烟记录-E1-E2-magnetostatic](Q4plus-冒烟记录-E1-E2-magnetostatic.md)）。
 
 ## 相关链接
 
 - [Q4plus-验收跟踪](Q4plus-验收跟踪.md)
 - [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)
 - [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md)
+- [Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)
 - [Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)
 - [Q4plus-冒烟记录-E1-E2-magnetostatic](Q4plus-冒烟记录-E1-E2-magnetostatic.md)
 - [G3-校准计划](G3-校准计划.md)
@@ -85,4 +86,4 @@
 
 ---
 
-*Mo-测试填实中；A1/A2 已关文档债；B1/C1 PASS；C2 后端 PASS（FE 另线未关）；D1/D2 已补记录；E1/E2 磁静力学壳已 PASS（禁勾 ≤3%）；禁勾 ≤5%/≤3%；不开 MVP。*
+*Mo-测试填实中；A1/A2 已关文档债；B1/C1 PASS；C2 后端+FE PASS（tip `4794565`；待产品整关 Q4+-3）；D1/D2 已补记录；E1/E2 磁静力学壳已 PASS（禁勾 ≤3%）；禁勾 ≤5%/≤3%；不开 MVP；不勾 F1/F2。*

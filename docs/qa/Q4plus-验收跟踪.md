@@ -4,7 +4,7 @@
 | --- | --- |
 | 依据 | [02-阶段任务拆解与门禁](../02-阶段任务拆解与门禁.md) Q4+-1…Q4+-6、[Q4-签字记录](Q4-签字记录.md)、[Q4-P11-签字包](Q4-P11-签字包.md) §4 |
 | 维护 | Mo-测试（脚手架）/ Mo-产品（口径）/ Motor（分批签字） |
-| 更新 | 2026-10-28 Asia/Shanghai（**Motor 确认** Q4+-5→**通过（CLI shell / 边界文档）**；产品 tip **`b9f8d83`**；证据 **`0685e96`** / FEM **`9ffa4b2`**；仍禁勾 ≤3%；不开宣称 MVP） |
+| 更新 | 2026-10-28 Asia/Shanghai（Mo-测试 C2 FE 四场景 PASS @ tip **`4794565`**；Q4+-3 FE 段测试通过→待产品确认整关；不代签；禁勾 F1/F2；不开宣称 MVP） |
 | 前提 | Q4 已签字通过 / 发布候选（Motor tip **`8d63bde`**；pack **`3a62ebb`**；产品 tip **`bff3866`**）；隔离仅 `/workspace/mo-platform` |
 
 状态：`未开始` / `进行中` / `待测` / `通过` / `阻塞`
@@ -15,10 +15,10 @@
 | --- | --- | --- | --- | --- |
 | Q4+-1 G3 校准计划正式稿 | Q4+-1 | 含 golden 路径与关闭条件；跟踪关闭 G3/Q2-L4 | **通过（文档债）** | **产品确认**；**Motor 确认 tip `d880536`**；正式稿 [G3-校准计划](G3-校准计划.md)；A1/A2 PASS（[记录](Q4plus-冒烟记录-A1-A2-G3.md)；`5df616d`/`31c6597`/`81699d3`）；§6 四项确认；**仍禁勾 ≤5%/≤3%**；**不开宣称 MVP** |
 | Q4+-2 compose `:5174` 代理 | Q4+-2 | 修复 nginx→host 代理超时；或书面不可行+替代路径 | **通过** | **产品确认**；**Motor 已确认**；B1 PASS（[冒烟记录](Q4plus-冒烟记录-Q4+-2-5174-proxy.md)；证据 tip **`ab1e6d5`**；业务 **`f929dcb`**）；`:5174` `/`/`/health`/`/api/v1/health`→200；db/redis ok；**不开宣称 MVP** |
-| Q4+-3 mems GET / artifacts·FE | Q4+-3 | Jobs-artifacts-only 关本门；FE 非仅 fixture | **通过（后端）· FE 待测** | **产品/Motor 已确认后端**（`6144f91` @ `83d2e6e` F5=A）；C1/C2 后端 PASS；FE tip **`4794565`**（`/field`→job-artifacts）已合入，**待 Mo-测试后产品整关 FE 段**；`mems/files`=Q4+-3b；**仍禁勾 ≤5%/≤3%**；**不开宣称 MVP** |
+| Q4+-3 mems GET / artifacts·FE | Q4+-3 | Jobs-artifacts-only 关本门；FE 非仅 fixture | **通过（后端）· FE 段测试通过 · 待产品确认整关** | **产品/Motor 已确认后端**（`6144f91` @ `83d2e6e` F5=A）；C1/C2 后端 PASS；C2 FE **PASS**（tip **`4794565`** / merge **`6a32d9d`**；四场景全 PASS；[记录](Q4plus-冒烟记录-C2-FE-field-source.md)）→ **待产品确认整关 Q4+-3**（**不代签**）；`mems/files`=Q4+-3b；**仍禁勾 ≤5%/≤3%**；**不开宣称 MVP** |
 | Q4+-4 live 几何 + AF Wasm | Q4+-4 | live 几何包 + AF Wasm 余项（可演示/降级） | **通过** | **产品确认**；**Motor 已确认**；D1/D2 PASS（[记录](Q4plus-冒烟记录-D1-D2-geometry.md)；证据 tip **`d4759ea`**）；几何 **`ad66ff9`** + Wasm **`166c319`**；STEP/DXF 书面降级；金标仍 Python；**禁勾 ≤5%**；**不开宣称 MVP** |
 | Q4+-5 磁静力学 FEM / 轴向真值 | Q4+-5 | 相对 heat-proxy 的磁静力学 FEM 与轴向磁拉力真值路径 | **通过（CLI shell / 边界文档）** | **产品确认**；**Motor 已确认**；E1/E2 PASS（[记录](Q4plus-冒烟记录-E1-E2-magnetostatic.md)；证据 tip **`0685e96`**）；FEM **`9ffa4b2`**；边界稿 [Q4plus-5](../drafts/Q4plus-5-磁静力学与轴向真值.md)；heat-proxy≠磁静力学；shell `pending_calibration`；力标量 null；**禁勾 ≤3%**；真 Elmer/Maxwell 后处理仍后置；**不开宣称 MVP** |
-| Q4+-6 冒烟与遗留关项 | Q4+-6 | Q4+ 冒烟与遗留关项记录；交 Motor 分批签字 | **未开始** | Owner：Mo-测试；**A1/A2、C1·C2（后端）、D1/D2 、E1/E2 已补记录**；FE 另线与其余区仍待；见 [Q4plus-冒烟清单](Q4plus-冒烟清单.md) |
+| Q4+-6 冒烟与遗留关项 | Q4+-6 | Q4+ 冒烟与遗留关项记录；交 Motor 分批签字 | **未开始** | Owner：Mo-测试；**A1/A2、B1、C1·C2（后端+FE）、D1/D2 、E1/E2 已补记录**；其余区仍待；见 [Q4plus-冒烟清单](Q4plus-冒烟清单.md) |
 
 ## 阶段出口（摘自 02）
 
@@ -40,7 +40,7 @@
 
 | ID | 遗留摘要 | 来源 | 转入状态 | 建议消化（Q4+） |
 | --- | --- | --- | --- | --- |
-| Q3-L4 | live 几何包、AF Wasm、磁静力学 FEM、mems 单文件 GET（API+FE `/field` 部分消化；整行未关） | Q4 签字 / P11 §4 | **跟踪中（「无 mems 单文件 GET」子项可关；整行不可关）** | **子项可关**：field/artifacts「无 mems 单文件 GET」→ Jobs artifacts canonical（tip **`6144f91`** @ **`83d2e6e`** / F5=A）；**整行仍不可关**（余 真 Elmer/Maxwell 磁静力学后处理 / FE job-artifacts 整关（live/AF Wasm 随 Q4+-4；磁静力学 CLI shell/边界随 Q4+-5 可记部分消化；FE tip `4794565` 待测））；mems/files=Q4+-3b；见 [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md) |
+| Q3-L4 | live 几何包、AF Wasm、磁静力学 FEM、mems 单文件 GET（API+FE `/field`；整行未关） | Q4 签字 / P11 §4 | **跟踪中（API + FE field/artifacts 子项可关；整行不可关）** | **子项可关**：(1) field/artifacts「无 mems 单文件 GET」API→ Jobs artifacts canonical（tip **`6144f91`** @ **`83d2e6e`** / F5=A）；(2) field/artifacts **FE 段**→ `source=job-artifacts` 四场景 PASS（tip **`4794565`** / merge **`6a32d9d`**；[C2 FE 记录](Q4plus-冒烟记录-C2-FE-field-source.md)）；**整行仍不可关**（余 真 Elmer/Maxwell 磁静力学后处理等；live/AF Wasm 随 Q4+-4、磁静力学 CLI shell/边界随 Q4+-5 可记部分消化）；mems/files=Q4+-3b；见 [Q4plus-冒烟记录-C1-C2-artifacts](Q4plus-冒烟记录-C1-C2-artifacts.md) |
 | Q4-校准 / G3 | 解析 ≤5% / FEM ≤3% 待校准；G3 计划正式稿已入库；并 Q2-L4 | Q4 签字 / P11 §4 | **已消化（文档债·计划正式稿）** | [G3-校准计划](G3-校准计划.md)；A1/A2 PASS；**数值门禁仍待标定报告**；禁勾 ≤5%/≤3% |
 | compose:5174 | nginx→host.docker.internal 代理超时（UI 可走 vite:5173） | Q4 签字 / P11 §4 | **已消化** | Q4+-2 **通过**；证据 tip **`ab1e6d5`** / **`f929dcb`**；B1 PASS |
 | pending_calibration | 多脚本；轴向标量 null；禁勾精度 | Q4 签字 / P11 §4 | **跟踪中** | 随 Q4+-1 / Q4+-5 与校准关闭联动跟踪 |
@@ -51,9 +51,9 @@
 
 | 产物 | 路径 | 说明 |
 | --- | --- | --- |
-| 验收跟踪 | [Q4plus-验收跟踪](Q4plus-验收跟踪.md) | 本文件；Q4+-1 **通过（文档债）**；Q4+-2/4/5 **通过**；Q4+-3 **通过（后端）· FE 待测**（`4794565`）；Q4+-6 **未开始**（A1/A2/C/D 、E1/E2 已补记录） |
+| 验收跟踪 | [Q4plus-验收跟踪](Q4plus-验收跟踪.md) | 本文件；Q4+-1 **通过（文档债）**；Q4+-2/4/5 **通过**；Q4+-3 **通过（后端）· FE 段测试通过 · 待产品确认整关**（`4794565`）；Q4+-6 **未开始**（A1/A2/B/C/D/E 已补记录） |
 | G3 校准计划 | [G3-校准计划](G3-校准计划.md) | Q4+-1 正式稿（已并入解析确认）；golden + 关闭条件；**未**关数值门禁 |
-| 冒烟清单 | [Q4plus-冒烟清单](Q4plus-冒烟清单.md) | A1/A2 **PASS**；**B1 PASS**（`f929dcb`）；C1 **PASS** / C2 **部分 PASS（后端）**（`6144f91`）；D1/D2 **PASS**；E1/E2 **PASS**（`9ffa4b2`）；F1/F2 禁勾；FE 另线；其余区待 tip |
+| 冒烟清单 | [Q4plus-冒烟清单](Q4plus-冒烟清单.md) | A1/A2 **PASS**；**B1 PASS**（`f929dcb`）；C1 **PASS** / C2 **PASS（后端+FE）**（`6144f91` + FE **`4794565`**）；D1/D2 **PASS**；E1/E2 **PASS**（`9ffa4b2`）；F1/F2 禁勾；其余区待 tip |
 | Q4 签字记录 | [Q4-签字记录](Q4-签字记录.md) | Motor tip **`8d63bde`**；发布候选；开闸依据 |
 | Q4-P11 签字包 §4 | [Q4-P11-签字包](Q4-P11-签字包.md) §4 | 遗留照实列举 |
 | 阶段门禁 | [02-阶段任务拆解与门禁](../02-阶段任务拆解与门禁.md) | § Q4+ |
@@ -62,6 +62,7 @@
 
 | 日期 (Asia/Shanghai) | tip / 依据 | 说明 |
 | --- | --- | --- |
+| 2026-10-28 | Mo-测试 C2 FE；业务 tip **`4794565`** / merge **`6a32d9d`** | C2 FE 四场景全 **PASS**（vite:5173；`job-artifacts`/`job-fixture`/`fixture`）；落盘 [Q4plus-冒烟记录-C2-FE-field-source](Q4plus-冒烟记录-C2-FE-field-source.md)；Q4+-3→**通过（后端）· FE 段测试通过 · 待产品确认整关**（**不代签**）；Q3-L4 field/artifacts **FE 段子项可关**；**整行仍不可关**；**禁勾 F1/F2**；**不开宣称 MVP**；隔离仅 mo-platform |
 | 2026-10-28 | Motor；产品 tip **`b9f8d83`**；证据 **`0685e96`** / FEM **`9ffa4b2`** | **Motor 确认** Q4+-5→**通过（CLI shell / 边界文档）**；heat-proxy≠磁静力学；**仍禁勾 ≤3%**；真 Elmer/Maxwell 后置；**不开宣称 MVP**；隔离仅 mo-platform |
 | 2026-10-28 | **产品确认**；E1/E2 tip **`0685e96`**；FEM **`9ffa4b2`**；Motor 请确认 | **同意** Q4+-5→**通过（CLI shell / 边界文档）**；heat-proxy≠磁静力学；`pending_calibration`；力标量 null；**禁勾 ≤3%**；真 Elmer/Maxwell 后置；顺记 FE **`4794565`**→Q4+-3 FE **待测**；**不开宣称 MVP**；隔离仅 mo-platform |
 | 2026-10-28 | Motor；产品 tip **`6d8dbde`**；B1 **`ab1e6d5`** / **`f929dcb`** | **Motor 确认** Q4+-2→**通过**；compose:5174 已消化；**不开宣称 MVP**；隔离仅 mo-platform |
