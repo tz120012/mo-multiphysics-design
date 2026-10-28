@@ -1,6 +1,6 @@
-"""Resolve FEM thinned artifacts for Jobs GET (F1 / Q3-L4).
+"""Resolve FEM/optimize thinned artifacts for Jobs GET (F1 / Q3-L4 / Q4-9).
 
-Reads worker disk under MO_FEM_WORKDIR (mems-relative layout), optional
+Reads worker disk under MO_OPT_WORKDIR / MO_FEM_WORKDIR (mems-relative layout), optional
 embedded job.payload.manifest, and optional .mems zip member. Does not
 serve full-field VTU / Elmer .result by default path.
 """
@@ -47,10 +47,28 @@ def media_type_for(path: str) -> str:
 
 
 def fem_workdir() -> Path | None:
+    """Backward-compatible single root (FEM). Prefer work_roots() for resolve."""
     root = os.environ.get("MO_FEM_WORKDIR")
     if not root:
         return None
     return Path(root)
+
+
+def work_roots() -> list[Path]:
+    """Resolve roots: MO_OPT_WORKDIR then MO_FEM_WORKDIR (deduped, existing preferred)."""
+    seen: set[str] = set()
+    out: list[Path] = []
+    for key in ("MO_OPT_WORKDIR", "MO_FEM_WORKDIR"):
+        raw = os.environ.get(key)
+        if not raw:
+            continue
+        path = Path(raw)
+        key_s = str(path.resolve()) if path.exists() else str(path)
+        if key_s in seen:
+            continue
+        seen.add(key_s)
+        out.append(path)
+    return out
 
 
 def _is_under(root: Path, candidate: Path) -> bool:
@@ -78,16 +96,19 @@ def candidate_disk_paths(rel: str, work_root: Path) -> list[Path]:
 
 
 def read_disk_bytes(rel: str) -> bytes | None:
-    root = fem_workdir()
-    if root is None:
-        return None
+    roots = work_roots()
+    if not roots:
+        # Fall back to legacy fem_workdir only
+        root = fem_workdir()
+        roots = [root] if root is not None else []
     try:
-        for cand in candidate_disk_paths(rel, root):
-            if not cand.is_file():
-                continue
-            if not _is_under(root, cand):
-                continue
-            return cand.read_bytes()
+        for root in roots:
+            for cand in candidate_disk_paths(rel, root):
+                if not cand.is_file():
+                    continue
+                if not _is_under(root, cand):
+                    continue
+                return cand.read_bytes()
     except (OSError, ValueError):
         return None
     return None
@@ -103,25 +124,64 @@ def embedded_manifest(job: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def load_manifest_from_disk(job_id: str | UUID) -> dict[str, Any] | None:
-    rel = f"solver/fem/jobs/{job_id}/manifest.json"
-    raw = read_disk_bytes(rel)
-    if raw is None:
-        return None
-    try:
-        data = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        return None
-    return data if isinstance(data, dict) else None
+def load_manifest_from_disk(job_id: str | UUID, job_type: str | None = None) -> dict[str, Any] | None:
+    """Try optimize then fem manifest paths (or resultRef-shaped order by jobType)."""
+    jid = str(job_id)
+    rels: list[str] = []
+    if job_type == "optimize":
+        rels.append(f"solver/optimize/jobs/{jid}/manifest.json")
+    elif job_type == "fem":
+        rels.append(f"solver/fem/jobs/{jid}/manifest.json")
+    else:
+        rels.extend(
+            [
+                f"solver/optimize/jobs/{jid}/manifest.json",
+                f"solver/fem/jobs/{jid}/manifest.json",
+            ]
+        )
+    # Always allow the other path as fallback
+    for extra in (
+        f"solver/optimize/jobs/{jid}/manifest.json",
+        f"solver/fem/jobs/{jid}/manifest.json",
+    ):
+        if extra not in rels:
+            rels.append(extra)
+    for rel in rels:
+        raw = read_disk_bytes(rel)
+        if raw is None:
+            continue
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if isinstance(data, dict):
+            return data
+    return None
 
 
 def load_manifest(job: dict[str, Any]) -> dict[str, Any] | None:
-    """Prefer disk manifest; fall back to payload-embedded (stub / _complete_fem_job)."""
+    """Prefer disk manifest; fall back to payload-embedded (stub / complete_*)."""
     jid = job.get("id")
     if jid is not None:
-        disk = load_manifest_from_disk(jid)
+        disk = load_manifest_from_disk(jid, job.get("jobType") or job.get("job_type"))
         if disk is not None:
             return disk
+    # resultRef may point at optimize/fem manifest — try exact rel
+    result_ref = job.get("resultRef")
+    if isinstance(result_ref, str) and result_ref.endswith("manifest.json"):
+        try:
+            rel = normalize_rel_path(result_ref)
+        except ValueError:
+            rel = None
+        if rel:
+            raw = read_disk_bytes(rel)
+            if raw is not None:
+                try:
+                    data = json.loads(raw.decode("utf-8"))
+                    if isinstance(data, dict):
+                        return data
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    pass
     return embedded_manifest(job)
 
 

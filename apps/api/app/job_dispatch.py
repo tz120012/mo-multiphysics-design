@@ -1,4 +1,4 @@
-"""Enqueue analytic/FEM/drive jobs via Celery when Redis is up; else in-process degrade (Q2-6 / Q3 / Q4)."""
+"""Enqueue analytic/FEM/drive/optimize jobs via Celery when Redis is up; else in-process degrade."""
 
 from __future__ import annotations
 
@@ -141,4 +141,48 @@ def try_enqueue_drive(job_id: UUID, payload: dict[str, Any] | None) -> str:
             logger.warning("Celery drive enqueue failed, degrading to in-process: %s", exc)
 
     _in_process_drive(job_id, payload)
+    return "in_process"
+
+
+def _in_process_optimize(job_id: UUID, payload: dict[str, Any] | None) -> None:
+    """Optimize: daemon thread calls solver-opt (never on request thread)."""
+
+    def _run() -> None:
+        try:
+            from app.tasks.optimize import _complete_optimize_job
+
+            time.sleep(0.02)
+            _complete_optimize_job(str(job_id), payload)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("in-process optimize failed: %s", exc)
+            job_update(
+                job_id,
+                status="failed",
+                error={"code": "optimize_failed", "message": str(exc)},
+            )
+
+    threading.Thread(target=_run, name=f"optimize-{job_id}", daemon=True).start()
+
+
+def try_enqueue_optimize(job_id: UUID, payload: dict[str, Any] | None) -> str:
+    """
+    Enqueue optimize on Celery queue `optimize` or in-process daemon thread.
+
+    Same CELERY_ENABLED + Redis gate. resultRef:
+    solver/optimize/jobs/{jobId}/manifest.json
+    NSGA runs only in worker / background thread — never FastAPI request thread.
+    """
+    from app.config import get_settings
+
+    settings = get_settings()
+    if settings.celery_enabled and redis_available():
+        try:
+            from app.tasks.optimize import run_optimize_job
+
+            run_optimize_job.delay(str(job_id), payload)
+            return "celery"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Celery optimize enqueue failed, degrading to in-process: %s", exc)
+
+    _in_process_optimize(job_id, payload)
     return "in_process"

@@ -12,7 +12,7 @@ celery_app = Celery(
     "mo_api",
     broker=_settings.redis_url,
     backend=_settings.redis_url,
-    include=["app.tasks.analytic", "app.tasks.fem", "app.tasks.drive"],
+    include=["app.tasks.analytic", "app.tasks.fem", "app.tasks.drive", "app.tasks.optimize"],
 )
 
 celery_app.conf.update(
@@ -30,5 +30,6 @@ celery_app.conf.update(
     # Ops compose worker-fem: celery -Q fem (docker-compose.yml)
     task_routes={
         "app.tasks.fem.run_fem_job": {"queue": "fem"},
+        "app.tasks.optimize.run_optimize_job": {"queue": "optimize"},
     },
 )
