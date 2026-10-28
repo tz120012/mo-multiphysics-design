@@ -22,11 +22,12 @@ info:
     - **不强制**服务端托管唯一解析内核；Python `packages/solver-analytic` = 金标/CI；径向 Wasm = 交互主路径。
     - 可选 sync solve 供 Bot/CI/FE 降级与 **AF** 在 Wasm AF 落地前使用。
     - FEM **禁止**嵌入 `apps/api` 进程；Elmer/GetDP/Gmsh 仅容器（`packages/solver-fem` = 模板/schema，非二进制）。
-    - api `version` 保持 `1.0.0-draft`；材料子版本见 Material.`materialsSchemaVersion`。
+    - api `version` 暂仍 `1.0.0-draft`（升格 → `1.0.0` 见 `docs/drafts/Q5-5-契约1.0.0钉死.md` checklist）；材料子版本见 Material.`materialsSchemaVersion`（本项不强制 bump）。
+    - **Q5-1**：`GET /projects/{projectId}/mems/files/{path}` 工程包成员只读（边界见 `docs/drafts/Q5-1-mems-files边界.md`）；实现未齐时 path 标 `x-status: planned-q5-1`。
 
     配套：`docs/drafts/Q3-轴向与FEM边界.md`；`docs/drafts/Q2-材料与解析边界.md`；`docs/drafts/mems-schema-v1.md`；
-    `docs/drafts/history-契约-q1-6.md`；`packages/solver-analytic/api/solve.schema.json`；
-    `packages/solver-fem/api/*.schema.json`。
+    `docs/drafts/history-契约-q1-6.md`；`docs/drafts/Q5-1-mems-files边界.md`；`docs/drafts/Q5-5-契约1.0.0钉死.md`；
+    `packages/solver-analytic/api/solve.schema.json`；`packages/solver-fem/api/*.schema.json`。
     真理源：`docs/01-任务书-v2.md`、`docs/02-阶段任务拆解与门禁.md`（本草案不修改二者）。
 
 servers:
@@ -270,8 +271,8 @@ paths:
       summary: Download `.mems` package
       description: |
         返回 zip 容器（application/zip）。元数据见 MemsMeta。
-        **整包 I/O only**。精简 FEM/optimize 单文件读走 Jobs artifacts（L4/Q4+-3）；
-        独立 `GET .../mems/files/{path}` 为 Q4+-3b（Motor F5=A 默认推迟），本契约不提供。
+        **整包 I/O**。精简 FEM/optimize 单文件读走 Jobs artifacts（L4/Q4+-3 已关）。
+        工程包任意成员只读见 **Q5-1** `GET .../mems/files/{path}`（原 Q4+-3b；边界稿 `docs/drafts/Q5-1-mems-files边界.md`）。
       operationId: downloadMems
       security:
         - bearerAuth: []
@@ -297,7 +298,7 @@ paths:
       summary: Upload / replace `.mems` package
       description: |
         整包替换；服务端校验顶层布局与 memsSchemaVersion。
-        非单文件 PUT；member 级读见 Jobs artifacts 可选 zip-member 回落（非 mems/files）。
+        非单文件 PUT。member 级**公开**读走 Q5-1 mems/files；Jobs artifacts 仍可选用 zip-member 作内部解析回落。
       operationId: uploadMems
       security:
         - bearerAuth: []
@@ -388,6 +389,90 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
+
+  /projects/{projectId}/mems/files/{path}:
+    get:
+      tags: [Mems]
+      summary: "Get one .mems zip member by relative path (Q5-1)"
+      description: |
+        **Q5-1**（原 Q4+-3b）：工程包任意成员只读 GET。
+        `path` 为 zip 内相对路径（支持多段，如 `geometry/params.json`、`solver/fem/jobs/{id}/manifest.json`）。
+        禁止 `..`、空段、绝对路径；规范化与 Jobs artifacts 同严。
+        Auth 与整包 mems GET 同（Bearer）。
+        **本阶段只读**；member PUT/DELETE 非目标（另开项）。
+        与 Jobs artifacts：精简 FEM/optimize / `/field` 仍走 artifacts；公开几何/工程文件应走本路径。
+        artifacts 可选 zip-member 回落保留为内部解析，**不**把本路径叙述成 `/field` 替代。
+        边界：`docs/drafts/Q5-1-mems-files边界.md`。
+      operationId: getMemsFile
+      x-status: planned-q5-1
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/projectId"
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: |
+            mems-relative zip member path (may contain slashes).
+            Reject empty, absolute (leading `/`), or `..` traversal → 400.
+          examples:
+            geometryParams:
+              value: geometry/params.json
+            solverManifest:
+              value: solver/fem/jobs/00000000-0000-0000-0000-000000000001/manifest.json
+      responses:
+        "200":
+          description: |
+            Raw member bytes. Content-Type by extension
+            (json→application/json；未知→application/octet-stream).
+            Optional Content-Disposition attachment.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: string
+                format: binary
+            model/gltf+json:
+              schema:
+                type: string
+                format: binary
+            model/gltf-binary:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="params.json"'
+        "400":
+          description: "Illegal path (empty / absolute / .. / empty segments)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Project has no package, or member not found in zip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /projects/{projectId}/history:
     get:
@@ -734,7 +819,7 @@ paths:
       summary: Poll job status / result（Q2/Q3）
       description: |
         返回 Job（含 status、resultRef、error）。FEM/optimize 成功时 resultRef 指向 manifest；
-        精简产物经 **Jobs artifacts** list/get 拉取（L4/Q4+-3 canonical；非须另开 mems/files）。
+        精简产物经 **Jobs artifacts** list/get 拉取（L4/Q4+-3 canonical）；包内非精简件公开读走 Q5-1 mems/files。
       operationId: getJob
       security:
         - bearerAuth: []
@@ -763,7 +848,7 @@ paths:
       summary: List thinned FEM/optimize artifacts（L4 / Q4+-3；从 manifest）
       description: |
         **Jobs artifacts GET = L4 / Q4+-3 精简结果单文件读；工程包仍走整包 mems；
-        `GET .../mems/files/{path}` 为可选快跟进（Q4+-3b），非本门硬项（Motor F5=A）。**
+        工程包任意成员只读由 **Q5-1** `GET .../mems/files/{path}` 提供（原 Q4+-3b；非 `/field` 替代）。**
         本路由关闭 Q3-L4「无 mems 单文件 GET」对 `/field`（有 jobId 时）的缺口叙述：
         精简 FEM/optimize 产物的 **canonical 单文件通道** = list + get（非另开 mems member GET）。
         从 worker 盘 `MO_OPT_WORKDIR` / `MO_FEM_WORKDIR`（`mems_shadow/` 或与 `.mems`
@@ -825,8 +910,8 @@ paths:
             mems_shadow/{rel} → {rel}
           → payload 内嵌 manifest.json（仅 manifest 自身）
           → 可选：job.projectId 对应已存 `.mems` zip 内同相对路径 member（已实现）
-        整包 I/O 仍为 `GET/PUT /projects/{id}/mems`；**不**要求本门交付
-        `GET /projects/{id}/mems/files/{path}`（Q4+-3b / F5=A 默认推迟）。
+        整包 I/O 仍为 `GET/PUT /projects/{id}/mems`；工程包任意成员公开读见
+        **Q5-1** `GET /projects/{id}/mems/files/{path}`（原 Q4+-3b；实现以 Q5-1 tip 为准）。
         路径穿越（`..`）拒绝。Content-Type：json/gltf/glb/png/webp。
         **非**默认全场 VTU 通道。workdir 未挂载且无内嵌/zip 时通常 404。
       operationId: getJobArtifact
