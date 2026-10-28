@@ -3,7 +3,7 @@
     <aside class="field-side">
       <h2 class="side-title">场量 · 精简可视化</h2>
       <p class="side-desc">
-        Q3-6 · F1 §5 · source={{ dataSource }} · {{ artifactBase }}
+        Q3-6 · F1 §5 · source={{ loading ? '…' : dataSource }} · {{ artifactBase }}
       </p>
 
       <dl v-if="queryJobId || queryResultRef || job" class="meta-list job-meta">
@@ -27,14 +27,15 @@
         </div>
         <div class="meta-row">
           <dt>source</dt>
-          <dd>{{ dataSource }}</dd>
+          <dd>{{ loading ? '…' : dataSource }}</dd>
         </div>
       </dl>
 
       <div v-if="jobError" class="error-box">{{ jobError }}</div>
       <div v-if="loadError" class="error-box">{{ loadError }}</div>
-      <p v-if="dataSource === 'fixture'" class="degrade-note">
-        dry-run 降级：FE 无单文件 GET / 真场不可达时使用 public fixture（不宣称误差达标）。
+      <p v-if="loading" class="degrade-note">{{ loadingHint }}</p>
+      <p v-else :class="dataSource === 'job-artifacts' ? 'live-note' : 'degrade-note'">
+        {{ sourceHint }}
       </p>
 
       <template v-if="manifest">
@@ -52,34 +53,36 @@
           <el-table-column prop="key" label="键" min-width="100" />
           <el-table-column prop="value" label="值" min-width="100" />
         </el-table>
+      </template>
 
+      <template v-if="artifactRows.length">
         <h3 class="section-title">artifacts</h3>
         <ul class="art-list">
-          <li v-for="(a, i) in manifest.artifacts" :key="i">
+          <li v-for="(a, i) in artifactRows" :key="`${a.role}-${a.path}-${i}`">
             <span class="art-role">{{ a.role }}</span>
             <span class="art-fmt">{{ a.format }}</span>
             <span class="art-path" :title="a.path">{{ basename(a.path) }}</span>
           </li>
         </ul>
-
-        <h3 v-if="scalarsArtifact" class="section-title">scalars.json</h3>
-        <el-table
-          v-if="scalarsArtifact"
-          :data="artifactScalarRows"
-          size="small"
-          stripe
-          empty-text="—"
-          style="width: 100%"
-        >
-          <el-table-column prop="key" label="键" min-width="100" />
-          <el-table-column prop="value" label="值" min-width="100" />
-        </el-table>
-
-        <div v-if="previewUrl" class="preview-block">
-          <h3 class="section-title">preview</h3>
-          <img :src="previewUrl" alt="FEM preview" class="preview-img" />
-        </div>
       </template>
+
+      <h3 v-if="scalarsArtifact" class="section-title">scalars.json</h3>
+      <el-table
+        v-if="scalarsArtifact"
+        :data="artifactScalarRows"
+        size="small"
+        stripe
+        empty-text="—"
+        style="width: 100%"
+      >
+        <el-table-column prop="key" label="键" min-width="100" />
+        <el-table-column prop="value" label="值" min-width="100" />
+      </el-table>
+
+      <div v-if="previewUrl" class="preview-block">
+        <h3 class="section-title">preview</h3>
+        <img :src="previewUrl" alt="FEM preview" class="preview-img" />
+      </div>
 
       <p class="hint">
         仅消费精简 JSON / glTF / PNG（docs/drafts/Q3-轴向与FEM边界.md §5）。禁止默认 VTK/全场。
@@ -95,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import * as THREE from 'three'
@@ -104,11 +107,25 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import {
   FEM_MANIFEST_FIXTURE_BASE,
   type FemArtifact,
+  type FemArtifactFormat,
+  type FemArtifactRole,
+  type FemDim,
+  type FemJobStatus,
   type FemManifest,
   type FemScalarsArtifact,
+  type FemSolverKernel,
 } from '@/types/fieldViz'
 import { disposeObject3D } from '@/lib/meshToThree'
-import { getJob, pollJob, JobPollAbortedError } from '@/api/jobs'
+import {
+  getJob,
+  getJobArtifact,
+  getJobArtifactBlob,
+  listJobArtifacts,
+  pollJob,
+  JobPollAbortedError,
+  JobPollTimeoutError,
+  type JobArtifactsList,
+} from '@/api/jobs'
 import { isJobTerminal, type Job } from '@/api/types'
 
 const route = useRoute()
@@ -123,13 +140,18 @@ const queryProjectId = computed(() =>
   typeof route.query.projectId === 'string' ? route.query.projectId.trim() : '',
 )
 
+type FieldDataSource = 'fixture' | 'job-fixture' | 'job-artifacts'
+
 const job = ref<Job | null>(null)
 const jobError = ref<string | null>(null)
-/** fixture | job-fixture — 本 tip 无 jszip/单文件 GET，真场缺时降级 fixture */
-const dataSource = ref<'fixture' | 'job-fixture'>('fixture')
+/** fixture：无 jobId。job-fixture：有 job 但列表空/404/拉取失败。job-artifacts：F1 精简件。 */
+const dataSource = ref<FieldDataSource>('fixture')
 const artifactBase = ref<string>(FEM_MANIFEST_FIXTURE_BASE)
+const degradeReason = ref<string | null>(null)
+const loading = ref(true)
 
 const manifest = ref<FemManifest | null>(null)
+const artifactRows = ref<FemArtifact[]>([])
 const scalarsArtifact = ref<FemScalarsArtifact | null>(null)
 const loadError = ref<string | null>(null)
 const gltfError = ref<string | null>(null)
@@ -138,10 +160,31 @@ const previewUrl = ref<string | null>(null)
 const hostRef = ref<HTMLDivElement | null>(null)
 
 let jobAbort: AbortController | null = null
+let objectUrls: string[] = []
+
+const ROLES: readonly FemArtifactRole[] = ['scalars', 'surface', 'slice', 'preview', 'other']
+const FORMATS: readonly FemArtifactFormat[] = ['json', 'gltf', 'glb', 'png', 'webp', 'other']
+const MESH_FORMATS: readonly FemArtifactFormat[] = ['glb', 'gltf']
+const STATUSES: readonly FemJobStatus[] = ['queued', 'running', 'succeeded', 'failed', 'cancelled']
 
 const displayResultRef = computed(
   () => job.value?.resultRef || queryResultRef.value || '',
 )
+
+const loadingHint = computed(() =>
+  queryJobId.value ? '正在读取任务与精简产物…' : '正在加载 dry-run fixture…',
+)
+
+const sourceHint = computed(() => {
+  if (dataSource.value === 'job-artifacts') {
+    return '来源 job-artifacts：已按 manifest 拉取 scalars / slice / preview 精简件。不宣称误差达标。'
+  }
+  if (dataSource.value === 'job-fixture') {
+    const why = degradeReason.value ? `（${degradeReason.value}）` : ''
+    return `已降级 public fixture${why}。当前场数据不是该 job 的精简产物。不宣称误差达标。`
+  }
+  return 'dry-run：未带 jobId，使用 public fixture。不宣称误差达标。'
+})
 
 let renderer: THREE.WebGLRenderer | null = null
 let scene: THREE.Scene | null = null
@@ -166,17 +209,166 @@ function resolveArtifactUrl(artifact: FemArtifact): string {
   return `${artifactBase.value}/${basename(artifact.path)}`
 }
 
+function clipMessage(message: string): string {
+  const one = message.replace(/\s+/g, ' ').trim()
+  if (!one || one.startsWith('<')) return ''
+  return one.length > 180 ? `${one.slice(0, 180)}…` : one
+}
+
 function errorMessage(e: unknown): string {
   if (axios.isAxiosError(e)) {
-    const detail = e.response?.data?.detail
-    if (typeof detail === 'string') return detail
-    if (detail && typeof detail === 'object' && 'message' in detail) {
-      return String((detail as { message: string }).message)
+    const data = e.response?.data
+    if (typeof data === 'string') {
+      const text = clipMessage(data)
+      if (text) return text
+    }
+    if (data && typeof data === 'object' && !(data instanceof Blob)) {
+      const body = data as { message?: unknown; detail?: unknown }
+      if (typeof body.message === 'string') {
+        const text = clipMessage(body.message)
+        if (text) return text
+      }
+      const detail = body.detail
+      if (typeof detail === 'string') {
+        const text = clipMessage(detail)
+        if (text) return text
+      }
+      if (detail && typeof detail === 'object' && 'message' in detail) {
+        const message = (detail as { message?: unknown }).message
+        if (typeof message === 'string') {
+          const text = clipMessage(message)
+          if (text) return text
+        }
+      }
     }
     if (!e.response) return `API 不可达：${e.message}`
+    if (e.response.status) return `HTTP ${e.response.status}`
     return e.message
   }
   return e instanceof Error ? e.message : String(e)
+}
+
+function isAbortError(e: unknown, signal?: AbortSignal): boolean {
+  if (signal?.aborted) return true
+  if (e instanceof JobPollAbortedError) return true
+  if (e instanceof DOMException && e.name === 'AbortError') return true
+  if (axios.isAxiosError(e) && (e.code === 'ERR_CANCELED' || e.name === 'CanceledError')) return true
+  return false
+}
+
+function throwIfAborted(signal: AbortSignal) {
+  if (signal.aborted) throw new DOMException('The operation was aborted', 'AbortError')
+}
+
+function stillCurrent(signal: AbortSignal): boolean {
+  return !signal.aborted && jobAbort?.signal === signal
+}
+
+function revokeAllObjectUrls() {
+  for (const url of objectUrls) URL.revokeObjectURL(url)
+  objectUrls = []
+}
+
+function asRole(value: string): FemArtifactRole {
+  return (ROLES as readonly string[]).includes(value) ? (value as FemArtifactRole) : 'other'
+}
+
+function asFormat(value: string): FemArtifactFormat {
+  return (FORMATS as readonly string[]).includes(value) ? (value as FemArtifactFormat) : 'other'
+}
+
+function coerceArtifacts(
+  raw: Array<{ path?: unknown; role?: unknown; format?: unknown; bytes?: unknown }>,
+): FemArtifact[] {
+  const out: FemArtifact[] = []
+  for (const item of raw) {
+    if (!item || typeof item.path !== 'string' || !item.path.trim()) continue
+    if (typeof item.role !== 'string' || typeof item.format !== 'string') continue
+    const art: FemArtifact = {
+      path: item.path.trim(),
+      role: asRole(item.role),
+      format: asFormat(item.format),
+    }
+    if (typeof item.bytes === 'number' && Number.isFinite(item.bytes)) art.bytes = item.bytes
+    out.push(art)
+  }
+  return out
+}
+
+function isKernel(value: unknown): value is FemSolverKernel {
+  return value === 'elmer' || value === 'getdp'
+}
+
+function isDim(value: unknown): value is FemDim {
+  return value === '2d' || value === '3d'
+}
+
+function coerceManifest(raw: unknown): FemManifest | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  if (typeof o.jobId !== 'string') return null
+  if (typeof o.status !== 'string' || !(STATUSES as readonly string[]).includes(o.status)) return null
+  if (!isKernel(o.solverKernel) || !isDim(o.dim)) return null
+  if (o.topology !== 'RF' && o.topology !== 'AF') return null
+  if (o.machineType !== 'BLDC' && o.machineType !== 'PMSM' && o.machineType !== 'ACIM') return null
+  if (!o.scalars || typeof o.scalars !== 'object' || Array.isArray(o.scalars)) return null
+  const artifacts = Array.isArray(o.artifacts)
+    ? coerceArtifacts(o.artifacts as Array<{ path?: unknown; role?: unknown; format?: unknown; bytes?: unknown }>)
+    : []
+  const manifestDoc: FemManifest = {
+    jobId: o.jobId,
+    status: o.status as FemJobStatus,
+    solverKernel: o.solverKernel,
+    topology: o.topology,
+    machineType: o.machineType,
+    dim: o.dim,
+    scalars: o.scalars as Record<string, unknown>,
+    artifacts,
+  }
+  if (typeof o.createdAt === 'string') manifestDoc.createdAt = o.createdAt
+  if (typeof o.updatedAt === 'string') manifestDoc.updatedAt = o.updatedAt
+  return manifestDoc
+}
+
+function pickArtifact(
+  arts: FemArtifact[],
+  role: FemArtifactRole,
+  formats: readonly FemArtifactFormat[],
+): FemArtifact | undefined {
+  return arts.find((a) => a.role === role && formats.includes(a.format))
+}
+
+function pickMeshArtifact(arts: FemArtifact[]): FemArtifact | undefined {
+  return pickArtifact(arts, 'slice', MESH_FORMATS) ?? pickArtifact(arts, 'surface', MESH_FORMATS)
+}
+
+function pickManifestPath(listed: JobArtifactsList, jobId: string): string {
+  const candidates = [
+    listed.resultRef,
+    job.value?.resultRef,
+    queryResultRef.value,
+    `solver/fem/jobs/${jobId}/manifest.json`,
+  ]
+  for (const candidate of candidates) {
+    const text = (candidate || '').trim().replace(/\\/g, '/').replace(/^\/+/, '')
+    if (!text || text.split('/').includes('..')) continue
+    return text
+  }
+  return `solver/fem/jobs/${jobId}/manifest.json`
+}
+
+function asScalars(value: unknown): FemScalarsArtifact | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as FemScalarsArtifact
+}
+
+async function fetchOptional<T>(run: () => Promise<T>, signal: AbortSignal): Promise<T | null> {
+  try {
+    return await run()
+  } catch (e) {
+    if (isAbortError(e, signal)) throw e
+    return null
+  }
 }
 
 function flattenScalars(obj: Record<string, unknown>, prefix = ''): { key: string; value: string }[] {
@@ -289,98 +481,262 @@ function teardownScene() {
   camera = null
 }
 
-async function loadGltf(url: string) {
+function resetViz() {
+  manifest.value = null
+  scalarsArtifact.value = null
+  artifactRows.value = []
+  previewUrl.value = null
+  meshLoaded.value = false
+  gltfError.value = null
+  loadError.value = null
+  revokeAllObjectUrls()
+  clearMesh()
+}
+
+function attachMesh(root: THREE.Object3D) {
   if (!scene) return
+  clearMesh()
+  meshRoot = root
+  meshRoot.traverse((obj) => {
+    const mesh = obj as THREE.Mesh
+    if (mesh.isMesh) {
+      const mat = mesh.material as THREE.MeshStandardMaterial
+      if (mat && 'metalness' in mat) {
+        mat.metalness = 0.2
+        mat.roughness = 0.55
+        mat.side = THREE.DoubleSide
+      }
+    }
+  })
+  scene.add(meshRoot)
+  fitCamera(meshRoot)
+  meshLoaded.value = true
+}
+
+async function loadGltf(url: string, signal: AbortSignal) {
+  if (!scene || signal.aborted) return
   clearMesh()
   gltfError.value = null
   meshLoaded.value = false
   const loader = new GLTFLoader()
   try {
     const gltf = await loader.loadAsync(url)
-    meshRoot = gltf.scene
-    meshRoot.traverse((obj) => {
-      const mesh = obj as THREE.Mesh
-      if (mesh.isMesh) {
-        const mat = mesh.material as THREE.MeshStandardMaterial
-        if (mat && 'metalness' in mat) {
-          mat.metalness = 0.2
-          mat.roughness = 0.55
-          mat.side = THREE.DoubleSide
-        }
-      }
-    })
-    scene.add(meshRoot)
-    fitCamera(meshRoot)
-    meshLoaded.value = true
+    if (signal.aborted || !scene) {
+      disposeObject3D(gltf.scene)
+      throwIfAborted(signal)
+      return
+    }
+    attachMesh(gltf.scene)
   } catch (e) {
+    if (isAbortError(e, signal)) throw e
+    gltfError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+async function loadGltfBytes(data: ArrayBuffer, signal: AbortSignal) {
+  if (!scene || signal.aborted) return
+  clearMesh()
+  gltfError.value = null
+  meshLoaded.value = false
+  const loader = new GLTFLoader()
+  try {
+    const gltf = await loader.parseAsync(data, '')
+    if (signal.aborted || !scene) {
+      disposeObject3D(gltf.scene)
+      throwIfAborted(signal)
+      return
+    }
+    attachMesh(gltf.scene)
+  } catch (e) {
+    if (isAbortError(e, signal)) throw e
     gltfError.value = e instanceof Error ? e.message : String(e)
   }
 }
 
 /**
- * 加载精简产物：manifest → scalars / slice|surface glTF / preview。
- * 架构 F1：真产物在 mems；本 tip 无 jszip 依赖、无单文件 GET → 允许降级 public fixture。
+ * public fixture：manifest → scalars / slice|surface / preview。
+ * 无 jobId，或 job 产物 404 / 空列表 / 拉取失败时走这里。
  */
-async function loadFromBase(base: string, source: 'fixture' | 'job-fixture') {
-  loadError.value = null
+async function loadFromBase(base: string, source: 'fixture' | 'job-fixture', signal: AbortSignal) {
+  throwIfAborted(signal)
+  resetViz()
   artifactBase.value = base
   dataSource.value = source
   try {
-    const res = await fetch(`${base}/manifest.json`)
+    const res = await fetch(`${base}/manifest.json`, { signal })
+    throwIfAborted(signal)
     if (!res.ok) throw new Error(`manifest ${res.status}`)
-    const m = (await res.json()) as FemManifest
+    const m = coerceManifest(await res.json())
+    if (!m) throw new Error('fixture manifest 形状无效')
     manifest.value = m
+    artifactRows.value = m.artifacts
 
-    const scalarsArt = m.artifacts.find((a) => a.role === 'scalars' && a.format === 'json')
+    const scalarsArt = pickArtifact(m.artifacts, 'scalars', ['json'])
     if (scalarsArt) {
-      const sRes = await fetch(resolveArtifactUrl(scalarsArt))
-      if (sRes.ok) scalarsArtifact.value = (await sRes.json()) as FemScalarsArtifact
+      const sRes = await fetch(resolveArtifactUrl(scalarsArt), { signal })
+      throwIfAborted(signal)
+      if (sRes.ok) scalarsArtifact.value = asScalars(await sRes.json())
     }
 
-    const previewArt = m.artifacts.find(
-      (a) => a.role === 'preview' && (a.format === 'png' || a.format === 'webp'),
-    )
+    const previewArt = pickArtifact(m.artifacts, 'preview', ['png', 'webp'])
     previewUrl.value = previewArt ? resolveArtifactUrl(previewArt) : null
 
-    const meshArt =
-      m.artifacts.find(
-        (a) =>
-          (a.role === 'slice' || a.role === 'surface') &&
-          (a.format === 'glb' || a.format === 'gltf'),
-      ) ?? null
+    const meshArt = pickMeshArtifact(m.artifacts)
     if (meshArt) {
-      await loadGltf(resolveArtifactUrl(meshArt))
-    } else {
+      await loadGltf(resolveArtifactUrl(meshArt), signal)
+    } else if (stillCurrent(signal)) {
       gltfError.value = 'manifest 无 slice/surface glTF/GLB 产物'
     }
   } catch (e) {
+    if (isAbortError(e, signal)) throw e
     loadError.value = e instanceof Error ? e.message : String(e)
   }
 }
 
-async function loadFixtureDegraded(reason?: string) {
-  if (reason) {
-    // 保留 job 上下文，标明降级
-    jobError.value = jobError.value || reason
-  }
+async function loadFixtureDegraded(signal: AbortSignal) {
+  throwIfAborted(signal)
   const src: 'fixture' | 'job-fixture' = queryJobId.value || job.value ? 'job-fixture' : 'fixture'
-  await loadFromBase(FEM_MANIFEST_FIXTURE_BASE, src)
+  await loadFromBase(FEM_MANIFEST_FIXTURE_BASE, src, signal)
+}
+
+function listFailReason(e: unknown): string {
+  if (axios.isAxiosError(e) && e.response?.status === 404) {
+    const msg = errorMessage(e)
+    if (!msg || msg === 'Not Found' || msg === 'HTTP 404') {
+      return '产物列表 404（路由未就绪或无 manifest）'
+    }
+    return `产物列表 404：${msg}`
+  }
+  return `产物列表失败：${errorMessage(e)}`
+}
+
+/**
+ * F1：list → manifest（resultRef）→ scalars / slice|surface / preview。
+ * 列表 404、空列表，或 manifest 与三件套都拿不到时返回 false，由调用方降级 fixture。
+ */
+async function tryLoadJobArtifacts(jobId: string, signal: AbortSignal): Promise<boolean> {
+  let listed: JobArtifactsList
+  try {
+    listed = await listJobArtifacts(jobId, signal)
+  } catch (e) {
+    if (isAbortError(e, signal)) throw e
+    degradeReason.value = listFailReason(e)
+    return false
+  }
+  if (!stillCurrent(signal)) return false
+
+  if (listed.resultRef && job.value && !job.value.resultRef) {
+    job.value = { ...job.value, resultRef: listed.resultRef }
+  }
+
+  const listedArts = coerceArtifacts(Array.isArray(listed.artifacts) ? listed.artifacts : [])
+  if (listedArts.length === 0) {
+    degradeReason.value = '产物列表为空'
+    return false
+  }
+
+  let manifestObj: FemManifest | null = null
+  try {
+    const raw = await getJobArtifact(jobId, pickManifestPath(listed, jobId), signal)
+    if (!stillCurrent(signal)) return false
+    manifestObj = coerceManifest(raw)
+  } catch (e) {
+    if (isAbortError(e, signal)) throw e
+    manifestObj = null
+  }
+  if (!stillCurrent(signal)) return false
+
+  if (manifestObj && manifestObj.artifacts.length === 0) {
+    manifestObj = { ...manifestObj, artifacts: listedArts }
+  }
+  const arts = manifestObj && manifestObj.artifacts.length > 0 ? manifestObj.artifacts : listedArts
+
+  const scalarsArt = pickArtifact(arts, 'scalars', ['json'])
+  const previewArt = pickArtifact(arts, 'preview', ['png', 'webp'])
+  const meshArt = pickMeshArtifact(arts)
+
+  const scalarsP = scalarsArt
+    ? fetchOptional(() => getJobArtifact(jobId, scalarsArt.path, signal), signal)
+    : Promise.resolve(null)
+  const previewP = previewArt
+    ? fetchOptional(() => getJobArtifactBlob(jobId, previewArt.path, signal), signal)
+    : Promise.resolve(null)
+  const meshP = meshArt
+    ? fetchOptional(() => getJobArtifactBlob(jobId, meshArt.path, signal), signal)
+    : Promise.resolve(null)
+  const [scalarsRes, previewRes, meshRes] = await Promise.all([scalarsP, previewP, meshP])
+  if (!stillCurrent(signal)) return false
+
+  const scalarsBody = asScalars(scalarsRes)
+  const previewBlob = previewRes instanceof Blob && previewRes.size > 0 ? previewRes : null
+  const meshBlob = meshRes instanceof Blob && meshRes.size > 0 ? meshRes : null
+  if (!manifestObj && !scalarsBody && !previewBlob && !meshBlob) {
+    degradeReason.value = 'manifest、scalars、slice、preview 均未取到'
+    return false
+  }
+
+  resetViz()
+  artifactBase.value = `/api/v1/jobs/${jobId}/artifacts`
+  dataSource.value = 'job-artifacts'
+  degradeReason.value = null
+  manifest.value = manifestObj
+  artifactRows.value = arts
+  scalarsArtifact.value = scalarsBody
+
+  const problems: string[] = []
+  if (scalarsArt && !scalarsBody) problems.push('scalars.json')
+  if (previewArt && !previewBlob) problems.push('preview')
+  if (problems.length) loadError.value = `部分产物未取到：${problems.join('、')}`
+
+  if (previewBlob && previewArt) {
+    const mime = previewArt.format === 'webp' ? 'image/webp' : 'image/png'
+    const typed = previewBlob.type ? previewBlob : new Blob([previewBlob], { type: mime })
+    const url = URL.createObjectURL(typed)
+    objectUrls.push(url)
+    previewUrl.value = url
+  }
+
+  if (meshBlob) {
+    try {
+      const buf = await meshBlob.arrayBuffer()
+      if (!stillCurrent(signal)) return true
+      await loadGltfBytes(buf, signal)
+    } catch (e) {
+      if (isAbortError(e, signal)) throw e
+      if (stillCurrent(signal)) {
+        gltfError.value = e instanceof Error ? e.message : String(e)
+      }
+    }
+  } else if (meshArt) {
+    gltfError.value = 'slice/surface 未取到'
+  } else {
+    gltfError.value = 'manifest 无 slice/surface glTF/GLB 产物'
+  }
+  return true
 }
 
 async function resolveJobThenLoad() {
-  jobError.value = null
-  const id = queryJobId.value
-  if (!id) {
-    await loadFixtureDegraded()
-    return
-  }
-
   jobAbort?.abort()
-  jobAbort = new AbortController()
-  const { signal } = jobAbort
+  const controller = new AbortController()
+  jobAbort = controller
+  const { signal } = controller
 
+  loading.value = true
+  jobError.value = null
+  degradeReason.value = null
+  job.value = null
+  resetViz()
+
+  const id = queryJobId.value
   try {
+    if (!id) {
+      await loadFixtureDegraded(signal)
+      return
+    }
+
+    artifactBase.value = '…'
     let j = await getJob(id, signal)
+    throwIfAborted(signal)
     job.value = j
     if (!isJobTerminal(j.status)) {
       try {
@@ -389,40 +745,67 @@ async function resolveJobThenLoad() {
           timeoutMs: 60_000,
           signal,
           onUpdate: (u) => {
-            job.value = u
+            if (stillCurrent(signal)) job.value = u
           },
         })
-        job.value = j
+        if (stillCurrent(signal)) job.value = j
       } catch (e) {
-        if (e instanceof JobPollAbortedError) return
-        // 短 poll 失败仍展示最后状态并降级 fixture
-        jobError.value = errorMessage(e)
+        if (isAbortError(e, signal)) return
+        if (e instanceof JobPollTimeoutError) {
+          if (e.job && stillCurrent(signal)) job.value = e.job
+          jobError.value = `轮询超时（最后状态 ${e.job?.status ?? job.value?.status ?? 'unknown'}）`
+        } else {
+          jobError.value = `轮询失败：${errorMessage(e)}`
+        }
       }
     }
 
-    // 真场：未来可 downloadMems+JSZip；本 tip 无 jszip → 直接降级 fixture，仍展示 jobId/resultRef
-    await loadFixtureDegraded(
-      j.resultRef
-        ? `无 mems 单文件 GET；resultRef=${j.resultRef} 文本保留，产物降级 fixture`
-        : '无 mems 单文件 GET；产物降级 public fixture',
-    )
+    if (!stillCurrent(signal)) return
+
+    if (job.value?.status === 'succeeded') {
+      const ok = await tryLoadJobArtifacts(id, signal)
+      if (!stillCurrent(signal)) return
+      if (ok) return
+    } else {
+      const status = job.value?.status ?? 'unknown'
+      if (job.value?.error?.message) {
+        jobError.value = jobError.value || job.value.error.message
+      }
+      degradeReason.value = degradeReason.value || `任务状态为 ${status}，未使用精简产物`
+    }
+
+    if (!stillCurrent(signal)) return
+    await loadFixtureDegraded(signal)
   } catch (e) {
-    if (e instanceof JobPollAbortedError) return
-    jobError.value = errorMessage(e)
-    await loadFixtureDegraded(`getJob 失败：${jobError.value}`)
+    if (isAbortError(e, signal)) return
+    if (!stillCurrent(signal)) return
+    jobError.value = `读取任务失败：${errorMessage(e)}`
+    degradeReason.value = degradeReason.value || '读取任务失败'
+    try {
+      await loadFixtureDegraded(signal)
+    } catch (e2) {
+      if (isAbortError(e2, signal)) return
+      if (stillCurrent(signal)) loadError.value = errorMessage(e2)
+    }
+  } finally {
+    if (stillCurrent(signal)) loading.value = false
   }
 }
+
+watch([queryJobId, queryResultRef], () => {
+  void resolveJobThenLoad()
+})
 
 onMounted(() => {
   initScene()
   void resolveJobThenLoad()
 })
 
-onBeforeUnmount(() => teardownScene())
-
-onUnmounted(() => {
+onBeforeUnmount(() => {
   jobAbort?.abort()
   jobAbort = null
+  revokeAllObjectUrls()
+  teardownScene()
 })
 </script>
 
@@ -453,6 +836,7 @@ onUnmounted(() => {
   font-size: 11px;
   color: var(--mo-text-muted);
   font-family: var(--mo-font-mono);
+  overflow-wrap: anywhere;
 }
 
 .section-title {
@@ -564,6 +948,17 @@ onUnmounted(() => {
   color: #fbbf24;
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--mo-radius);
+}
+
+.live-note {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.35);
   border-radius: var(--mo-radius);
 }
 

@@ -19,7 +19,11 @@ export type FemArtifactRole = 'scalars' | 'surface' | 'slice' | 'preview' | 'oth
 export type FemArtifactFormat = 'json' | 'gltf' | 'glb' | 'png' | 'webp' | 'other'
 
 export type FemArtifact = {
-  /** 相对 manifest 目录或 .mems 根的路径；本 tip mock 相对 fixture 目录 */
+  /**
+   * 相对 .mems 根的路径。
+   * job-artifacts：GET /jobs/{jobId}/artifacts/{path}（按段编码，保留 `/`）。
+   * fixture 降级：basename 映射到 public 目录。
+   */
   path: string
   role: FemArtifactRole
   format: FemArtifactFormat
