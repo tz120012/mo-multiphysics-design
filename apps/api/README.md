@@ -153,11 +153,22 @@ curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H "Authorization: Bearer $TOKEN
 curl -s -o /dev/null -w '%{http_code}\n' -X DELETE -H "Authorization: Bearer $TOKEN" \
   "$BASE/materials/mat-steel-m19"
 
-# Optional sync analytic solve stub (expect 501; Jobs analytic remains batch path)
-curl -s -o /dev/null -w '%{http_code}\n' -X POST -H "Authorization: Bearer $TOKEN" \
+# Sync analytic solve (Python golden; Bearer required). Query solver=mec|mock
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"schema_version":"0.1.0-q2","topology":"RF","machine_type":"PMSM","geometry":{},"materials":{},"operating_point":{}}' \
-  "$BASE/solver/analytic/solve"
+  -d @../../packages/solver-analytic/smoke/fixtures/radial_pmsm_request.json \
+  "$BASE/solver/analytic/solve?solver=mec" | python3 -m json.tool | head -40
+
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d @../../packages/solver-analytic/smoke/fixtures/radial_acim_request.json \
+  "$BASE/solver/analytic/solve" | python3 -m json.tool | head -40
+
+# mock path
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d @../../packages/solver-analytic/smoke/fixtures/radial_pmsm_request.json \
+  "$BASE/solver/analytic/solve?solver=mock" | python3 -m json.tool | head -20
 ```
 
 ### Jobs analytic poll (Q2-6 optional Celery)
