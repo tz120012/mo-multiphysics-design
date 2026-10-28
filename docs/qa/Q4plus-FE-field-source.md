@@ -30,3 +30,7 @@
 | `/field?jobId=<不存在或无产物>` | `source=job-fixture`（列表空/404 **且**关键 GET 失败） |
 
 `projectId` 只作元数据展示，不参与本页取数。
+
+## 磁静力学后处理（Q5-2 FE）
+
+方程模式面板见 [Q5-2-FE-field-magnetostatic](Q5-2-FE-field-magnetostatic.md)（FEM tip `797ce67`）。数据源规则以上表为准，不因磁静力学标量改道。

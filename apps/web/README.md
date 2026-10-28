@@ -88,6 +88,8 @@ pnpm preview
 
 不使用 mems 整包或 `mems/files`。状态注记只写「不宣称误差达标」，不宣称 MVP。
 
+磁静力学后处理（Q5-2，FEM tip `797ce67`）仍走上面的 artifacts / fixture 规则。`equationMode=magnetostatic` 或 `magnetostaticPathReady=true` 时侧栏为「磁静力学后处理」（含 `postprocess`、`axialForceN`、`magneticEnergyJ` 等）；`heat_proxy` 或旧 fixture 缺省标为 heat-proxy / 非磁静力学真值。`pending_calibration` 缺省视为未校准。说明见 `docs/qa/Q5-2-FE-field-magnetostatic.md`。
+
 ## 已知限制
 
 - 鉴权接真 API（`POST /auth/login`）；token 存 `accessToken`

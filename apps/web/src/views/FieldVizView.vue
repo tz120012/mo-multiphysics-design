@@ -38,6 +38,46 @@
         {{ sourceHint }}
       </p>
 
+      <section
+        v-if="postprocessView"
+        class="post-panel"
+        :data-postprocess-kind="postprocessView.kind"
+        :data-equation-mode="postprocessView.equationMode"
+        :data-pending-calibration="postprocessView.pendingCalibration ? 'true' : 'false'"
+        :data-magnetostatic-path-ready="postprocessView.pathReadyText"
+      >
+        <div class="post-head">
+          <h3 class="post-title">{{ postprocessView.title }}</h3>
+          <span
+            v-if="postprocessView.pendingCalibration"
+            class="cal-badge"
+            data-pending-calibration
+          >pending_calibration</span>
+        </div>
+        <p class="post-status">
+          equationMode={{ postprocessView.equationModeText }}
+          · magnetostaticPathReady={{ postprocessView.pathReadyText }}
+        </p>
+        <p class="post-note">{{ postprocessView.note }}</p>
+        <dl class="meta-list post-list">
+          <div
+            v-for="row in postprocessView.rows"
+            :key="row.key"
+            class="meta-row"
+            :data-scalar="row.key"
+            :data-scalar-state="row.state"
+            :data-uncalibrated="row.uncalibrated ? 'true' : 'false'"
+          >
+            <dt>{{ row.key }}</dt>
+            <dd>
+              <span class="scalar-value">{{ row.value }}</span>
+              <span v-if="row.unit" class="scalar-unit">{{ row.unit }}</span>
+              <span v-if="row.uncalibrated" class="cal-badge cal-badge-inline">pending_calibration</span>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <template v-if="manifest">
         <dl class="meta-list">
           <div class="meta-row"><dt>manifest.jobId</dt><dd class="mono-trunc" :title="manifest.jobId">{{ shortId(manifest.jobId) }}</dd></div>
@@ -115,6 +155,7 @@ import {
   type FemScalarsArtifact,
   type FemSolverKernel,
 } from '@/types/fieldViz'
+import { buildFieldPostprocessView, assignManifestPostprocessFields } from '@/lib/fieldPostprocess'
 import { disposeObject3D } from '@/lib/meshToThree'
 import {
   getJob,
@@ -159,6 +200,9 @@ const forceFixture = computed(() => {
  *    列表非空时，单文件失败仍保持 `job-artifacts`，不改吃 fixture。
  * 5. 不走 mems 整包，也不调用 mems/files（Q4+-3b / F5-A）。
  *    状态注记只写「不宣称误差达标」；不宣称 MVP，不写精度达标。
+ * 6. 后处理面板只读已取到的 scalars / manifest（FEM tip 797ce67）。
+ *    equationMode=magnetostatic 或 magnetostaticPathReady=true → 磁静力学后处理；
+ *    heat_proxy 或缺省 → heat-proxy / 非磁静力学真值。不改上面的 source 规则。
  */
 type FieldDataSource = 'fixture' | 'job-fixture' | 'job-artifacts'
 
@@ -348,6 +392,7 @@ function coerceManifest(raw: unknown): FemManifest | null {
   }
   if (typeof o.createdAt === 'string') manifestDoc.createdAt = o.createdAt
   if (typeof o.updatedAt === 'string') manifestDoc.updatedAt = o.updatedAt
+  assignManifestPostprocessFields(manifestDoc, o)
   return manifestDoc
 }
 
@@ -419,6 +464,10 @@ const artifactScalarRows = computed(() =>
   scalarsArtifact.value
     ? flattenScalars(scalarsArtifact.value as Record<string, unknown>)
     : [],
+)
+
+const postprocessView = computed(() =>
+  buildFieldPostprocessView(manifest.value, scalarsArtifact.value),
 )
 
 function clearMesh() {
@@ -881,7 +930,7 @@ onBeforeUnmount(() => {
 }
 
 .field-side {
-  width: 320px;
+  width: 360px;
   flex-shrink: 0;
   padding: 16px;
   border-right: 1px solid var(--mo-border);
@@ -997,6 +1046,86 @@ onBeforeUnmount(() => {
   font-size: 11px;
   color: var(--mo-text-muted);
   line-height: 1.4;
+}
+
+.post-panel {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--mo-radius);
+  border: 1px solid rgba(45, 212, 191, 0.4);
+  background: rgba(45, 212, 191, 0.06);
+}
+
+.post-panel[data-postprocess-kind='heat-proxy'],
+.post-panel[data-postprocess-kind='other'] {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.post-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.post-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.post-status,
+.post-note {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.post-status {
+  font-family: var(--mo-font-mono);
+  color: var(--mo-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.post-note {
+  color: var(--mo-text-secondary);
+}
+
+.post-list {
+  margin-bottom: 0;
+}
+
+.post-list .meta-row dd {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  text-align: right;
+}
+
+.scalar-unit {
+  color: var(--mo-text-muted);
+}
+
+.cal-badge {
+  font-family: var(--mo-font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  white-space: nowrap;
+}
+
+.cal-badge-inline {
+  font-size: 9px;
+  padding: 0 5px;
 }
 
 .job-meta {
