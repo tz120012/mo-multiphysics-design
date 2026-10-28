@@ -1,0 +1,17 @@
+name: ci
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  gate0-placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate0 CI placeholder
+        run: |
+          echo "mo-platform Gate0 CI placeholder OK"
+          test -f docs/01-任务书-v2.md
+          test -f docs/02-阶段任务拆解与门禁.md
+          bash scripts/smoke_gate0.sh || true

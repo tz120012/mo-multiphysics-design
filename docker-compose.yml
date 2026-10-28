@@ -1,0 +1,36 @@
+# Gate0 placeholder — Postgres + Redis for Mo local deps
+# Do not start against other projects' networks.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mo-postgres
+    environment:
+      POSTGRES_USER: mo
+      POSTGRES_PASSWORD: mo
+      POSTGRES_DB: mo
+    ports:
+      - "5433:5432"
+    volumes:
+      - mo_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mo -d mo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mo-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - mo_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mo_pg_data:
+  mo_redis_data:
