@@ -237,7 +237,19 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
   sleep 0.2
 done
 # Expect resultRef like: solver/fem/jobs/<uuid>/manifest.json
+
+# L4 F1: list + get thinned artifacts (needs MO_FEM_WORKDIR shared vol for disk files;
+# stub dry-run may list artifacts=[] from payload-embedded manifest)
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/jobs/$JID/artifacts" | python3 -m json.tool
+# Single file (mems-relative path; Content-Type set for json/gltf/png/webp):
+curl -s -H "Authorization: Bearer $TOKEN" \
+  -o /tmp/fem-manifest.json \
+  "$BASE/jobs/$JID/artifacts/solver/fem/jobs/$JID/manifest.json"
+curl -s -H "Authorization: Bearer $TOKEN" \
+  -o /tmp/fem-scalars.json \
+  "$BASE/jobs/$JID/artifacts/results/fem/$JID/scalars.json"
 ```
+
 
 Celery FEM worker (queue `fem`, compose profile):
 

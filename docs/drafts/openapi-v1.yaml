@@ -720,10 +720,14 @@ paths:
   /jobs/{jobId}/artifacts:
     get:
       tags: [Jobs]
-      summary: List job artifacts（optional stub；Q3 MVP 可用 resultRef + mems GET）
+      summary: List thinned FEM artifacts（F1；从 manifest）
       description: |
-        **Q3 MVP 可不实现**（501）。优先使用 Job.resultRef → manifest.artifacts[] +
-        Mems 包内相对路径。本路由为后续对象存储 / 签名下载预留。
+        **已提供** list。从 worker 盘 `MO_FEM_WORKDIR`（`mems_shadow/` 或与 `.mems`
+        同布局）或 job.payload 内嵌 manifest 读取 `artifacts[]`。
+        读的是 F1 精简件索引（manifest + scalars/slice/preview），**非全场 VTU**。
+        Job 不存在 → 404 `not_found`；有 job 但无 manifest → 404 `manifest_not_found`。
+        dry-run stub 的 `artifacts=[]` → 200 + 空列表。
+        对象存储 / 签名 URL 仍为后置，本路由不实现。
       operationId: listJobArtifacts
       security:
         - bearerAuth: []
@@ -736,15 +740,19 @@ paths:
             format: uuid
       responses:
         "200":
-          description: Artifact list（future）
+          description: Artifact list from manifest
           content:
             application/json:
               schema:
                 type: object
+                required: [jobId, artifacts]
                 properties:
                   jobId:
                     type: string
                     format: uuid
+                  resultRef:
+                    type: string
+                    nullable: true
                   artifacts:
                     type: array
                     items:
@@ -752,9 +760,71 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
-          $ref: "#/components/responses/NotFound"
-        "501":
-          description: Not implemented（Q3 MVP 允许）
+          description: |
+            Job missing (`not_found`) or manifest unlocatable (`manifest_not_found`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /jobs/{jobId}/artifacts/{artifactPath}:
+    get:
+      tags: [Jobs]
+      summary: Get one thinned artifact by mems-relative path（F1）
+      description: |
+        按 `.mems` 相对路径返回精简产物字节（如 `solver/fem/jobs/{id}/manifest.json`、
+        `results/fem/{id}/slice.gltf`）。解析序：`MO_FEM_WORKDIR/mems_shadow/{rel}` →
+        `MO_FEM_WORKDIR/{rel}` → payload 内嵌 manifest.json → 可选 mems zip member。
+        路径穿越（`..`）拒绝。Content-Type：json/gltf/glb/png/webp。
+        **非**默认全场 VTU 通道。未设 `MO_FEM_WORKDIR` 时除内嵌 manifest.json 外通常 404。
+      operationId: getJobArtifact
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: artifactPath
+          in: path
+          required: true
+          schema:
+            type: string
+          description: mems-relative path (may contain slashes)
+      responses:
+        "200":
+          description: Artifact bytes
+          content:
+            application/json:
+              schema:
+                type: object
+            model/gltf+json:
+              schema:
+                type: string
+            image/png:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Bad path / traversal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Job or artifact missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
   securitySchemes:

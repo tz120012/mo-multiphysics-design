@@ -96,8 +96,24 @@ class FemJobPayload(BaseModel):
     templateId: str | None = None
 
 
-class JobCreate(BaseModel):
+class FemArtifact(BaseModel):
+    """Thinned FEM artifact pointer (F1; relative to .mems root)."""
 
+    path: str
+    role: str
+    format: str
+    bytes: int | None = None
+
+
+class JobArtifactsList(BaseModel):
+    """GET /jobs/{jobId}/artifacts response."""
+
+    jobId: UUID
+    resultRef: str | None = None
+    artifacts: list[FemArtifact] = Field(default_factory=list)
+
+
+class JobCreate(BaseModel):
     projectId: UUID
     jobType: JobType
     payload: dict[str, Any] | None = None
