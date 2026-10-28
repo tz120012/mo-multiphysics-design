@@ -1,8 +1,8 @@
-# Q4-9 NSGA-II 多目标优化 — 跨服务边界架构锁定（草案）
+# Q4-9 NSGA-II 多目标优化 — 跨服务边界架构锁定
 
 | 项 | 值 |
 | --- | --- |
-| 状态 | **Q4 架构锁定草案**（等 Motor 追认；开放分叉见 §8 F3/F4） |
+| 状态 | **Q4 架构锁定**（Motor 已追认 F3/F4；勿擅自重开除非与 01/02 矛盾） |
 | 日期 | 2026-10-28（Asia/Shanghai） |
 | 作者 | Mo-架构 |
 | 依据 | `docs/01-任务书-v2.md` §3 热–力与优化 / §4 栈；`docs/02` Q4-9（Mo-架构 / Mo-解析；交付：任务定义 + 帕累托结果） |
@@ -11,7 +11,7 @@
 | 冻结源 | **不修改** `docs/01` / `docs/02` 正文 |
 | memsSchemaVersion | 仍沿草案谱系（与 Q3 一致；本文件只扩 `solver/optimize/` 路径约定） |
 
-> 本文件锁定：Q4-9 NSGA-II 的 **Jobs / 包 / 载荷 / resultRef / FE·BE 边界**；各角色 Does / Does not；验收条；以及须 Motor 拍板的开放分叉。**架构默认已标清，勿当作 Motor 已签字。**  
+> 本文件锁定：Q4-9 NSGA-II 的 **Jobs / 包 / 载荷 / resultRef / FE·BE 边界**；各角色 Does / Does not；验收条；Motor 已拍板分叉见 §8。**F3/F4 已由 Motor 拍板（见 §8）；其余锁定同步生效。**  
 > 驱动（Q4-1…6）拥有驱动源 / Map / ripple / 退磁接口，**不**拥有 NSGA 核心。热 LPTN（Q4-7）、轴向磁拉力（Q4-8）的指标可被 NSGA **日后消费**，但 **Q4 MVP 不得阻塞在完整热–力闭环**。
 
 ---
@@ -32,7 +32,7 @@
 
 ---
 
-## 2. 总则锁定（架构默认，等 Motor 追认）
+## 2. 总则锁定（Motor 已追认；含 F3/F4）
 
 | # | 决策 | 锁定内容 |
 | --- | --- | --- |
@@ -52,12 +52,12 @@
 
 | 项 | 锁定 |
 | --- | --- |
-| 包路径 | **`packages/solver-opt/`**（架构默认；Motor 追认前可先立骨架） |
+| 包路径 | **`packages/solver-opt/`**（**F4 已拍板**；解析可立包） |
 | 内容 | NSGA-II 实现入口；`OptimizeJobPayload` / Pareto manifest / results JSON Schema；objective adapter 接口；样例 problem fixture |
 | **禁止** | 托管 FEM 二进制；把 analytic `SolveRequest` 污染为优化专用超集；宿主机强制 scipy 系统包 |
 | 与 analytic 关系 | 评估时 **调用** `packages/solver-analytic`（或已存在的 solve 契约），不把优化状态机搬进 analytic |
 
-推荐目录（可演进，勿改名包根直至 F4 拍板）：
+推荐目录（可演进；包根名已锁定为 `solver-opt`）：
 
 ```text
 packages/solver-opt/
@@ -220,14 +220,21 @@ UI → POST /jobs { jobType: optimize, payload: OptimizeJobPayload }
 
 ---
 
-## 8. 开放分叉（仅列真实议题 · 等 Motor）
+## 8. Motor 拍板（F3 / F4）
 
-> **勿发明 Motor 决策。** 下列为架构默认建议；Motor 追认前不升格为已拍板。
+| 项 | 值 |
+| --- | --- |
+| 日期 | 2026-10-28（Asia/Shanghai） |
+| 拍板人 | **Motor** |
+| 依据 tip | 架构草案 `0e9e271`（Motor 已 push） |
+| 结论 | **采纳架构默认**；Q4-9 开闸：解析立 `packages/solver-opt/`；后端落地 Jobs `optimize` delta |
 
-| # | 议题 | **架构默认（建议）** | 备注 |
+| # | 议题 | **Motor 裁决** | 备注 |
 | --- | --- | --- | --- |
-| **F3** | Q4 门禁是否要求 **驱动耦合目标**，或 **analytic-only Pareto 演示** 即够 | **analytic-only 演示足够过 Q4-9 样例门禁**；`analytic+drive` 为驱动就绪后的增强，不挡「NSGA 可演示样例」 | 与 [驱动后处理.md](./驱动后处理.md) Q4-1…6 进度解耦 |
-| **F4** | 包名 `packages/solver-opt` vs `packages/optimizer` | **采纳 `packages/solver-opt/`**（与 `solver-analytic` / `solver-fem` 前缀一致） | 若 Motor 选 `optimizer`，立包前改名一次，避免双包 |
+| **F3** | Q4 门禁是否要求驱动耦合目标 | **analytic-only Pareto 可演示样例即够**；`analytic+drive` 为增强，**不挡门禁** | 与 [驱动后处理.md](./驱动后处理.md) Q4-1…6 进度解耦 |
+| **F4** | 包名 | **`packages/solver-opt/`**（与 `solver-analytic` / `solver-fem` 前缀一致） | 禁止另立 `packages/optimizer` 双包 |
+
+其余锁定（已确认有效）：`jobType=optimize` 仅异步 Jobs；解析 Owns solver-opt；架构 Owns OpenAPI/Jobs；spot FEM / 热–力 stretch。
 
 已关闭、不重开：
 
@@ -279,4 +286,4 @@ UI → POST /jobs { jobType: optimize, payload: OptimizeJobPayload }
 
 ---
 
-*草案结束。F3/F4 等 Motor 追认后方可标「已拍板」；升格或改包名/门禁解读须 Motor 确认。**勿改 docs/01、docs/02 正文。***
+*锁定结束。F3/F4 已追认；改包名/门禁解读须 Motor 确认。**勿改 docs/01、docs/02 正文。***
