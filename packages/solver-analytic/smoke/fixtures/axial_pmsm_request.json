@@ -3,12 +3,12 @@
   "topology": "AF",
   "machine_type": "PMSM",
   "geometry": {
-    "poles": 16,
-    "slots": 18,
+    "poles": 10,
+    "slots": 12,
     "stack_length_m": 0.008,
     "airgap_m": 0.001,
     "rotor_od_m": 0.12,
-    "stator_id_m": 0.06,
+    "stator_id_m": 0.04,
     "magnet_thickness_m": 0.004,
     "turns_per_phase": 36,
     "n_planes": 4

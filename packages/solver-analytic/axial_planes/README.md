@@ -10,6 +10,9 @@
 | 部署 | sync `POST /solver/analytic/solve` **或** Jobs `analytic` 均可；**Wasm AF = stretch**，非 Q3 关门 |
 | 锁定 | [`docs/drafts/Q3-轴向与FEM边界.md`](../../../docs/drafts/Q3-轴向与FEM边界.md)（架构 tip `8d966d9`） |
 
+
+> **Q3-L3 金标几何**：与 Mo-几何 RFMR pipeline 默认一致（10p/12s，ID40/OD120 mm）；旧 16p/18s/ID60 仅为历史 demo。书面口径：[`docs/drafts/Q3-轴向多平面.md`](../../../docs/drafts/Q3-轴向多平面.md) **Q3-L3**（`2.614` vs `2.330` = 不同入参，非 kernel bug；不对标 ≤5%）。
+
 ## 1. 原理
 
 盘式轴向电机气隙磁通沿 **轴向（z）** 穿过气隙；转矩力臂沿 **半径 r**。多平面展开把环形气隙在径向上解耦为 **N 个同心圆环（平面）**：
