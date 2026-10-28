@@ -92,7 +92,7 @@ echo "fail: ${fail_count}"
 echo "total: ${total}"
 printf "failure_rate: %d.%02d%%\n" "$fail_pct_int" "$fail_pct_rem"
 echo "threshold: fail if failure_rate > 10% or initial health never ok"
-echo "extension_points: Jobs enqueue (analytic/fem dry-run); optional hey/ab if present"
+echo "extension_points: Jobs enqueue via scripts/stress-jobs.sh (make stress-jobs; analytic/fem dry-run); optional hey/ab if present"
 if command -v hey >/dev/null 2>&1; then
   echo "note: hey is available on PATH (not used by this skeleton)"
 elif command -v ab >/dev/null 2>&1; then

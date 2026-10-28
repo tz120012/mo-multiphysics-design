@@ -7,7 +7,7 @@
 ## 目的
 
 在 **on-prem / 近气隙（air-gapped-ish）** 环境下，用 Docker Compose 拉起 Mo 栈，**不依赖公有云 SaaS**（无托管 DB、云 Redis、外部鉴权 SaaS 等非必需）。  
-本手册描述「干净机 → 四服务健康 →（可选）worker / FEM dry-run」的可复现路径；压测入口见 `make stress`（`scripts/stress-smoke.sh`）。
+本手册描述「干净机 → 四服务健康 →（可选）worker / FEM dry-run」的可复现路径；压测入口见 `make stress`（`scripts/stress-smoke.sh`）与 Jobs 扩展 `make stress-jobs`（`scripts/stress-jobs.sh`，analytic/fem dry-run）。
 
 ## 主机要求
 
@@ -69,6 +69,7 @@ make health                 # 或 make health-box
 
 ```bash
 make stress                 # BASE_URL / CONCURRENCY / REQUESTS 可环境变量覆盖
+make stress-jobs            # JOBS_N / POLL_SEC；analytic + fem dry-run 入队轮询
 ```
 
 ## 配置面（关键 `.env`）
@@ -123,3 +124,5 @@ make down-box
 - [deploy-local.md](./deploy-local.md) — 本地一键与 box / FEM 细节  
 - [drafts/Q4-10-压测与私有化.md](./drafts/Q4-10-压测与私有化.md) — Q4-10 范围与验收  
 - `scripts/stress-smoke.sh` — 压测入口骨架（`make stress`）
+- `scripts/stress-jobs.sh` — Jobs analytic/fem dry-run 入队扩展（`make stress-jobs`）
+- [qa/Q4-10-压测与私有化演练.md](./qa/Q4-10-压测与私有化演练.md) — 压测跑数与演练报告（进行中）
