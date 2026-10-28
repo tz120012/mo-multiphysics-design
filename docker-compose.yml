@@ -51,6 +51,12 @@ services:
       SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
       # Set CELERY_ENABLED=1 when using `make up-worker` (profile worker)
       CELERY_ENABLED: ${CELERY_ENABLED:-0}
+      # Shared with worker for artifacts GET (L4/F1); same defaults as worker
+      MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
+      MO_OPT_WORKDIR: ${MO_OPT_WORKDIR:-/var/mo/fem}
+    volumes:
+      # api reads worker-written thinned artifacts via shared vol
+      - mo_femdata:/var/mo/fem
     ports:
       - "${API_HOST_PORT:-8000}:8000"
     depends_on:

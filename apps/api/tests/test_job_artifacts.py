@@ -159,3 +159,80 @@ def test_job_missing_404(client):
     r = c.get(f"/api/v1/jobs/{missing}/artifacts", headers=headers)
     assert r.status_code == 404
     assert r.json()["code"] == "not_found"
+
+
+def test_work_roots_fallback_defaults(tmp_path, monkeypatch):
+    """No MO_* env → work_roots includes writer defaults (/tmp/mo-opt, /tmp/mo-fem)."""
+    monkeypatch.delenv("MO_OPT_WORKDIR", raising=False)
+    monkeypatch.delenv("MO_FEM_WORKDIR", raising=False)
+    from app import artifacts_resolve as ar
+
+    opt = tmp_path / "mo-opt"
+    fem = tmp_path / "mo-fem"
+    monkeypatch.setattr(ar, "DEFAULT_OPT_WORKDIR", opt)
+    monkeypatch.setattr(ar, "DEFAULT_FEM_WORKDIR", fem)
+
+    roots = ar.work_roots()
+    assert opt in roots
+    assert fem in roots
+    assert opt.is_dir()
+    assert fem.is_dir()
+
+
+def test_get_artifact_from_default_opt_workdir(tmp_path, monkeypatch):
+    """In-process path: unset env, file under default opt workdir → GET 200."""
+    monkeypatch.delenv("MO_OPT_WORKDIR", raising=False)
+    monkeypatch.delenv("MO_FEM_WORKDIR", raising=False)
+    monkeypatch.setenv("CELERY_ENABLED", "0")
+
+    from app import artifacts_resolve as ar
+
+    opt = tmp_path / "mo-opt"
+    fem = tmp_path / "mo-fem"
+    monkeypatch.setattr(ar, "DEFAULT_OPT_WORKDIR", opt)
+    monkeypatch.setattr(ar, "DEFAULT_FEM_WORKDIR", fem)
+
+    from app.jobs_store import _jobs, _lock
+
+    with _lock:
+        _jobs.clear()
+    from app.main import create_app
+
+    app = create_app()
+    with TestClient(app) as c:
+        token = _auth(c)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        jid = uuid4()
+        rel = f"results/optimize/{jid}/pareto.json"
+        shadow = opt / "mems_shadow" / rel
+        shadow.parent.mkdir(parents=True, exist_ok=True)
+        shadow.write_text('{"front":[]}\n', encoding="utf-8")
+
+        man_rel = f"solver/optimize/jobs/{jid}/manifest.json"
+        manifest = {
+            "jobId": str(jid),
+            "status": "succeeded",
+            "artifacts": [{"path": rel, "role": "pareto", "format": "json", "bytes": 12}],
+        }
+        man_path = opt / "mems_shadow" / man_rel
+        man_path.parent.mkdir(parents=True, exist_ok=True)
+        man_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        from app.jobs_store import job_create
+        from datetime import datetime, timezone
+
+        item = job_create(
+            project_id=uuid4(), job_type="optimize", payload={"input": {}}, status="queued"
+        )
+        with _lock:
+            old = _jobs.pop(item["id"])
+            old["id"] = jid
+            old["status"] = "succeeded"
+            old["resultRef"] = man_rel
+            old["updatedAt"] = datetime.now(timezone.utc)
+            _jobs[jid] = old
+
+        r = c.get(f"/api/v1/jobs/{jid}/artifacts/{rel}", headers=headers)
+        assert r.status_code == 200, r.text
+        assert r.json() == {"front": []}

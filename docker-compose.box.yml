@@ -16,6 +16,11 @@ services:
       DATABASE_URL: postgresql+psycopg://mo:mo@host.docker.internal:${POSTGRES_PORT:-5433}/mo
       REDIS_URL: redis://host.docker.internal:${REDIS_PORT:-6380}/0
       SOLVER_ANALYTIC_PATH: ${SOLVER_ANALYTIC_PATH:-/opt/mo/packages/solver-analytic}
+      # Same shared workdir as base compose (artifacts GET / worker disk)
+      MO_FEM_WORKDIR: ${MO_FEM_WORKDIR:-/var/mo/fem}
+      MO_OPT_WORKDIR: ${MO_OPT_WORKDIR:-/var/mo/fem}
+    volumes:
+      - mo_femdata:/var/mo/fem
 
   web:
     extra_hosts:

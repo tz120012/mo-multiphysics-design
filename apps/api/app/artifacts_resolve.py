@@ -54,20 +54,44 @@ def fem_workdir() -> Path | None:
     return Path(root)
 
 
+# Defaults aligned with tasks/optimize.py (_work_root → /tmp/mo-opt) and tasks/fem.py (/tmp/mo-fem).
+# Used when MO_OPT_WORKDIR / MO_FEM_WORKDIR are unset (in-process CELERY_ENABLED=0).
+DEFAULT_OPT_WORKDIR = Path("/tmp/mo-opt")
+DEFAULT_FEM_WORKDIR = Path("/tmp/mo-fem")
+
+
 def work_roots() -> list[Path]:
-    """Resolve roots: MO_OPT_WORKDIR then MO_FEM_WORKDIR (deduped, existing preferred)."""
+    """Resolve roots: MO_OPT_WORKDIR then MO_FEM_WORKDIR; else /tmp/mo-opt + /tmp/mo-fem.
+
+    Env roots win when set. With no env (compose api historically omitted workdir),
+    fall back to the same defaults writers use so artifacts GET finds in-process files.
+    Fallback dirs are included when they exist or are creatable.
+    """
     seen: set[str] = set()
     out: list[Path] = []
+
+    def _add(path: Path) -> None:
+        key_s = str(path.resolve()) if path.exists() else str(path)
+        if key_s in seen:
+            return
+        seen.add(key_s)
+        out.append(path)
+
     for key in ("MO_OPT_WORKDIR", "MO_FEM_WORKDIR"):
         raw = os.environ.get(key)
         if not raw:
             continue
-        path = Path(raw)
-        key_s = str(path.resolve()) if path.exists() else str(path)
-        if key_s in seen:
-            continue
-        seen.add(key_s)
-        out.append(path)
+        _add(Path(raw))
+    if out:
+        return out
+    for path in (DEFAULT_OPT_WORKDIR, DEFAULT_FEM_WORKDIR):
+        try:
+            if not path.exists():
+                path.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            if not path.exists():
+                continue
+        _add(path)
     return out
 
 

@@ -239,7 +239,9 @@ done
 # Expect resultRef like: solver/fem/jobs/<uuid>/manifest.json
 
 # L4 F1: list + get thinned artifacts (needs MO_FEM_WORKDIR shared vol for disk files;
-# stub dry-run may list artifacts=[] from payload-embedded manifest)
+# stub dry-run may list artifacts=[] from payload-embedded manifest).
+# Compose api now mounts mo_femdata at /var/mo/fem (with MO_*_WORKDIR); without the vol,
+# in-process still writes /tmp/mo-opt and artifacts_resolve.work_roots() falls back there.
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/jobs/$JID/artifacts" | python3 -m json.tool
 # Single file (mems-relative path; Content-Type set for json/gltf/png/webp):
 curl -s -H "Authorization: Bearer $TOKEN" \
