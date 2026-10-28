@@ -36,7 +36,8 @@ make up-fem   # worker + fem stub；默认 make up 不拉 FEM
 
 ## 未决
 
-- heat-proxy E2E 已通（`MO_FEM_DRY_RUN=0`，tip `2c1fed6`）；磁静力学场后处理 / 真 glTF 切片后置
+- heat-proxy E2E 已通（`MO_FEM_DRY_RUN=0`，tip `2c1fed6`）；**保留** HeatEquation 模板
+- 磁静力学真值路径（骨架 + 冒烟壳）：见 [Q4plus-5-磁静力学与轴向真值.md](./Q4plus-5-磁静力学与轴向真值.md)；真 Elmer MS + Maxwell 后处理仍后置；`pending_calibration`
 - GetDP 真跑通（非 Q3 硬阻塞）
 
 ## Q3-L2 Dockerfile
@@ -46,4 +47,5 @@ make up-fem   # worker + fem stub；默认 make up 不拉 FEM
 ## 下一步（Q4）
 
 - [Q4-7-热闭环-FEM损耗输入.md](./Q4-7-热闭环-FEM损耗输入.md)：电磁损耗输入契约（LPTN 主责解析；驱动分损耗）
-- [Q4-8-轴向磁拉力.md](./Q4-8-轴向磁拉力.md)：AF 轴向磁拉力 / 变形 / 轴承载荷专项（磁静力学后置；占位标量）
+- [Q4-8-轴向磁拉力.md](./Q4-8-轴向磁拉力.md)：AF 轴向磁拉力 / 变形 / 轴承载荷专项（占位标量仍有效）
+- [Q4plus-5-磁静力学与轴向真值.md](./Q4plus-5-磁静力学与轴向真值.md)：磁静力学 ≠ heat-proxy；真值路径壳 `run_magnetostatic_shell.py`

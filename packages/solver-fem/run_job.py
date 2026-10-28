@@ -18,6 +18,9 @@ TEMPLATES = {
     ("AF", "PMSM", "3d"): "af_pmsm_3d",
 }
 
+# Magnetostatic skeleton template (≠ heat-proxy af_pmsm_3d)
+MAGNETOSTATIC_TEMPLATE_IDS = frozenset({"af_pmsm_3d_ms"})
+
 
 class FemSolveError(RuntimeError):
     """Raised when a required FEM binary is missing or a solver step fails."""
@@ -32,6 +35,28 @@ def resolve_template(payload: dict[str, Any]) -> str:
         str(payload.get("dim", "2d")),
     )
     return TEMPLATES.get(key, "rf_pmsm_2d")
+
+
+def resolve_equation_mode(payload: dict[str, Any], *, dry_run: bool) -> str:
+    """Return heat_proxy | magnetostatic.
+
+    Missing equationMode + dryRun=false → heat_proxy (Q3 E2E compat).
+    templateId af_pmsm_3d_ms implies magnetostatic when equationMode omitted.
+    """
+    raw = payload.get("equationMode")
+    if raw is not None:
+        mode = str(raw).strip().lower().replace("-", "_")
+        if mode in {"heat_proxy", "heatproxy"}:
+            return "heat_proxy"
+        if mode in {"magnetostatic", "magneto_static", "ms"}:
+            return "magnetostatic"
+        raise FemSolveError(f"unknown equationMode: {raw!r}")
+    tid = str(payload.get("templateId") or "")
+    if tid in MAGNETOSTATIC_TEMPLATE_IDS:
+        return "magnetostatic"
+    if dry_run:
+        return "heat_proxy"  # dry-run default; shell may override via payload
+    return "heat_proxy"
 
 
 def prepare_job_dir(job_dir: Path, payload: dict[str, Any]) -> Path:
@@ -118,7 +143,13 @@ def run_job(
     work_root: Path,
     dry_run: bool = True,
 ) -> dict[str, Any]:
-    payload = payload or {}
+    payload = dict(payload or {})
+    equation_mode = resolve_equation_mode(payload, dry_run=dry_run)
+    payload.setdefault("equationMode", equation_mode)
+    if equation_mode == "magnetostatic":
+        payload.setdefault("magnetostaticPathReady", False)
+        payload.setdefault("templateId", "af_pmsm_3d_ms")
+
     job_dir = prepare_job_dir(work_root / "jobs" / job_id, payload)
     topology = str(payload.get("topology", "RF"))
     machine_type = str(payload.get("machineType", "PMSM"))
@@ -130,12 +161,26 @@ def run_job(
     notes: str | None = None
 
     if not dry_run:
+        if equation_mode == "magnetostatic":
+            # Skeleton only: do not run HeatEquation or a fake MS success path.
+            raise FemSolveError(
+                "magnetostatic real Elmer path not ready "
+                "(magnetostaticPathReady=false); use dry-run / "
+                "smoke/run_magnetostatic_shell.py, or equationMode=heat_proxy "
+                "for Q3 E2E scheduling only — do NOT claim FEM ≤3%"
+            )
         if kernel == "getdp":
             raise FemSolveError("GetDP real solve not wired yet (F2 stub); use elmer")
         elmer_exit = run_elmer_pipeline(job_dir, dim)
         notes = (
-            "ElmerSolver OK (heat-proxy Q3 E2E); pending_calibration — "
-            "do NOT claim FEM ≤3%"
+            "ElmerSolver OK (heat-proxy Q3 E2E); equationMode=heat_proxy; "
+            "pending_calibration — do NOT claim FEM ≤3% "
+            "(≠ magnetostatic motor solve)"
+        )
+    elif equation_mode == "magnetostatic":
+        notes = (
+            "dry-run magnetostatic skeleton; magnetostaticPathReady=false; "
+            "pending_calibration — do NOT claim FEM ≤3%"
         )
 
     published = write_result_artifacts(
@@ -169,6 +214,7 @@ def run_job(
         "jobId": job_id,
         "jobDir": str(job_dir),
         "dryRun": dry_run,
+        "equationMode": equation_mode,
         "resultRef": published["resultRef"],
         "manifestPath": published["manifestPath"],
         "manifest": published["manifest"],

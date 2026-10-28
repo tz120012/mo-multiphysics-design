@@ -30,3 +30,11 @@ results/fem/{jobId}/          # JSON scalars + glTF/GLB + PNG
 ```
 
 细则：`docs/drafts/Q3-轴向与FEM边界.md`。
+
+## Q4+ 磁静力学（骨架）
+
+- 边界：`docs/drafts/Q4plus-5-磁静力学与轴向真值.md`（heat-proxy ≠ magnetostatic）
+- 模板骨架：`templates/af_pmsm_3d_ms/`（`equationMode=magnetostatic`；`pending_calibration`）
+- 冒烟：`python3 packages/solver-fem/smoke/run_magnetostatic_shell.py`
+- **禁宣称** FEM ≤3%；真 Elmer MS 后处理未关前力标量为 null
+

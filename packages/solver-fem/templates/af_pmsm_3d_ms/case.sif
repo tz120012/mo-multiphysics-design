@@ -1,0 +1,52 @@
+! =============================================================================
+! af_pmsm_3d_ms — MAGNETOSTATIC SKELETON (Q4+-5)
+! equationMode = magnetostatic
+! pending_calibration = true
+! magnetostaticPathReady = false
+!
+! THIS IS NOT a heat-proxy case. Do NOT confuse with af_pmsm_3d / rf_pmsm_2d
+! (those keep HeatEquation for Q3 E2E scheduling only).
+!
+! Do NOT claim FEM ≤3% / MVP. Do NOT treat a successful HeatEquation run as
+! a motor magnetostatic solution.
+!
+! TODO (blocked until ready — leave as comments; do not ship a fake success path):
+!   1) Choose formulation: magnetic vector potential A and/or scalar potential
+!      (Elmer MagnetoDynamics / WhitneyAVSolver / StatCurrent-style MS — TBD).
+!   2) Materials: mu_r / Hc / remanence for PM + iron + airgap.
+!   3) BCs: periodic / Dirichlet on A; excitation from winding or PM.
+!   4) Mesh: airgap refinement suitable for Maxwell stress on AF interface.
+!   5) Postprocess: Maxwell stress tensor or virtual work → axialForceN (Fz).
+!   6) Wire run_job.py real path only after a container dry-proof exists.
+!
+! Until magnetostaticPathReady=true, runners must use dry-run / shell smoke
+! (packages/solver-fem/smoke/run_magnetostatic_shell.py) and keep force
+! scalars null.
+! =============================================================================
+
+! --- PLACEHOLDER HEADER (non-executable contract marker) ---------------------
+! Header
+!   Mesh DB "." "mesh"
+! End
+!
+! Simulation
+!   Coordinate System = Cartesian 3D
+!   Simulation Type = Steady state
+!   ! TODO: magnetostatic steady-state settings
+! End
+!
+! Equation 1
+!   Name = "MagnetostaticSkeleton"
+!   ! TODO: Active Solvers = <magnetostatic solver id>
+! End
+!
+! ! Solver N
+! !   Equation = <Magnetostatic TBD>
+! !   Procedure = "<Elmer magnetostatic module TBD>" "<Solver TBD>"
+! !   Variable = <A or phi TBD>
+! ! End
+! -----------------------------------------------------------------------------
+
+! Intentionally no runnable HeatEquation / fake magnetostatic Solver block.
+! If ElmerSolver is pointed at this file today, it SHOULD fail loudly —
+! that is preferred over a silent heat-proxy masquerading as magnetostatics.

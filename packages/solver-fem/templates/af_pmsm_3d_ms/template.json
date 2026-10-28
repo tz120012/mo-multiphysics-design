@@ -1,0 +1,12 @@
+{
+  "templateId": "af_pmsm_3d_ms",
+  "equationMode": "magnetostatic",
+  "topology": "AF",
+  "machineType": "PMSM",
+  "dim": "3d",
+  "solverKernel": "elmer",
+  "meshProfile": "af_pmsm_3d_ms_min",
+  "pending_calibration": true,
+  "magnetostaticPathReady": false,
+  "notes": "Magnetostatic skeleton only; heat-proxy templates unchanged; do NOT claim FEM ≤3%. Real Elmer magnetostatic + Maxwell/virtual-work postprocess deferred."
+}

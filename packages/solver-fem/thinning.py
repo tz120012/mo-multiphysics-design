@@ -45,6 +45,14 @@ def write_result_artifacts(
     losses_w = pl.get("lossesW")
     if not isinstance(losses_w, dict):
         losses_w = {}
+    # equationMode: missing + non-dry defaults to heat_proxy (compat); dry-run may omit.
+    equation_mode = pl.get("equationMode")
+    if equation_mode is None and not dry_run:
+        equation_mode = "heat_proxy"
+    magnetostatic_ready = pl.get("magnetostaticPathReady")
+    if equation_mode == "magnetostatic" and magnetostatic_ready is None:
+        magnetostatic_ready = False
+
     scalars: dict[str, Any] = {
         "schemaVersion": "fem-scalars-v0",
         "torqueNm": 0.0,
@@ -62,8 +70,13 @@ def write_result_artifacts(
             "solverKernel": solver_kernel,
             "meshProfile": pl.get("meshProfile"),
             "templateId": pl.get("templateId"),
+            "equationMode": equation_mode,
         },
     }
+    if equation_mode is not None:
+        scalars["equationMode"] = equation_mode
+    if magnetostatic_ready is not None:
+        scalars["magnetostaticPathReady"] = magnetostatic_ready
     if "operatingPoint" in pl and isinstance(pl["operatingPoint"], dict):
         scalars["operatingPoint"] = pl["operatingPoint"]
     if "source" in pl:
@@ -129,6 +142,10 @@ def write_result_artifacts(
         "updatedAt": ts,
         "notes": notes,
     }
+    if equation_mode is not None:
+        manifest["scalars"]["equationMode"] = equation_mode
+    if magnetostatic_ready is not None:
+        manifest["scalars"]["magnetostaticPathReady"] = magnetostatic_ready
     if elmer_exit is not None:
         manifest["scalars"]["elmerExit"] = elmer_exit
     man_path = job_solver / "manifest.json"
