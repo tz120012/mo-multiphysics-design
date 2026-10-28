@@ -6,7 +6,7 @@
 > 范围：发布候选加固——校准计划、`:5174`、mems/artifacts·FE、live 几何/AF Wasm、磁静力学 FEM/轴向真值  
 > **误差**：解析 ≤5% / FEM ≤3% 均为 **待校准**——**校准书面关闭前不得勾「≤5%/≤3% 达标」**  
 > **MVP**：本清单**不开宣称 MVP 已达成**；Motor 分批签字；全关后方可议该宣称  
-> **现状**：A1/A2 **PASS**（对照 tip **`81699d3`** / `5df616d` / 产品 **`31c6597`**；记录 [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)）；其余区仍待 tip；**F1/F2 禁勾**；**不开宣称 MVP**
+> **现状**：A1/A2 **PASS**（对照 tip **`81699d3`** / `5df616d` / 产品 **`31c6597`**；记录 [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)）；D1/D2 **PASS**（几何 `ad66ff9` / Wasm `166c319`；[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)）；其余区仍待 tip；**F1/F2 禁勾**；**不开宣称 MVP**
 
 ## 状态说明
 
@@ -40,8 +40,8 @@
 
 | ID | 检查项 | 通过标准（就绪后） | 现状 |
 | --- | --- | --- | --- |
-| Q4+-D1 | live 几何包 | 可演示交付或明确降级说明 | TODO（等 tip） |
-| Q4+-D2 | AF Wasm 余项 | 可演示或书面降级 | TODO（等 tip） |
+| Q4+-D1 | live 几何包 | 可演示交付或明确降级说明 | **PASS**（tip **`ad66ff9`**：pytest 30；`rebuild_live_geometry`/`rebuild_examples`；AF summary 可抽；STEP/DXF 书面降级；见 [Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)） |
+| Q4+-D2 | AF Wasm 余项 | 可演示或书面降级 | **PASS**（tip **`166c319`**：`cargo test` 5；`solve_json`+`axial_pmsm_request.json` 有限 T/E；`meta.solver=axial_planes`/`wasm=true`；几何 summary 可喂；**禁勾 ≤5%**；见记录） |
 
 ## E. 磁静力学 FEM / 轴向真值（对照 Q4+-5）
 
@@ -67,14 +67,15 @@
 ## 执行方式（骨架）
 
 1. 各角色 tip / 交测后，Mo-测试按区实跑并改「现状」。  
-2. A1/A2 已有 PASS；其余区在对应 tip 入库前保持 TODO。  
+2. A1/A2、D1/D2 已有 PASS；其余区在对应 tip 入库前保持 TODO。  
 3. 不得勾选 F1/F2；不得宣称 MVP 已达成。  
-4. 证据附于 [Q4plus-验收跟踪](Q4plus-验收跟踪.md) 与分项冒烟记录（A1/A2：[Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)）。
+4. 证据附于 [Q4plus-验收跟踪](Q4plus-验收跟踪.md) 与分项冒烟记录（A1/A2：[Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)；D1/D2：[Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)）。
 
 ## 相关链接
 
 - [Q4plus-验收跟踪](Q4plus-验收跟踪.md)
 - [Q4plus-冒烟记录-A1-A2-G3](Q4plus-冒烟记录-A1-A2-G3.md)
+- [Q4plus-冒烟记录-D1-D2-geometry](Q4plus-冒烟记录-D1-D2-geometry.md)
 - [G3-校准计划](G3-校准计划.md)
 - [Q4-签字记录](Q4-签字记录.md)
 - [Q4-P11-签字包](Q4-P11-签字包.md) §4
@@ -82,4 +83,4 @@
 
 ---
 
-*Mo-测试填实中；A1/A2 已关文档债。*
+*Mo-测试填实中；A1/A2 已关文档债；D1/D2 已补记录（Q4+-4 待产品确认）。*
