@@ -3,7 +3,7 @@
 | 字段 | 内容 |
 | --- | --- |
 | 日期 | 2026-10-28 12:38 Asia/Shanghai |
-| 指派 tip | 本提交落地 cases+golden；证据 tip **`TIP_PLACEHOLDER`**（本提交） |
+| 指派 tip | 本提交落地 cases+golden；证据 tip **`679af19`**（本提交） |
 | 祖先/基线 | 阻塞记录 `6747dec` / 盘点 tip `f11a036`；compose 绿 `0ec37e2` |
 | 执行 | Mo-测试执行员 |
 | 性质 | Motor 正式口径复测：**框架关项**（非 ≤5% 达标宣称） |
@@ -24,7 +24,7 @@
 
 ```bash
 cd /workspace/mo-platform
-git rev-parse --short HEAD   # → TIP_PLACEHOLDER（本提交）
+git rev-parse --short HEAD   # → 679af19（本提交）
 ls tests/benchmark/cases/*/case.json
 # rf-acim-smoke-001 rf-bldc-smoke-001 rf-pmsm-smoke-001
 ls tests/benchmark/golden/

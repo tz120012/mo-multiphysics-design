@@ -3,7 +3,7 @@
 | 字段 | 内容 |
 | --- | --- |
 | 日期 | 2026-10-28 12:38 Asia/Shanghai |
-| tip | `TIP_PLACEHOLDER` |
+| tip | `679af19` |
 | caseId | rf-pmsm-smoke-001 / rf-bldc-smoke-001 / rf-acim-smoke-001（三套径向占位） |
 | 执行人 | Mo-测试 |
 | 解析版本/入口 | （未跑数值比对）Wasm / API / 脚本均未对标 |
