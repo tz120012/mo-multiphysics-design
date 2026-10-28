@@ -1,6 +1,7 @@
 """Jobs enqueue / poll (Q2-6 analytic; Q3 fem; Q4 drive/optimize).
 
-L4: GET artifacts list + single-file (F1 worker disk / resultRef; thinned only).
+L4 / Q4+-3: GET artifacts list + single-file = canonical thinned FEM/optimize channel
+(F1 worker disk / resultRef / optional .mems zip member). mems/files deferred (F5=A).
 Optimize: Celery queue `optimize` or in-process daemon — never NSGA on request thread.
 """
 
@@ -197,13 +198,13 @@ def cancel_job(
 @router.get(
     "/{job_id}/artifacts",
     response_model=JobArtifactsList,
-    summary="List thinned artifacts (F1; from FEM/optimize manifest)",
+    summary="List thinned artifacts (L4/Q4+-3; FEM/optimize manifest)",
 )
 def list_job_artifacts(
     job_id: UUID,
     _: Annotated[str, Depends(require_bearer)],
 ) -> JobArtifactsList:
-    """Return artifacts[] from job manifest.
+    """Return artifacts[] from job manifest (L4 / Q4+-3 list half of single-file channel).
 
     Prefer disk under MO_OPT_WORKDIR / MO_FEM_WORKDIR (mems_shadow / mems layout); else
     payload-embedded manifest (stub). Job missing → 404 not_found.
@@ -241,7 +242,7 @@ def list_job_artifacts(
 
 @router.get(
     "/{job_id}/artifacts/{artifact_path:path}",
-    summary="Get one thinned artifact by mems-relative path (F1)",
+    summary="Get one thinned artifact by mems-relative path (L4/Q4+-3)",
     response_class=Response,
 )
 def get_job_artifact(
@@ -249,11 +250,12 @@ def get_job_artifact(
     artifact_path: str,
     _: Annotated[str, Depends(require_bearer)],
 ) -> Response:
-    """Serve file bytes for a mems-relative path (e.g. results/optimize/{id}/pareto.json).
+    """Serve thinned artifact bytes (L4 / Q4+-3 canonical single-file GET).
 
-    Resolution: workdir/mems_shadow/{rel} → workdir/{rel} →
-    payload-embedded manifest.json → optional mems zip member.
+    Resolution: MO_OPT/FEM workdir mems_shadow/{rel} → workdir/{rel} →
+    payload-embedded manifest.json → optional project .mems zip member.
     Path traversal (`..`) rejected. Full-field VTU is not the default path.
+    Independent GET .../mems/files/{path} is Q4+-3b (not this gate).
     """
     job = _require_job(job_id)
     try:

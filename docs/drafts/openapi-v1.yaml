@@ -268,7 +268,10 @@ paths:
     get:
       tags: [Mems]
       summary: Download `.mems` package
-      description: 返回 zip 容器（application/zip）。元数据见 MemsMeta。
+      description: |
+        返回 zip 容器（application/zip）。元数据见 MemsMeta。
+        **整包 I/O only**。精简 FEM/optimize 单文件读走 Jobs artifacts（L4/Q4+-3）；
+        独立 `GET .../mems/files/{path}` 为 Q4+-3b（Motor F5=A 默认推迟），本契约不提供。
       operationId: downloadMems
       security:
         - bearerAuth: []
@@ -292,7 +295,9 @@ paths:
     put:
       tags: [Mems]
       summary: Upload / replace `.mems` package
-      description: 整包替换；服务端校验顶层布局与 memsSchemaVersion。
+      description: |
+        整包替换；服务端校验顶层布局与 memsSchemaVersion。
+        非单文件 PUT；member 级读见 Jobs artifacts 可选 zip-member 回落（非 mems/files）。
       operationId: uploadMems
       security:
         - bearerAuth: []
@@ -728,8 +733,8 @@ paths:
       tags: [Jobs]
       summary: Poll job status / result（Q2/Q3）
       description: |
-        返回 Job（含 status、resultRef、error）。FEM 成功时 resultRef 指向 manifest；
-        浏览器再经 Mems GET 拉取 `results/fem/{jobId}/` 精简产物。
+        返回 Job（含 status、resultRef、error）。FEM/optimize 成功时 resultRef 指向 manifest；
+        精简产物经 **Jobs artifacts** list/get 拉取（L4/Q4+-3 canonical；非须另开 mems/files）。
       operationId: getJob
       security:
         - bearerAuth: []
@@ -755,14 +760,19 @@ paths:
   /jobs/{jobId}/artifacts:
     get:
       tags: [Jobs]
-      summary: List thinned FEM artifacts（F1；从 manifest）
+      summary: List thinned FEM/optimize artifacts（L4 / Q4+-3；从 manifest）
       description: |
-        **已提供** list。从 worker 盘 `MO_FEM_WORKDIR`（`mems_shadow/` 或与 `.mems`
+        **Jobs artifacts GET = L4 / Q4+-3 精简结果单文件读；工程包仍走整包 mems；
+        `GET .../mems/files/{path}` 为可选快跟进（Q4+-3b），非本门硬项（Motor F5=A）。**
+        本路由关闭 Q3-L4「无 mems 单文件 GET」对 `/field`（有 jobId 时）的缺口叙述：
+        精简 FEM/optimize 产物的 **canonical 单文件通道** = list + get（非另开 mems member GET）。
+        从 worker 盘 `MO_OPT_WORKDIR` / `MO_FEM_WORKDIR`（`mems_shadow/` 或与 `.mems`
         同布局）或 job.payload 内嵌 manifest 读取 `artifacts[]`。
-        读的是 F1 精简件索引（manifest + scalars/slice/preview），**非全场 VTU**。
+        读的是 F1 精简件索引（manifest + scalars/slice/preview/pareto），**非全场 VTU**。
         Job 不存在 → 404 `not_found`；有 job 但无 manifest → 404 `manifest_not_found`。
         dry-run stub 的 `artifacts=[]` → 200 + 空列表。
         对象存储 / 签名 URL 仍为后置，本路由不实现。
+        裁决：`docs/drafts/Q4+-3-mems单文件与artifacts收口.md`（tip `83d2e6e`）。
       operationId: listJobArtifacts
       security:
         - bearerAuth: []
@@ -805,13 +815,20 @@ paths:
   /jobs/{jobId}/artifacts/{artifactPath}:
     get:
       tags: [Jobs]
-      summary: Get one thinned artifact by mems-relative path（F1）
+      summary: Get one thinned artifact by mems-relative path（L4 / Q4+-3 canonical）
       description: |
+        **L4 / Q4+-3 canonical 单文件读**（fem + optimize thinned products；有 jobId 时供 `/field`）。
         按 `.mems` 相对路径返回精简产物字节（如 `solver/fem/jobs/{id}/manifest.json`、
-        `results/fem/{id}/slice.gltf`）。解析序：`MO_FEM_WORKDIR/mems_shadow/{rel}` →
-        `MO_FEM_WORKDIR/{rel}` → payload 内嵌 manifest.json → 可选 mems zip member。
+        `results/fem/{id}/slice.gltf`、`results/optimize/{id}/pareto.json`）。
+        **解析序**（与 `artifacts_resolve.resolve_artifact_bytes` 对齐）：
+          MO_OPT_WORKDIR / MO_FEM_WORKDIR:
+            mems_shadow/{rel} → {rel}
+          → payload 内嵌 manifest.json（仅 manifest 自身）
+          → 可选：job.projectId 对应已存 `.mems` zip 内同相对路径 member（已实现）
+        整包 I/O 仍为 `GET/PUT /projects/{id}/mems`；**不**要求本门交付
+        `GET /projects/{id}/mems/files/{path}`（Q4+-3b / F5=A 默认推迟）。
         路径穿越（`..`）拒绝。Content-Type：json/gltf/glb/png/webp。
-        **非**默认全场 VTU 通道。未设 `MO_FEM_WORKDIR` 时除内嵌 manifest.json 外通常 404。
+        **非**默认全场 VTU 通道。workdir 未挂载且无内嵌/zip 时通常 404。
       operationId: getJobArtifact
       security:
         - bearerAuth: []
@@ -1277,9 +1294,11 @@ components:
             jobType=analytic：自由对象或 SolveRequest 子集。
             jobType=fem：必须符合 FemJobPayload（实现可渐进强制校验）。
             jobType=drive：须符合 DriveJobPayload（mode + machineType）。
+            jobType=optimize：必须符合 OptimizeJobPayload（variables/objectives/nsga/evaluatorProfile）。
           oneOf:
             - $ref: "#/components/schemas/FemJobPayload"
             - $ref: "#/components/schemas/DriveJobPayload"
+            - $ref: "#/components/schemas/OptimizeJobPayload"
             - type: object
               additionalProperties: true
 
@@ -1328,6 +1347,88 @@ components:
           type: string
           description: Optional id under packages/solver-fem/templates/
 
+
+    OptimizeJobPayload:
+      type: object
+      description: |
+        Q4-9 optimize 作业载荷。真理源亦见 packages/solver-opt/api/optimize-job-payload.schema.json
+        与 docs/drafts/Q4-NSGA-II跨服务边界.md §4.3。
+        入队后异步 NSGA（Celery optimize / in-process）；禁止在 api 请求线程内跑 NSGA。
+        成功 resultRef → solver/optimize/jobs/{jobId}/manifest.json；精简件经 Jobs artifacts。
+      required: [variables, objectives, nsga, evaluatorProfile]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+          description: Optional echo of top-level projectId
+        memsRef:
+          type: string
+        baseSolveRequest:
+          type: object
+          additionalProperties: true
+          description: Baseline SolveRequest for analytic adapter; worker may fill fixture default when omitted
+        variables:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [id, bounds]
+            additionalProperties: true
+            properties:
+              id:
+                type: string
+              path:
+                type: string
+              type:
+                type: string
+                enum: [continuous, integer, discrete]
+              bounds:
+                type: array
+                minItems: 2
+                maxItems: 2
+                items:
+                  type: number
+              discreteSet:
+                type: array
+                items:
+                  type: number
+        objectives:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required: [id, sense, metricId]
+            additionalProperties: true
+            properties:
+              id:
+                type: string
+              sense:
+                type: string
+                enum: [minimize, maximize]
+              metricId:
+                type: string
+        constraints:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        nsga:
+          type: object
+          required: [popSize, generations, seed]
+          properties:
+            popSize:
+              type: integer
+              minimum: 2
+              maximum: 64
+            generations:
+              type: integer
+              minimum: 1
+              maximum: 100
+            seed:
+              type: integer
+        evaluatorProfile:
+          type: string
+          enum: [analytic, analytic+drive, analytic+fem]
 
     DriveJobPayload:
       type: object
@@ -1441,10 +1542,12 @@ components:
         resultRef:
           type: string
           description: |
-            Pointer into `.mems` or future object store.
+            Pointer into worker workdir / `.mems` layout or future object store.
             analytic → solver/analytic/…
             fem（推荐）→ solver/fem/jobs/{jobId}/manifest.json
               （artifacts 列 results/fem/{jobId}/…）
+            optimize → solver/optimize/jobs/{jobId}/manifest.json
+              （artifacts 列 results/optimize/{jobId}/…；经 Jobs artifacts GET）
             drive → drive://jobs/{jobId}
         error:
           $ref: "#/components/schemas/Error"

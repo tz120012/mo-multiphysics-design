@@ -1,8 +1,11 @@
-"""Resolve FEM/optimize thinned artifacts for Jobs GET (F1 / Q3-L4 / Q4-9).
+"""Resolve FEM/optimize thinned artifacts for Jobs GET (F1 / L4 / Q4+-3).
 
-Reads worker disk under MO_OPT_WORKDIR / MO_FEM_WORKDIR (mems-relative layout), optional
-embedded job.payload.manifest, and optional .mems zip member. Does not
-serve full-field VTU / Elmer .result by default path.
+Canonical single-file channel for thinned FEM/optimize products (Q4+-3 / Motor F5=A):
+GET /jobs/{id}/artifacts and .../artifacts/{path}. Whole-zip mems stays package I/O;
+GET .../mems/files/{path} is deferred (Q4+-3b).
+
+Resolve order: MO_OPT/FEM workdir mems_shadow → workdir → payload embed → optional
+project .mems zip member (read_mems_member). Does not serve full-field VTU by default.
 """
 
 from __future__ import annotations
@@ -148,8 +151,7 @@ def embedded_manifest(job: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def load_manifest_from_disk(job_id: str | UUID, job_type: str | None = None) -> dict[str, Any] | None:
-    """Try optimize then fem manifest paths (or resultRef-shaped order by jobType)."""
+def _manifest_rel_candidates(job_id: str | UUID, job_type: str | None = None) -> list[str]:
     jid = str(job_id)
     rels: list[str] = []
     if job_type == "optimize":
@@ -163,34 +165,74 @@ def load_manifest_from_disk(job_id: str | UUID, job_type: str | None = None) -> 
                 f"solver/fem/jobs/{jid}/manifest.json",
             ]
         )
-    # Always allow the other path as fallback
     for extra in (
         f"solver/optimize/jobs/{jid}/manifest.json",
         f"solver/fem/jobs/{jid}/manifest.json",
     ):
         if extra not in rels:
             rels.append(extra)
-    for rel in rels:
+    return rels
+
+
+def _parse_manifest_bytes(raw: bytes) -> dict[str, Any] | None:
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def load_manifest_from_disk(job_id: str | UUID, job_type: str | None = None) -> dict[str, Any] | None:
+    """Try optimize then fem manifest paths (or resultRef-shaped order by jobType)."""
+    for rel in _manifest_rel_candidates(job_id, job_type):
         raw = read_disk_bytes(rel)
         if raw is None:
             continue
+        parsed = _parse_manifest_bytes(raw)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def load_manifest_from_mems(
+    job: dict[str, Any],
+    job_id: str | UUID | None = None,
+    job_type: str | None = None,
+) -> dict[str, Any] | None:
+    """Optional: read manifest.json from stored project `.mems` zip (Q4+-3 zip fallback)."""
+    pid = job.get("projectId")
+    jid = job_id if job_id is not None else job.get("id")
+    if jid is None:
+        return None
+    jt = job_type if job_type is not None else (job.get("jobType") or job.get("job_type"))
+    rels = _manifest_rel_candidates(jid, jt)
+    result_ref = job.get("resultRef")
+    if isinstance(result_ref, str) and result_ref.endswith("manifest.json"):
         try:
-            data = json.loads(raw.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError):
+            rel = normalize_rel_path(result_ref)
+        except ValueError:
+            rel = None
+        if rel and rel not in rels:
+            rels.insert(0, rel)
+    for rel in rels:
+        raw = read_mems_member(pid, rel)
+        if raw is None:
             continue
-        if isinstance(data, dict):
-            return data
+        parsed = _parse_manifest_bytes(raw)
+        if parsed is not None:
+            return parsed
     return None
 
 
 def load_manifest(job: dict[str, Any]) -> dict[str, Any] | None:
-    """Prefer disk manifest; fall back to payload-embedded (stub / complete_*)."""
+    """Prefer disk; then optional .mems zip member; then payload-embedded (stub)."""
     jid = job.get("id")
+    jt = job.get("jobType") or job.get("job_type")
     if jid is not None:
-        disk = load_manifest_from_disk(jid, job.get("jobType") or job.get("job_type"))
+        disk = load_manifest_from_disk(jid, jt)
         if disk is not None:
             return disk
-    # resultRef may point at optimize/fem manifest — try exact rel
+    # resultRef may point at optimize/fem manifest — try exact rel on disk
     result_ref = job.get("resultRef")
     if isinstance(result_ref, str) and result_ref.endswith("manifest.json"):
         try:
@@ -200,18 +242,34 @@ def load_manifest(job: dict[str, Any]) -> dict[str, Any] | None:
         if rel:
             raw = read_disk_bytes(rel)
             if raw is not None:
-                try:
-                    data = json.loads(raw.decode("utf-8"))
-                    if isinstance(data, dict):
-                        return data
-                except (UnicodeDecodeError, json.JSONDecodeError):
-                    pass
+                parsed = _parse_manifest_bytes(raw)
+                if parsed is not None:
+                    return parsed
+    zipped = load_manifest_from_mems(job, jid, jt)
+    if zipped is not None:
+        return zipped
     return embedded_manifest(job)
 
 
-def read_mems_member(project_id: UUID | None, rel: str) -> bytes | None:
-    """Optional: read member from in-memory .mems zip; skip if absent (no big mems change)."""
+def _as_project_uuid(project_id: UUID | str | None) -> UUID | None:
+    """Coerce job.projectId (UUID or str) for mems zip lookup."""
     if project_id is None:
+        return None
+    if isinstance(project_id, UUID):
+        return project_id
+    try:
+        return UUID(str(project_id))
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def read_mems_member(project_id: UUID | str | None, rel: str) -> bytes | None:
+    """Optional: read member from stored project `.mems` zip when disk miss.
+
+    Used by Jobs artifacts GET (Q4+-3); does not add a public mems/files route.
+    """
+    pid = _as_project_uuid(project_id)
+    if pid is None:
         return None
     try:
         from app.mems_store import _lock, _mems  # noqa: PLC0415 — optional path
@@ -222,7 +280,7 @@ def read_mems_member(project_id: UUID | None, rel: str) -> bytes | None:
     except ValueError:
         return None
     with _lock:
-        stored = _mems.get(project_id)
+        stored = _mems.get(pid)
         if stored is None:
             return None
         data = stored.get("data")
@@ -230,11 +288,12 @@ def read_mems_member(project_id: UUID | None, rel: str) -> bytes | None:
         return None
     try:
         with zipfile.ZipFile(BytesIO(data), "r") as zf:
-            # zip members may use forward slashes
             names = set(zf.namelist())
-            if rel_n in names:
-                return zf.read(rel_n)
-            # try without leading dirs quirks
+            # Exact mems-relative path first; tolerate leading "./" in zip writers
+            candidates = (rel_n, f"./{rel_n}")
+            for name in candidates:
+                if name in names:
+                    return zf.read(name)
             return None
     except (OSError, zipfile.BadZipFile, KeyError):
         return None
@@ -246,7 +305,7 @@ def resolve_artifact_bytes(
 ) -> tuple[bytes, str] | None:
     """Return (bytes, media_type) or None.
 
-    Order: MO_FEM_WORKDIR disk → embedded manifest.json from payload → mems zip.
+    Order: MO_OPT/FEM workdir mems_shadow → workdir → payload embed → optional .mems zip.
     """
     try:
         rel_n = normalize_rel_path(rel)
@@ -273,8 +332,8 @@ def resolve_artifact_bytes(
             body = (json.dumps(man, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
             return body, "application/json"
 
-    pid = job.get("projectId")
-    if isinstance(pid, UUID):
+    pid = _as_project_uuid(job.get("projectId"))
+    if pid is not None:
         zipped = read_mems_member(pid, rel_n)
         if zipped is not None:
             return zipped, media_type_for(rel_n)

@@ -236,3 +236,77 @@ def test_get_artifact_from_default_opt_workdir(tmp_path, monkeypatch):
         r = c.get(f"/api/v1/jobs/{jid}/artifacts/{rel}", headers=headers)
         assert r.status_code == 200, r.text
         assert r.json() == {"front": []}
+
+
+def test_get_artifact_from_mems_zip_member_when_disk_miss(client):
+    """Q4+-3: disk miss → optional project .mems zip member serves artifacts GET."""
+    import io
+    import zipfile
+    from datetime import datetime, timezone
+
+    c, work = client
+    token = _auth(c)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    pid = uuid4()
+    jid = uuid4()
+    rel = f"results/fem/{jid}/scalars.json"
+    man_rel = f"solver/fem/jobs/{jid}/manifest.json"
+    payload_body = b'{"from":"zip","ok":true}\n'
+    manifest = {
+        "jobId": str(jid),
+        "status": "succeeded",
+        "solverKernel": "elmer",
+        "topology": "RF",
+        "machineType": "PMSM",
+        "dim": "2d",
+        "scalars": {"fromZip": True},
+        "artifacts": [
+            {"path": rel, "role": "scalars", "format": "json", "bytes": len(payload_body)}
+        ],
+    }
+
+    # Build minimal .mems zip with project.json + artifact members (no disk copies).
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "project.json",
+            json.dumps({"id": str(pid), "name": "zip-fallback"}),
+        )
+        zf.writestr(man_rel, json.dumps(manifest))
+        zf.writestr(rel, payload_body)
+    from app.mems_store import mems_put, mems_delete
+
+    mems_put(pid, buf.getvalue())
+
+    from app.jobs_store import job_create, _jobs, _lock
+
+    item = job_create(project_id=pid, job_type="fem", payload={"input": {}}, status="queued")
+    with _lock:
+        old = _jobs.pop(item["id"])
+        old["id"] = jid
+        old["projectId"] = pid
+        old["status"] = "succeeded"
+        old["resultRef"] = man_rel
+        old["updatedAt"] = datetime.now(timezone.utc)
+        _jobs[jid] = old
+
+    # Ensure workdir has no shadow copy of the scalars file (zip-only path).
+    shadow = work / "mems_shadow" / rel
+    assert not shadow.exists()
+
+    r_list = c.get(f"/api/v1/jobs/{jid}/artifacts", headers=headers)
+    assert r_list.status_code == 200, r_list.text
+    listed = r_list.json()
+    assert listed["resultRef"] == man_rel
+    assert any(a["path"] == rel for a in listed["artifacts"])
+
+    r_get = c.get(f"/api/v1/jobs/{jid}/artifacts/{rel}", headers=headers)
+    assert r_get.status_code == 200, r_get.text
+    assert r_get.json() == {"from": "zip", "ok": True}
+
+    r_man = c.get(f"/api/v1/jobs/{jid}/artifacts/{man_rel}", headers=headers)
+    assert r_man.status_code == 200, r_man.text
+    assert r_man.json()["scalars"]["fromZip"] is True
+
+    mems_delete(pid)
