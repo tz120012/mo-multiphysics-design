@@ -20,6 +20,7 @@ from mo_geometry.validation import (
     require_od_gt_id,
     require_one_of,
     require_positive,
+    require_positive_even_int,
 )
 
 
@@ -177,7 +178,8 @@ def validate_radial(params: Any) -> list[str]:
             ("SPM", "IPM"),
             errors,
         )
-        require_int_positive("rotor.poleCount", rotor.get("poleCount"), errors)
+        # 裁决：poleCount 为极数（正偶数）；极对数 = poleCount/2 派生，勿双写
+        require_positive_even_int("rotor.poleCount", rotor.get("poleCount"), errors)
 
     require_positive("airgap", params.get("airgap"), errors)
     require_positive("axialActiveLength", params.get("axialActiveLength"), errors)
@@ -209,6 +211,23 @@ def validate_radial(params: Any) -> list[str]:
             errors.append("acim: required when machineType is 'ACIM'")
         else:
             validate_acim_block(acim, slot_count=slot_count, errors=errors, warnings=warnings)
+            # 裁决 soft-check：cagePolePairs（极对数）== rotor.poleCount/2
+            if isinstance(acim, dict) and isinstance(rotor, dict):
+                pc = rotor.get("poleCount")
+                cpp = acim.get("cagePolePairs")
+                if (
+                    isinstance(pc, int)
+                    and not isinstance(pc, bool)
+                    and pc > 0
+                    and pc % 2 == 0
+                    and isinstance(cpp, int)
+                    and not isinstance(cpp, bool)
+                    and cpp != pc // 2
+                ):
+                    warnings.append(
+                        f"acim.cagePolePairs ({cpp}) != rotor.poleCount/2 ({pc // 2}); "
+                        "poleCount is authoritative; cagePolePairs is cage literature pole-pairs"
+                    )
     elif acim is not None:
         # 非 ACIM 允许省略；若提供则仍校验形状
         validate_acim_block(acim, slot_count=slot_count, errors=errors, warnings=warnings)

@@ -89,3 +89,10 @@ def test_non_pmsm_mesh_empty_primitives():
     }
     mesh = build_axial_mesh_descriptor(reserved)
     assert mesh["primitives"] == []
+
+
+def test_axial_pole_count_must_be_even():
+    p = default_axial_af_pmsm()
+    p["pmsm"]["poleCount"] = 7
+    errs = validate_axial(p)
+    assert any("poleCount" in e and "even" in e for e in errs)

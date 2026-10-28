@@ -22,6 +22,14 @@
 
 几何参数 JSON → **前端 / 后端 / `.mems`**；**不进 Wasm**。
 
+
+## 极数约定（架构裁决）
+
+- 持久化唯一源：`poleCount`（正偶数，极数）
+- 电气极对数派生：`pole_pairs_from_pole_count(poleCount)` → `poleCount / 2`（UI 可显示，勿另存冲突字段）
+- ACIM：`cagePolePairs` 保持极对数语义不改名；与 `rotor.poleCount/2` soft-check
+- 详见 `docs/drafts/裁决-geometry-mems-poleCount.md`
+
 ## 安装与测试
 
 ```bash

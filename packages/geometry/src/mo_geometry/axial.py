@@ -17,6 +17,7 @@ from mo_geometry.validation import (
     require_od_gt_id,
     require_one_of,
     require_positive,
+    require_positive_even_int,
 )
 
 
@@ -117,7 +118,8 @@ def validate_axial(params: Any) -> list[str]:
                 f"pmsm.magnetSectorAngle: must be in (0, 180], got {mag_ang}"
             )
         require_int_positive("pmsm.slotCount", pmsm.get("slotCount"), errors)
-        require_int_positive("pmsm.poleCount", pmsm.get("poleCount"), errors)
+        # 裁决：poleCount 为极数（正偶数）；极对数派生
+        require_positive_even_int("pmsm.poleCount", pmsm.get("poleCount"), errors)
     else:
         # 枚举预留：不允许展开完整 PMSM 参数树
         if pmsm is not None:

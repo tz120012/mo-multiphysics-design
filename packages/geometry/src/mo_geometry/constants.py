@@ -25,3 +25,10 @@ BAR_SLOT_SHAPES: Final[tuple[str, ...]] = (
     "closed_slot",
     "open_slot",
 )
+
+
+def pole_pairs_from_pole_count(pole_count: int) -> int:
+    """电气极对数（派生）。权威持久化字段仍是 poleCount；勿反向双写。"""
+    if not isinstance(pole_count, int) or isinstance(pole_count, bool) or pole_count <= 0 or pole_count % 2 != 0:
+        raise ValueError(f"pole_count must be a positive even int, got {pole_count!r}")
+    return pole_count // 2

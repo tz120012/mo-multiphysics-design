@@ -97,3 +97,26 @@ def test_mesh_reacts_to_od():
     yoke_a = next(p for p in da["primitives"] if p["name"] == "stator_yoke")
     yoke_b = next(p for p in db["primitives"] if p["name"] == "stator_yoke")
     assert yoke_b["outerRadius"] > yoke_a["outerRadius"]
+
+
+def test_pole_count_must_be_even():
+    p = default_radial_pmsm()
+    p["rotor"]["poleCount"] = 5
+    errs = _hard_errors(validate_radial(p))
+    assert any("poleCount" in e and "even" in e for e in errs)
+
+
+def test_acim_cage_pole_pairs_soft_mismatch():
+    p = default_radial_acim()
+    # default rotor.poleCount=4 → pairs=2; force mismatch
+    p["acim"]["cagePolePairs"] = 3
+    msgs = validate_radial(p)
+    hard = _hard_errors(msgs)
+    assert hard == [], hard
+    assert any("cagePolePairs" in m for m in msgs)
+
+
+def test_pole_pairs_helper():
+    from mo_geometry import pole_pairs_from_pole_count
+
+    assert pole_pairs_from_pole_count(10) == 5

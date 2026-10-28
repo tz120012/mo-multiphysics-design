@@ -12,7 +12,11 @@ from mo_geometry.axial import (
     to_mems_geometry_fragment as to_mems_axial_fragment,
     validate_axial,
 )
-from mo_geometry.constants import GEOMETRY_SCHEMA_VERSION, MESH_SCHEMA_VERSION
+from mo_geometry.constants import (
+    GEOMETRY_SCHEMA_VERSION,
+    MESH_SCHEMA_VERSION,
+    pole_pairs_from_pole_count,
+)
 from mo_geometry.radial import (
     RadialParams,
     build_radial_mesh_descriptor,
@@ -26,6 +30,7 @@ from mo_geometry.radial import (
 __all__ = [
     "GEOMETRY_SCHEMA_VERSION",
     "MESH_SCHEMA_VERSION",
+    "pole_pairs_from_pole_count",
     "AxialParams",
     "RadialParams",
     "build_axial_mesh_descriptor",
