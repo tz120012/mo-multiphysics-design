@@ -3,19 +3,24 @@ info:
   title: Mo Platform API
   version: 1.0.0-draft
   description: |
-    Mo 电机多物理场智能设计平台 — Q1 API 边界草案（OpenAPI 3.1）。
+    Mo 电机多物理场智能设计平台 — Q1/Q2 API 边界草案（OpenAPI 3.1）。
 
     **契约口径（前后端对齐）：**
     - Q1：鉴权占位、项目 CRUD、`.mems` 下载/上传/导入/导出、history undo/redo 占位。
-    - Materials：list/get 薄桩；完整 CRUD 属 **Q2**。
-    - Jobs：POST/GET 薄桩（`analytic` | `fem` | `optimize`），异步 Celery 轮询；主体属 **Q2/Q3**。
+    - Materials（**Q2-1 架构锁定**）：list/get（category）+ POST/PUT/DELETE；种子只读；类型化 `curves`；
+      `materialsSchemaVersion: "0.1.0-q2"`。详见 docs/drafts/Q2-材料与解析边界.md。
+    - Analytic（**Q2-2 / Q2-6**）双轨：交互主路径 = 客户端 Wasm（Rust→wasm32）；可选 sync
+      `POST /solver/analytic/solve`；批处理 = Jobs `jobType=analytic`（Celery，不可用时可进程内降级）。
+    - Jobs：POST/GET（`analytic` | `fem` | `optimize`）；交互 UI **不得**阻塞于 Jobs 轮询。
 
     **实现边界：**
-    - Wasm 解析可在客户端或 `packages/solver-analytic` 运行；本 API 不强制托管解析内核。
-    - FEM 不在本 API 表面暴露专用 FEM 路由，仅通过 Jobs 作业类型进入（Q3）。
-    - **Gate0 无业务实现**；本文件仅为 Q1 开工契约，路由可先返回 501/空壳。
+    - **不强制**服务端托管唯一解析内核；Python `packages/solver-analytic` = 金标/CI；Wasm = 交互主路径。
+    - 可选 sync solve 为 Q2 stub（Bot/CI/FE 降级）；Wasm 先到不阻塞 MVP。
+    - FEM 仅经 Jobs（Q3）；无专用 FEM 路由。
+    - api `version` 保持 `1.0.0-draft`；材料子版本见 Material.`materialsSchemaVersion`。
 
-    配套：`docs/drafts/mems-schema-v1.md`（`memsSchemaVersion: "1.0.0-draft"`）；`docs/drafts/history-契约-q1-6.md`（Q1-6 History 语义）。
+    配套：`docs/drafts/Q2-材料与解析边界.md`；`docs/drafts/mems-schema-v1.md`；`docs/drafts/history-契约-q1-6.md`；
+    `packages/solver-analytic/api/solve.schema.json`（SolveRequest/SolveResult 真理源）。
     真理源：`docs/01-任务书-v2.md`、`docs/02-阶段任务拆解与门禁.md`（本草案不修改二者）。
 
 servers:
@@ -33,9 +38,11 @@ tags:
   - name: History
     description: Q1-6 Undo/Redo 占位；语义见 docs/drafts/history-契约-q1-6.md（客户端权威；本 API 可空桩）
   - name: Materials
-    description: Q1 薄桩；完整 CRUD → Q2
+    description: Q2-1 CRUD + 种子只读；typed curves；见 Q2-材料与解析边界.md
+  - name: Solver
+    description: 可选同步解析（Q2 stub）；交互主路径仍为客户端 Wasm
   - name: Jobs
-    description: 异步作业薄桩；主体 → Q2/Q3
+    description: analytic=Q2-6 可选批处理（Celery/进程内降级）；fem/optimize→Q3/Q4
 
 paths:
   /health:
@@ -458,13 +465,29 @@ paths:
   /materials:
     get:
       tags: [Materials]
-      summary: List materials（Q1 stub；CRUD → Q2）
+      summary: List materials（Q2-1；seed + custom）
+      description: |
+        返回内置种子与自定义材料（默认不含 soft-deleted）。
+        可用 `category` 过滤。契约：docs/drafts/Q2-材料与解析边界.md。
       operationId: listMaterials
       security:
         - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/MaterialCategory"
+          description: Filter by material category
+        - name: includeDeleted
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
-          description: Material stubs
+          description: Material list
           content:
             application/json:
               schema:
@@ -477,20 +500,52 @@ paths:
                       $ref: "#/components/schemas/Material"
         "401":
           $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Materials]
+      summary: Create custom material（Q2-1）
+      description: |
+        仅创建 custom（`builtin=false`）。须带类型化 `curves`（按 category），不得仅靠自由 meta。
+        种子不可经此接口写成 builtin。
+      operationId: createMaterial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Material"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Id conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /materials/{materialId}:
+    parameters:
+      - name: materialId
+        in: path
+        required: true
+        schema:
+          type: string
     get:
       tags: [Materials]
-      summary: Get material（Q1 stub；CRUD → Q2）
+      summary: Get material by id（Q2-1）
       operationId: getMaterial
       security:
         - bearerAuth: []
-      parameters:
-        - name: materialId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         "200":
           description: Material
@@ -502,14 +557,103 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Materials]
+      summary: Replace custom material（Q2-1；prefer over PATCH）
+      description: |
+        全量替换 custom。对 builtin 种子返回 403。Q2 不要求 PATCH。
+      operationId: putMaterial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialUpdate"
+      responses:
+        "200":
+          description: Replaced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Material"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Builtin seed is read-only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Materials]
+      summary: Soft-delete custom material（Q2-1）
+      description: Soft-delete（`deletedAt`）。种子不可删（403）。
+      operationId: deleteMaterial
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Soft-deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Builtin seed is read-only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /solver/analytic/solve:
+    post:
+      tags: [Solver]
+      summary: Optional sync analytic solve（Q2 stub；非 MVP 阻塞）
+      description: |
+        轻量同步包装 `packages/solver-analytic`，供 Bot/CI 与 Wasm 未就绪时的 FE 降级。
+        **交互主路径 = 客户端 Wasm**。请求/响应对齐
+        `packages/solver-analytic/api/solve.schema.json`（SolveRequest/SolveResult）。
+        未实现可 501。降级序：Wasm → 本端 → Jobs analytic。
+        见 docs/drafts/Q2-材料与解析边界.md。
+      operationId: postSolverAnalyticSolve
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyticSolveRequest"
+      responses:
+        "200":
+          description: SolveResult
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticSolveResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "501":
+          description: Not implemented yet（optional Q2 stub）
 
   /jobs:
     post:
       tags: [Jobs]
-      summary: Enqueue job stub（Q2/Q3 mostly）
+      summary: Enqueue job（analytic=Q2-6 批处理；fem/optimize→Q3/Q4）
       description: |
-        Celery 异步作业入口。`jobType=analytic` 可在 Q2 充实；`fem` / `optimize` 属 Q3/Q4。
-        Gate0/Q1 可返回 501 或占位 Job 记录。
+        Celery 异步作业入口（Redis 不可用时可进程内假异步，契约形状不变）。
+        - `jobType=analytic`：**可选 Q2-6** 批处理 / Benchmark；**不得**作为 UI 交互主路径。
+          成功后快照写入 `.mems` `solver/analytic/`（mems PUT 或 `resultRef`）。
+        - `fem` / `optimize`：Q3/Q4 占位。
+        交互秒级求解 → Wasm（或可选 sync `/solver/analytic/solve`）。
       operationId: createJob
       security:
         - bearerAuth: []
@@ -700,25 +844,249 @@ components:
           type: string
           format: date-time
 
+    MaterialCategory:
+      type: string
+      enum: [steel, magnet, coil, acim_bar]
+      description: Q2-1 材料类别
+
+    CurveTable2D:
+      type: object
+      description: 二维表曲线；单位见各类 Material props
+      required: [xName, yName, points]
+      properties:
+        xName:
+          type: string
+        yName:
+          type: string
+        xUnit:
+          type: string
+        yUnit:
+          type: string
+        points:
+          type: array
+          minItems: 2
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
+              type: number
+        note:
+          type: string
+
+    SteelProps:
+      type: object
+      description: 硅钢 B-H 与/或 B-P；单位 B=T，H=A/m，P=W/kg
+      properties:
+        bh:
+          $ref: "#/components/schemas/CurveTable2D"
+        bp:
+          $ref: "#/components/schemas/CurveTable2D"
+        lossCoefficients:
+          type: object
+          additionalProperties: true
+
+    MagnetProps:
+      type: object
+      description: 永磁退磁曲线 + Br/Hc；单位 Br=T，Hc=A/m，温度=°C
+      required: [br_t, hc_a_per_m]
+      properties:
+        br_t:
+          type: number
+        hc_a_per_m:
+          type: number
+        demag:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [curve]
+            properties:
+              temperature_c:
+                type: number
+              curve:
+                $ref: "#/components/schemas/CurveTable2D"
+        alphaBr:
+          type: number
+        alphaHc:
+          type: number
+
+    CoilProps:
+      type: object
+      description: 线圈；resistivity=Ω·m；fillFactor 0–1
+      required: [resistivity_ohm_m]
+      properties:
+        resistivity_ohm_m:
+          type: number
+          exclusiveMinimum: 0
+        fillFactor:
+          type: number
+          minimum: 0
+          maximum: 1
+        skin:
+          type: object
+          additionalProperties: true
+
+    AcimBarProps:
+      type: object
+      description: ACIM 导条电/热物性；几何在 geometry 包。conductivity=S/m
+      required: [conductivity_s_per_m]
+      properties:
+        conductivity_s_per_m:
+          type: number
+          exclusiveMinimum: 0
+        skin:
+          type: object
+          additionalProperties: true
+
+    MaterialCurves:
+      type: object
+      description: 按 category 填充对应分支
+      properties:
+        steel:
+          $ref: "#/components/schemas/SteelProps"
+        magnet:
+          $ref: "#/components/schemas/MagnetProps"
+        coil:
+          $ref: "#/components/schemas/CoilProps"
+        acim_bar:
+          $ref: "#/components/schemas/AcimBarProps"
+
     Material:
       type: object
-      required: [id, name, category]
+      required:
+        - id
+        - name
+        - category
+        - builtin
+        - materialsSchemaVersion
       properties:
         id:
           type: string
         name:
           type: string
         category:
+          $ref: "#/components/schemas/MaterialCategory"
+        builtin:
+          type: boolean
+          description: true=种子只读；false=custom
+        materialsSchemaVersion:
           type: string
-          description: e.g. steel | magnet | coil | acim_bar
+          const: "0.1.0-q2"
+        curves:
+          $ref: "#/components/schemas/MaterialCurves"
         meta:
+          type: object
+          additionalProperties: true
+          description: 扩展袋；过渡期可含旧 seed 键，不得长期替代 curves
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MaterialCreate:
+      type: object
+      required: [name, category, curves]
+      properties:
+        id:
+          type: string
+          description: Optional explicit id
+        name:
+          type: string
+        category:
+          $ref: "#/components/schemas/MaterialCategory"
+        curves:
+          $ref: "#/components/schemas/MaterialCurves"
+        meta:
+          type: object
+          additionalProperties: true
+        materialsSchemaVersion:
+          type: string
+          const: "0.1.0-q2"
+          default: "0.1.0-q2"
+
+    MaterialUpdate:
+      type: object
+      description: PUT 全量替换（custom only）
+      required: [name, category, curves]
+      properties:
+        name:
+          type: string
+        category:
+          $ref: "#/components/schemas/MaterialCategory"
+        curves:
+          $ref: "#/components/schemas/MaterialCurves"
+        meta:
+          type: object
+          additionalProperties: true
+        materialsSchemaVersion:
+          type: string
+          const: "0.1.0-q2"
+
+    AnalyticSolveRequest:
+      type: object
+      description: |
+        镜像 packages/solver-analytic/api/solve.schema.json SolveRequest（snake_case）。
+        不以本文件另起 FE DTO。
+      required:
+        - schema_version
+        - topology
+        - machine_type
+        - geometry
+        - materials
+        - operating_point
+      properties:
+        schema_version:
+          type: string
+          examples: ["0.0.0-gate0", "0.1.0-q2"]
+        topology:
+          type: string
+          enum: [RF, AF]
+        machine_type:
+          type: string
+          enum: [BLDC, PMSM, ACIM]
+        geometry:
+          type: object
+          additionalProperties: true
+          description: GeometrySummary — 见 Q2-材料与解析边界.md 附录 A
+        materials:
+          type: object
+          additionalProperties: true
+        operating_point:
+          type: object
+          additionalProperties: true
+
+    AnalyticSolveResult:
+      type: object
+      description: 镜像 solve.schema.json SolveResult
+      required: [schema_version, meta, torque_nm, back_emf_v_peak, losses_w]
+      properties:
+        schema_version:
+          type: string
+        meta:
+          type: object
+          additionalProperties: true
+        torque_nm:
+          type: number
+        back_emf_v_peak:
+          type: number
+        losses_w:
+          type: object
+          additionalProperties: true
+        inductance_h:
           type: object
           additionalProperties: true
 
     JobType:
       type: string
       enum: [analytic, fem, optimize]
-      description: analytic≈Q2；fem≈Q3；optimize≈Q4
+      description: analytic=Q2-6 可选批处理（非 UI 主路径）；fem≈Q3；optimize≈Q4
 
     Job:
       type: object
@@ -737,7 +1105,7 @@ components:
           enum: [queued, running, succeeded, failed, cancelled]
         resultRef:
           type: string
-          description: Optional pointer into `.mems` results/ or object store
+          description: Optional pointer into `.mems` solver/analytic/ or results/ / object store
         error:
           $ref: "#/components/schemas/Error"
         createdAt:

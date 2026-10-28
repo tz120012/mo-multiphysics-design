@@ -1,4 +1,4 @@
-# docs/drafts — Gate0 / Q1 架构草案
+# docs/drafts — Gate0 / Q1 / Q2 架构草案
 
 本目录存放 **Mo-架构** 在不改动冻结源的前提下提交的契约与评审草稿。
 
@@ -17,5 +17,7 @@
 | [裁决-geometry-mems-poleCount.md](./裁决-geometry-mems-poleCount.md) | Mo-架构裁决：`poleCount` + 双轨版本 KEEP |
 | [openapi-v1.yaml](./openapi-v1.yaml) | Mo Platform API OpenAPI 3.1 **v1 草案**（`1.0.0-draft`） |
 | [history-契约-q1-6.md](./history-契约-q1-6.md) | Q1-6 Undo/Redo **最小契约**（客户端权威线性栈 + `history/stack.json`） |
+| [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) | **Q2 锁定**：Materials API CRUD + Wasm/analytic 双轨部署边界 |
 
 其他范围笔记（几何 / 解析 / FEM / 驱动后处理等）可并存于本目录，**均不替代** 01/02。
+Q2 解析开放项（Rust 偏好）已在 [解析范围.md](./解析范围.md) §6 勾选关闭，细节以 Q2 边界草案为准。

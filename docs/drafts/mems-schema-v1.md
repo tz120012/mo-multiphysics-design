@@ -100,7 +100,9 @@ manifest.json
 
 - 引用标准库材料 ID（硅钢 B-P、永磁退磁曲线、线圈、ACIM 导条）
 - 允许 `custom/` 下自定义曲线 JSON（B-H / B-P / 退磁等）
-- 包内仅存引用 + 自定义覆盖；完整库由 API Materials 服务提供（**Q2 CRUD**；Q1 仅 list/get 桩）
+- 包内仅存 **refs + 工程覆盖（overrides）**；完整库由 API Materials 服务提供
+- **Q2 锁定**：API CRUD + 种子只读 + `materialsSchemaVersion: "0.1.0-q2"`（**不** bump 本包 `memsSchemaVersion` 至 1.0.0）
+- 细则：[Q2-材料与解析边界.md](./Q2-材料与解析边界.md)；OpenAPI：[openapi-v1.yaml](./openapi-v1.yaml)
 
 ---
 
@@ -108,7 +110,7 @@ manifest.json
 
 | 路径 | 职责 |
 | --- | --- |
-| `solver/analytic/` | 解析输入/输出快照（MEC / 多平面 / ACIM 等效电路）；可由客户端 Wasm 或 `packages/solver-analytic` 写入 |
+| `solver/analytic/` | 解析输入/输出快照（MEC / 多平面 / ACIM 等效电路）；由 **FE Wasm（主）** / 可选 sync API / Jobs analytic worker 写入；契约见 [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) |
 | `solver/fem/` | FEM 工况、网格句柄、结果索引；**不在 Gate0/Q1 实现求解**，仅保留目录与空索引 JSON |
 
 ---
@@ -172,7 +174,7 @@ manifest.json
 | 组件 | 职责 |
 | --- | --- |
 | **API（Mo-后端）** | 持久化 `.mems` blob + 元数据（Project / MemsMeta）；提供 upload/download/import/export |
-| **Wasm / `packages/solver-analytic`** | 写入 `solver/analytic/` 快照；不直接改 Project 行（经 API 或本地包回写） |
+| **Wasm（Rust→wasm32）/ `packages/solver-analytic`（Python 金标）** | 写入 `solver/analytic/` 快照；不直接改 Project 行（经 API 或本地包回写）；Q2 形态见 [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) |
 | **FEM worker（Q3）** | 写入 `solver/fem/` 与 `results/` 索引/切片；经 Jobs 异步回传 |
 | **前端** | Undo/Redo 写入 `history/`；几何参数变更经命令模式；本地可先改再 PUT 整包 |
 
@@ -192,7 +194,7 @@ manifest.json
 见同目录 `openapi-v1.yaml`：
 
 - Q1 对齐：鉴权占位、项目 CRUD、`.mems` 上下载/导入导出、history undo/redo 占位
-- Materials / Jobs：标为 Q2/Q3 薄桩
+- Materials / Jobs / 可选 sync solve：见 **Q2 锁定** [Q2-材料与解析边界.md](./Q2-材料与解析边界.md) 与 `openapi-v1.yaml`（api 版本仍 `1.0.0-draft`）
 
 ---
 
