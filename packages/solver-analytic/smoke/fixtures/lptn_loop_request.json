@@ -1,0 +1,42 @@
+{
+  "machineType": "PMSM",
+  "source": "analytic",
+  "pending_calibration": true,
+  "lossesW": {
+    "total": 125.0,
+    "iron": 40.0,
+    "copper": 80.0,
+    "pmEddy": 5.0,
+    "rotorBar": null,
+    "endRing": null
+  },
+  "lossBreakdown": {
+    "source": "analytic",
+    "unit": "W",
+    "notes": "smoke seeded analytic losses — not FEM EM"
+  },
+  "operatingPoint": {
+    "rpm": 3000,
+    "torqueNm": 8.0,
+    "T_ambientC": 25.0,
+    "tempC": 25.0
+  },
+  "jobId": null,
+  "resultRef": null,
+  "materials": {
+    "br_t": 1.2,
+    "temp_coeff_br": -0.0012
+  },
+  "thermal": {
+    "max_iter": 8,
+    "tol": 0.05,
+    "conductance_w_per_k": {
+      "copper_iron": 8.0,
+      "iron_ambient": 4.0,
+      "copper_ambient": 1.5,
+      "magnet_iron": 6.0,
+      "magnet_ambient": 1.0
+    }
+  },
+  "notes": "Q4-7 LPTN smoke — thermal-loop-iter-v0"
+}
