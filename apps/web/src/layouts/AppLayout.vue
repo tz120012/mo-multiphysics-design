@@ -13,6 +13,9 @@
         <router-link to="/workspace" class="mo-nav-link" active-class="is-active">
           工作区
         </router-link>
+        <router-link to="/analytic" class="mo-nav-link" active-class="is-active">
+          解析
+        </router-link>
       </nav>
       <div class="mo-header-right">
         <span class="mo-user">{{ auth.username }}</span>

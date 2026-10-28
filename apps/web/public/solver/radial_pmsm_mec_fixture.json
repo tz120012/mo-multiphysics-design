@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.0.0-gate0",
+  "meta": {
+    "solver": "mec",
+    "elapsed_ms": 0.465,
+    "mock": false,
+    "note": "Radial SPM PMSM MEC v0 (series one-pole path, analytic steel μ(B)). Engineering first cut — not calibrated to ≤5%. Defaults: magnet_arc_ratio defaulted to 0.7; carter_factor defaulted to 1.15; tooth_height_m estimated as 0.01064 m; stator_yoke_height_m estimated as 0.008225 m; rotor_yoke_height_m estimated as 0.006991 m; winding_factor defaulted to 0.93; mur_pm defaulted to 1.05; sigma_copper defaulted to 5.8e7 S/m",
+    "mec": {
+      "converged": true,
+      "iterations": 17,
+      "flux_pole_wb": 0.0004881540035795286,
+      "B_airgap_t": 0.9008826839028379,
+      "B_tooth_t": 1.261235757463973,
+      "B_stator_yoke_t": 1.483806773487027,
+      "B_rotor_yoke_t": 1.7456550276317966,
+      "R_total": 5589166.247275114,
+      "F_pm_a": 2728.37045300392,
+      "F_net_a": 2728.37045300392,
+      "psi_pm_wb": 0.021791194719790154
+    }
+  },
+  "torque_nm": 4.085849009960654,
+  "back_emf_v_peak": 34.229528622318725,
+  "losses_w": {
+    "copper": 59.99790718364898,
+    "iron": 35.31789439296892,
+    "magnet_eddy": 0.016491355833849045
+  },
+  "inductance_h": {
+    "ld": 0.00010458551861539656,
+    "lq": 0.00010725679244472132
+  }
+}

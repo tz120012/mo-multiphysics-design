@@ -1,0 +1,26 @@
+{
+  "schema_version": "0.0.0-gate0",
+  "topology": "RF",
+  "machine_type": "PMSM",
+  "geometry": {
+    "poles": 10,
+    "slots": 12,
+    "stack_length_m": 0.04,
+    "airgap_m": 0.0008,
+    "rotor_od_m": 0.06,
+    "stator_id_m": 0.0616,
+    "magnet_thickness_m": 0.003,
+    "turns_per_phase": 48
+  },
+  "materials": {
+    "steel_id": "demo-steel",
+    "magnet_id": "demo-N35",
+    "conductor_id": "Cu",
+    "br_t": 1.2
+  },
+  "operating_point": {
+    "speed_rpm": 3000,
+    "current_a_peak": 25,
+    "gamma_deg": 0
+  }
+}

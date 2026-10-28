@@ -27,6 +27,11 @@ const routes: RouteRecordRaw[] = [
         name: 'workspace',
         component: () => import('@/views/WorkspaceView.vue'),
       },
+      {
+        path: 'analytic',
+        name: 'analytic',
+        component: () => import('@/views/AnalyticView.vue'),
+      },
     ],
   },
   {
