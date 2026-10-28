@@ -15,12 +15,12 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Mo API"
-    app_version: str = "0.1.0"
+    app_version: str = "1.0.0-draft"
     # Host-side defaults (API process on host → published ports).
     # In-compose override: postgresql+psycopg://mo:mo@postgres:5432/mo
     database_url: str = "postgresql+psycopg://mo:mo@127.0.0.1:5433/mo"
     redis_url: str = "redis://127.0.0.1:6380/0"
-    mems_schema_version: str = "0.1.0-draft"
+    mems_schema_version: str = "1.0.0-draft"
 
 
 @lru_cache

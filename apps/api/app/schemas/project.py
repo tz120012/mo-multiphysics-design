@@ -1,7 +1,8 @@
-"""Project schemas aligned with .mems project.json minimal field set."""
+"""Project schemas aligned with openapi-v1.yaml / .mems project.json."""
 
 from datetime import datetime
 from enum import Enum
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -23,19 +24,19 @@ class MachineType(str, Enum):
 
 
 class ProjectCreate(BaseModel):
-    """Create project body."""
+    """Create / full-replace (PUT) project body (OpenAPI ProjectCreate)."""
 
     name: str = Field(..., min_length=1, max_length=200, description="Display name")
     topology: Topology = Field(..., description="RF | AF")
     machineType: MachineType = Field(..., description="BLDC | PMSM | ACIM")
-    memsSchemaVersion: str | None = Field(
+    units: dict[str, Any] | None = Field(
         default=None,
-        description="Defaults to server mems schema draft version",
+        description="Optional units object (stored client-side in .mems; accepted on create)",
     )
 
 
 class ProjectUpdate(BaseModel):
-    """Partial update for a project."""
+    """Partial update for PATCH compatibility."""
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
     topology: Topology | None = None

@@ -1,9 +1,11 @@
-"""Project CRUD shell (auth required). Persists to Postgres when available, else memory."""
+"""Project CRUD aligned with openapi-v1 (PUT primary; PATCH kept for compat)."""
+
+from __future__ import annotations
 
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.config import get_settings
 from app.db import (
@@ -15,24 +17,31 @@ from app.db import (
     is_db_ready,
 )
 from app.deps.auth import require_bearer
+from app.mems_store import mems_delete
 from app.schemas.project import Project, ProjectCreate, ProjectList, ProjectUpdate
 from app.store import mem_create, mem_delete, mem_get, mem_list, mem_update
 
 router = APIRouter(
     prefix="/api/v1/projects",
-    tags=["projects"],
+    tags=["Projects"],
     dependencies=[Depends(require_bearer)],
 )
 
 
+def _not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={"code": "not_found", "message": "Project not found"},
+    )
+
+
 def _create(body: ProjectCreate) -> dict[str, Any]:
     settings = get_settings()
-    version = body.memsSchemaVersion or settings.mems_schema_version
     kwargs = dict(
         name=body.name,
         topology=body.topology.value,
         machine_type=body.machineType.value,
-        mems_schema_version=version,
+        mems_schema_version=settings.mems_schema_version,
     )
     if is_db_ready():
         return db_create_project(**kwargs)
@@ -51,32 +60,52 @@ def _get(project_id: UUID) -> dict[str, Any] | None:
     return mem_get(project_id)
 
 
+def _apply_fields(project_id: UUID, fields: dict[str, Any]) -> dict[str, Any] | None:
+    if is_db_ready():
+        return db_update_project(project_id, fields)
+    return mem_update(project_id, fields)
+
+
+def _put(project_id: UUID, body: ProjectCreate) -> dict[str, Any] | None:
+    fields = {
+        "name": body.name,
+        "topology": body.topology.value,
+        "machineType": body.machineType.value,
+    }
+    return _apply_fields(project_id, fields)
+
+
 def _patch(project_id: UUID, body: ProjectUpdate) -> dict[str, Any] | None:
     fields = body.model_dump(exclude_unset=True)
     if "topology" in fields and fields["topology"] is not None:
         fields["topology"] = fields["topology"].value
     if "machineType" in fields and fields["machineType"] is not None:
         fields["machineType"] = fields["machineType"].value
-    if is_db_ready():
-        return db_update_project(project_id, fields)
-    return mem_update(project_id, fields)
+    return _apply_fields(project_id, fields)
 
 
 def _delete(project_id: UUID) -> bool:
-    if is_db_ready():
-        return db_delete_project(project_id)
-    return mem_delete(project_id)
+    ok = db_delete_project(project_id) if is_db_ready() else mem_delete(project_id)
+    if ok:
+        mems_delete(project_id)
+    return ok
 
 
 @router.get(
     "",
     response_model=ProjectList,
     summary="List projects",
-    description="Return all projects (empty shell store until real persistence expands).",
 )
-def list_projects(_: Annotated[str, Depends(require_bearer)]) -> ProjectList:
-    items = [Project.model_validate(p) for p in _list()]
-    return ProjectList(items=items, total=len(items))
+def list_projects(
+    _: Annotated[str, Depends(require_bearer)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> ProjectList:
+    all_items = _list()
+    total = len(all_items)
+    page = all_items[offset : offset + limit]
+    items = [Project.model_validate(p) for p in page]
+    return ProjectList(items=items, total=total)
 
 
 @router.post(
@@ -84,7 +113,6 @@ def list_projects(_: Annotated[str, Depends(require_bearer)]) -> ProjectList:
     response_model=Project,
     status_code=status.HTTP_201_CREATED,
     summary="Create project",
-    description="Create a project with .mems minimal fields (topology × machineType).",
 )
 def create_project(
     body: ProjectCreate,
@@ -97,7 +125,6 @@ def create_project(
     "/{project_id}",
     response_model=Project,
     summary="Get project",
-    description="Fetch one project by UUID.",
 )
 def get_project(
     project_id: UUID,
@@ -105,24 +132,40 @@ def get_project(
 ) -> Project:
     item = _get(project_id)
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        raise _not_found()
+    return Project.model_validate(item)
+
+
+@router.put(
+    "/{project_id}",
+    response_model=Project,
+    summary="Update project metadata (full replace of ProjectCreate fields)",
+)
+def put_project(
+    project_id: UUID,
+    body: ProjectCreate,
+    _: Annotated[str, Depends(require_bearer)],
+) -> Project:
+    item = _put(project_id, body)
+    if item is None:
+        raise _not_found()
     return Project.model_validate(item)
 
 
 @router.patch(
     "/{project_id}",
     response_model=Project,
-    summary="Update project",
-    description="Partial update of project metadata fields.",
+    summary="Partial update (compat; OpenAPI prefers PUT)",
+    deprecated=True,
 )
-def update_project(
+def patch_project(
     project_id: UUID,
     body: ProjectUpdate,
     _: Annotated[str, Depends(require_bearer)],
 ) -> Project:
     item = _patch(project_id, body)
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        raise _not_found()
     return Project.model_validate(item)
 
 
@@ -130,11 +173,10 @@ def update_project(
     "/{project_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete project",
-    description="Delete a project by UUID.",
 )
 def delete_project(
     project_id: UUID,
     _: Annotated[str, Depends(require_bearer)],
 ) -> None:
     if not _delete(project_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        raise _not_found()
