@@ -66,16 +66,18 @@ def solve_series_mec(
     """Iterate Φ = F / ΣR(B) until relative flux change < tol.
 
     Real magnetic-circuit fixed-point — not empirical scaling.
+    Linear-only networks solve in one step (no under-relaxation).
     """
-    # Seed: linear iron at low B
     for b in branches:
         if b.nonlinear:
             b.mu = mu_fn(0.0)
         b.R = reluctance_linear(b.length_m, b.area_m2, b.mu)
 
+    any_nl = any(b.nonlinear for b in branches)
     phi = 0.0 if flux0 is None else float(flux0)
     converged = False
     it = 0
+
     for it in range(1, max_iter + 1):
         for b in branches:
             _update_branch_R(b, phi, mu_fn)
@@ -85,10 +87,18 @@ def solve_series_mec(
         phi_new = float(mmf_a) / R_tot
         if not math.isfinite(phi_new):
             raise RuntimeError("non-finite flux in MEC iteration")
+
+        if not any_nl:
+            phi = phi_new
+            for b in branches:
+                _update_branch_R(b, phi, mu_fn)
+            R_tot = sum(b.R for b in branches)
+            converged = True
+            break
+
         denom = max(abs(phi_new), 1e-16)
         if abs(phi_new - phi) / denom < tol:
             phi = phi_new
-            # final B/R update
             for b in branches:
                 _update_branch_R(b, phi, mu_fn)
             R_tot = sum(b.R for b in branches)
