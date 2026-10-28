@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@mo/solver-analytic-wasm/*": [
+        "../../packages/solver-analytic-wasm/pkg/*"
       ]
     }
   },
