@@ -12,7 +12,7 @@ celery_app = Celery(
     "mo_api",
     broker=_settings.redis_url,
     backend=_settings.redis_url,
-    include=["app.tasks.analytic", "app.tasks.fem"],
+    include=["app.tasks.analytic", "app.tasks.fem", "app.tasks.drive"],
 )
 
 celery_app.conf.update(

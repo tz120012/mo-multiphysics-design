@@ -114,7 +114,7 @@ export const MACHINE_TYPE_LABELS: Record<MachineType, string> = {
 }
 
 /** Jobs — 对齐 openapi Job / JobCreate / FemJobPayload（OpenAPI Job 不含 payload） */
-export type JobType = 'analytic' | 'fem' | 'optimize'
+export type JobType = 'analytic' | 'fem' | 'optimize' | 'drive'
 
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
 
@@ -144,11 +144,28 @@ export interface FemJobPayload {
   templateId?: string
 }
 
+
+/** Drive modes — packages/solver-drive */
+export type DriveMode = 'bldc_square' | 'pmsm_foc' | 'acim_vf' | 'acim_foc'
+
+export interface DriveJobPayload {
+  mode: DriveMode | 'efficiency_map'
+  machineType: MachineType
+  operatingPoint?: Record<string, unknown>
+  pwm?: Record<string, unknown>
+  deadTime?: Record<string, unknown>
+  plant?: Record<string, unknown>
+  mapGrid?: Record<string, unknown>
+  mapMode?: DriveMode
+  nSamples?: number
+  projectId?: string
+}
+
 export interface JobCreate {
   projectId: string
   jobType: JobType
-  /** jobType=fem 时须符合 FemJobPayload */
-  payload?: FemJobPayload | Record<string, unknown>
+  /** jobType=fem → FemJobPayload；jobType=drive → DriveJobPayload */
+  payload?: FemJobPayload | DriveJobPayload | Record<string, unknown>
 }
 
 /** OpenAPI Job — 不含 payload */
@@ -157,11 +174,13 @@ export interface Job {
   projectId: string
   jobType: JobType
   status: JobStatus
-  /** fem 成功多为 solver/fem/jobs/{jobId}/manifest.json */
+  /** fem 成功多为 solver/fem/jobs/{jobId}/manifest.json；drive → drive://jobs/{jobId} */
   resultRef?: string | null
   error?: ApiErrorBody | null
   createdAt: string
   updatedAt?: string
+  /** drive/analytic may embed input+result for FE poll */
+  payload?: Record<string, unknown> | null
 }
 
 export const JOB_TERMINAL_STATUSES: readonly JobStatus[] = [

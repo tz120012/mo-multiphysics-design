@@ -22,6 +22,9 @@
         <router-link to="/field" class="mo-nav-link" active-class="is-active">
           场量
         </router-link>
+        <router-link to="/drive" class="mo-nav-link" active-class="is-active">
+          驱动
+        </router-link>
       </nav>
       <div class="mo-header-right">
         <span class="mo-user">{{ auth.username }}</span>

@@ -9,7 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import get_settings
 from app.db import db_status, init_db
-from app.routers import auth, health, history, jobs, materials, mems, projects, solver
+from app.routers import auth, drive, health, history, jobs, materials, mems, projects, solver
 
 
 @asynccontextmanager
@@ -72,6 +72,7 @@ def create_app() -> FastAPI:
     application.include_router(history.router)
     application.include_router(materials.router)
     application.include_router(jobs.router)
+    application.include_router(drive.router)
     application.include_router(solver.router)
     return application
 

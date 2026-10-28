@@ -42,6 +42,11 @@ const routes: RouteRecordRaw[] = [
         name: 'field',
         component: () => import('@/views/FieldVizView.vue'),
       },
+      {
+        path: 'drive',
+        name: 'drive',
+        component: () => import('@/views/DriveView.vue'),
+      },
     ],
   },
   {

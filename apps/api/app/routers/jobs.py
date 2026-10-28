@@ -19,9 +19,10 @@ from app.artifacts_resolve import (
     resolve_artifact_bytes,
 )
 from app.deps.auth import require_bearer
-from app.job_dispatch import try_enqueue_analytic, try_enqueue_fem
+from app.job_dispatch import try_enqueue_analytic, try_enqueue_drive, try_enqueue_fem
 from app.jobs_store import job_create, job_get
 from app.schemas.common import (
+    DriveJobPayload,
     FemArtifact,
     FemJobPayload,
     Job,
@@ -60,6 +61,30 @@ def _validate_fem_payload(payload: dict[str, Any] | None) -> FemJobPayload:
         ) from exc
 
 
+
+def _validate_drive_payload(payload: dict[str, Any] | None) -> DriveJobPayload:
+    """Require mode + machineType; 422 on missing/invalid DriveJobPayload fields."""
+    try:
+        return DriveJobPayload.model_validate(payload or {})
+    except ValidationError as exc:
+        missing = []
+        for err in exc.errors():
+            loc = ".".join(str(x) for x in err.get("loc", ()))
+            if err.get("type") == "missing":
+                missing.append(loc or "?")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "validation_error",
+                "message": "DriveJobPayload validation failed",
+                "details": {
+                    "missing": missing,
+                    "errors": exc.errors(),
+                },
+            },
+        ) from exc
+
+
 def _require_job(job_id: UUID) -> dict[str, Any]:
     item = job_get(job_id)
     if item is None:
@@ -74,7 +99,7 @@ def _require_job(job_id: UUID) -> dict[str, Any]:
     "",
     response_model=Job,
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Enqueue job (analytic/fem: Celery or in-process degrade; optimize placeholder)",
+    summary="Enqueue job (analytic/fem/drive: Celery or in-process degrade; optimize placeholder)",
 )
 def create_job(
     body: JobCreate,
@@ -82,6 +107,8 @@ def create_job(
 ) -> Job:
     if body.jobType == JobType.fem:
         _validate_fem_payload(body.payload)
+    elif body.jobType == JobType.drive:
+        _validate_drive_payload(body.payload)
 
     item = job_create(
         project_id=body.projectId,
@@ -93,7 +120,9 @@ def create_job(
         try_enqueue_analytic(item["id"], body.payload)
     elif body.jobType == JobType.fem:
         try_enqueue_fem(item["id"], body.payload)
-    # optimize: remain queued placeholder until Q4
+    elif body.jobType == JobType.drive:
+        try_enqueue_drive(item["id"], body.payload)
+    # optimize: remain queued placeholder until Q4 NSGA wiring
     return Job.model_validate(item)
 
 

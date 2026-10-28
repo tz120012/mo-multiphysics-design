@@ -13,7 +13,7 @@ info:
       `POST /solver/analytic/solve`；批处理 = Jobs `jobType=analytic`（Celery，不可用时可进程内降级）。
     - **轴向解析（Q3-1）**：同一 `solve.schema.json`（`topology: AF`，MVP=PMSM）；Python 金标
       `packages/solver-analytic/axial_planes/`；AF UI 可用 sync **或** Jobs analytic（**不**强制 Wasm AF 硬门禁）。
-    - Jobs：POST/GET（`analytic` | `fem` | `optimize`）；交互 UI **不得**阻塞于 Jobs 长轮询为唯一 UX。
+    - Jobs：POST/GET（`analytic` | `fem` | `optimize` | `drive`）；交互 UI **不得**阻塞于 Jobs 长轮询为唯一 UX。
     - FEM（**Q3 主路径**）：仅 `jobType=fem` 异步；payload 见 `FemJobPayload`；`resultRef` → `.mems`
       `solver/fem/jobs/{jobId}/manifest.json` + `results/fem/{jobId}/` 精简产物。详见
       docs/drafts/Q3-轴向与FEM边界.md。
@@ -47,8 +47,10 @@ tags:
     description: Q2-1 CRUD + 种子只读；typed curves；见 Q2-材料与解析边界.md
   - name: Solver
     description: 可选同步解析；径向交互主路径=Wasm；轴向 AF 可用本端直至 Wasm AF
+  - name: Drive
+    description: Q4-1…4 驱动单工况 sync 预览；Map 走 Jobs
   - name: Jobs
-    description: analytic=Q2-6 可选批处理；fem=Q3 主路径（Celery FEM worker）；optimize→Q4
+    description: analytic=Q2-6 可选批处理；fem=Q3 主路径（Celery FEM worker）；drive=Q4；optimize→Q4
 
 paths:
   /health:
@@ -650,10 +652,42 @@ paths:
         "501":
           description: Not implemented yet（optional Q2 stub）
 
+
+  /drive/solve:
+    post:
+      tags: [Drive]
+      summary: Sync single-case drive preview（非 efficiency_map）
+      description: |
+        单工况同步预览；`mode=efficiency_map` 须走 Jobs。结果含 lossesW/currentsA/waveforms。
+        详见 docs/drafts/驱动Jobs契约.md。
+      operationId: postDriveSolve
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriveJobPayload"
+      responses:
+        "200":
+          description: Drive result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
   /jobs:
     post:
       tags: [Jobs]
-      summary: Enqueue job（analytic 可选；fem=Q3 主路径；optimize→Q4）
+      summary: Enqueue job（analytic 可选；fem=Q3 主路径；drive=Q4-1…4；optimize→Q4）
       description: |
         Celery 异步作业入口（analytic：Redis 不可用时可进程内假异步，契约形状不变）。
         - `jobType=analytic`：**可选**批处理 / Benchmark / **轴向 AF**（Wasm AF 未就绪时）；
@@ -663,6 +697,7 @@ paths:
           可选 templateId）。**禁止**在 api 进程内跑 Elmer/GetDP。
           成功后 `resultRef` → `solver/fem/jobs/{jobId}/manifest.json`；精简产物在
           `results/fem/{jobId}/`（JSON scalars + glTF/GLB + PNG）。见 Q3-轴向与FEM边界.md。
+        - `jobType=drive`：Q4-1…4（BLDC 方波 / PMSM FOC / ACIM V/f+FOC / Map）；见 DriveJobPayload。
         - `optimize`：Q4 占位。
         交互 FEM：**fire → poll/subscribe → 进度**；不得以阻塞长轮询为唯一 UX。
       operationId: createJob
@@ -852,6 +887,12 @@ components:
             $ref: "#/components/schemas/Error"
     Unauthorized:
       description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ValidationError:
+      description: Request validation failed
       content:
         application/json:
           schema:
@@ -1198,10 +1239,10 @@ components:
 
     JobType:
       type: string
-      enum: [analytic, fem, optimize]
+      enum: [analytic, fem, optimize, drive]
       description: |
         analytic=可选批处理 / AF 解析（径向 UI 主路径仍为 Wasm）；
-        fem=Q3 主路径（始终异步）；optimize≈Q4
+        fem=Q3 主路径（始终异步）；optimize≈Q4；drive=Q4-1…4 驱动（Celery/in-process）
 
     JobCreate:
       type: object
@@ -1216,8 +1257,10 @@ components:
           description: |
             jobType=analytic：自由对象或 SolveRequest 子集。
             jobType=fem：必须符合 FemJobPayload（实现可渐进强制校验）。
+            jobType=drive：须符合 DriveJobPayload（mode + machineType）。
           oneOf:
             - $ref: "#/components/schemas/FemJobPayload"
+            - $ref: "#/components/schemas/DriveJobPayload"
             - type: object
               additionalProperties: true
 
@@ -1265,6 +1308,46 @@ components:
         templateId:
           type: string
           description: Optional id under packages/solver-fem/templates/
+
+
+    DriveJobPayload:
+      type: object
+      description: |
+        Q4 drive 作业载荷。单工况或 efficiency_map（Map 仅 Jobs，禁止 sync 扫全图）。
+        详见 docs/drafts/驱动Jobs契约.md；结果含 lossesW/currentsA/operatingPoint；
+        Mo-解析适配 magnetEddy→pmEddy、bar→rotorBar、speedRpm→rpm、tempC=磁体温度。
+      required: [mode, machineType]
+      properties:
+        mode:
+          type: string
+          enum: [bldc_square, pmsm_foc, acim_vf, acim_foc, efficiency_map]
+        machineType:
+          type: string
+          enum: [BLDC, PMSM, ACIM]
+        operatingPoint:
+          type: object
+          additionalProperties: true
+        pwm:
+          type: object
+          additionalProperties: true
+        deadTime:
+          type: object
+          additionalProperties: true
+        plant:
+          type: object
+          additionalProperties: true
+        mapGrid:
+          type: object
+          additionalProperties: true
+          description: efficiency_map 网格；默认 nx=ny=20
+        mapMode:
+          type: string
+          enum: [bldc_square, pmsm_foc, acim_vf, acim_foc]
+        nSamples:
+          type: integer
+        projectId:
+          type: string
+          format: uuid
 
     FemArtifact:
       type: object
@@ -1343,6 +1426,7 @@ components:
             analytic → solver/analytic/…
             fem（推荐）→ solver/fem/jobs/{jobId}/manifest.json
               （artifacts 列 results/fem/{jobId}/…）
+            drive → drive://jobs/{jobId}
         error:
           $ref: "#/components/schemas/Error"
         createdAt:
@@ -1351,6 +1435,11 @@ components:
         updatedAt:
           type: string
           format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+          description: |
+            可选；drive 成功时含 input + result（lossesW/currentsA/waveforms/metrics）。
 
     HistoryEntry:
       type: object

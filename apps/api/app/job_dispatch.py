@@ -1,4 +1,4 @@
-"""Enqueue analytic/FEM jobs via Celery when Redis is up; else in-process degrade (Q2-6 / Q3)."""
+"""Enqueue analytic/FEM/drive jobs via Celery when Redis is up; else in-process degrade (Q2-6 / Q3 / Q4)."""
 
 from __future__ import annotations
 
@@ -100,4 +100,45 @@ def try_enqueue_fem(job_id: UUID, payload: dict[str, Any] | None) -> str:
             logger.warning("Celery fem enqueue failed, degrading to in-process: %s", exc)
 
     _in_process_fem(job_id, payload)
+    return "in_process"
+
+
+def _in_process_drive(job_id: UUID, payload: dict[str, Any] | None) -> None:
+    """Drive: queued → running → succeeded|failed via _complete_drive_job."""
+
+    def _run() -> None:
+        try:
+            from app.tasks.drive import _complete_drive_job
+
+            _complete_drive_job(str(job_id), payload)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("in-process drive failed: %s", exc)
+            job_update(
+                job_id,
+                status="failed",
+                error={"code": "drive_failed", "message": str(exc)},
+            )
+
+    threading.Thread(target=_run, name=f"drive-{job_id}", daemon=True).start()
+
+
+def try_enqueue_drive(job_id: UUID, payload: dict[str, Any] | None) -> str:
+    """
+    Enqueue drive on Celery (default queue) or in-process degrade.
+
+    Same CELERY_ENABLED + Redis gate as analytic/fem. resultRef: drive://jobs/{jobId}
+    """
+    from app.config import get_settings
+
+    settings = get_settings()
+    if settings.celery_enabled and redis_available():
+        try:
+            from app.tasks.drive import run_drive_job
+
+            run_drive_job.delay(str(job_id), payload)
+            return "celery"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Celery drive enqueue failed, degrading to in-process: %s", exc)
+
+    _in_process_drive(job_id, payload)
     return "in_process"
