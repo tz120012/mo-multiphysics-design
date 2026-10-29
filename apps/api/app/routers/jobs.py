@@ -129,6 +129,11 @@ def create_job(
     body: JobCreate,
     _: Annotated[str, Depends(require_bearer)],
 ) -> Job:
+    """Enqueue analytic/fem/drive/optimize. Rebuild is POST /geometry/rebuild (not a Job).
+
+    FEM/analytic payload may include UEM-exported ``geometrySummary`` from a prior
+    rebuild response; workers ignore unknown keys today. Does not auto-trigger on rebuild.
+    """
     if body.jobType == JobType.fem:
         _validate_fem_payload(body.payload)
     elif body.jobType == JobType.drive:

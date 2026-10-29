@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ErrorBody(BaseModel):
@@ -88,7 +88,14 @@ class FemJobPayload(BaseModel):
     equationMode: heat_proxy | magnetostatic (Q5-2). Missing + dryRun=false →
     heat_proxy compat. templateId=af_pmsm_3d_ms implies magnetostatic when omitted.
     heat-proxy ≠ magnetostatic; never invent axialForceN from heat-proxy.
+
+    Q6/D1: optional ``geometrySummary`` (and other UEM-exported keys from
+    POST /geometry/rebuild) may be carried for later FEM assembly — ignored by
+    workers today; extra=allow so unknown useful keys are not rejected.
+    Rebuild itself is NOT a Job and does not auto-enqueue FEM.
     """
+
+    model_config = ConfigDict(extra="allow")
 
     topology: str = Field(..., pattern="^(RF|AF)$")
     machineType: str = Field(..., pattern="^(BLDC|PMSM|ACIM)$")
@@ -108,6 +115,10 @@ class FemJobPayload(BaseModel):
     dryRun: bool | None = Field(
         default=None,
         description="Optional dry-run flag; MO_FEM_DRY_RUN env remains the worker gate",
+    )
+    geometrySummary: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional UEM export from POST /api/v1/geometry/rebuild (Q6/D1); not required for enqueue",
     )
 
 

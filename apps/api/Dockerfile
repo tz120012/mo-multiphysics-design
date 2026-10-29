@@ -12,7 +12,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     SOLVER_ANALYTIC_PATH=/opt/mo/packages/solver-analytic \
     SOLVER_FEM_PATH=/opt/mo/packages/solver-fem \
     MO_FEM_DRY_RUN=1 \
-    SOLVER_OPT_PATH=/opt/mo/packages/solver-opt
+    SOLVER_OPT_PATH=/opt/mo/packages/solver-opt \
+    MO_GEOMETRY_PATH=/opt/mo/packages/geometry
 
 COPY apps/api/requirements.txt .
 RUN pip install -r requirements.txt
@@ -22,6 +23,8 @@ COPY apps/api/app ./app
 COPY packages/solver-analytic /opt/mo/packages/solver-analytic
 COPY packages/solver-fem /opt/mo/packages/solver-fem
 COPY packages/solver-opt /opt/mo/packages/solver-opt
+COPY packages/geometry /opt/mo/packages/geometry
+RUN pip install -e /opt/mo/packages/geometry
 
 EXPOSE 8000
 

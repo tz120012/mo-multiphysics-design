@@ -729,9 +729,11 @@ paths:
         单位：`params.units.length` 默认 mm（亦接受 m）；`angle` 默认 deg（亦接受 rad）；
         `geometrySummary` 为 SI 米 / snake_case（几何包既有导出）。
         P1+：浏览器本地重建为主（A1）；本 API 留作金标/降级；响应形不变。
-        契约：`docs/drafts/Q6-UEM与几何rebuild契约.md`（Motor tip `be6ed88` A1+B1+C2+D1；开闸 `cc3b2d1`）。
+        契约：`docs/drafts/Q6-UEM与几何rebuild契约.md`（Motor tip `be6ed88` A1+B1+C2+D1；开闸 `cc3b2d1`；
+        架构锁定 tip `55b1255`）。**实现状态：apps/api 已接线** `mo_geometry.rebuild_live_geometry`；
+        主请求形 `{topology, machineType?, params}`（params = geometry/params.json）。
       operationId: postGeometryRebuild
-      x-status: planned-q6
+      x-status: implemented
       security:
         - bearerAuth: []
       requestBody:
@@ -787,11 +789,10 @@ paths:
                 $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "501":
+        "503":
           description: |
-            Topology/machineType not supported for live rebuild yet, or route not implemented
-            (`x-status: planned-q6`). Client may fall back to fixture with explicit UI label
-            (must NOT claim 建模完成).
+            mo_geometry package unavailable in this deployment (set MO_GEOMETRY_PATH / image COPY).
+        # 501 reserved for future unsupported topology/machineType; P0 RF+AF-PMSM return 400 on bad params.
 
   /solver/analytic/solve:
     post:
