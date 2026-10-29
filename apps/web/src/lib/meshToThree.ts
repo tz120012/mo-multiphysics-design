@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type {
   MeshDescriptor,
   MeshPrimitive,
+  MeshPrimitiveRole,
   RingPrimitive,
   SectorPrimitive,
 } from '@/types/mesh'
@@ -21,6 +22,31 @@ export function colorForPrimitiveName(name: string): number {
     if (entry.test(name)) return entry.color
   }
   return 0x94a3b8
+}
+
+const STYLE_BY_ROLE: Partial<Record<MeshPrimitiveRole, { color: number; opacity: number }>> = {
+  stator_yoke: { color: 0x14b8a6, opacity: 1 },
+  stator_tooth: { color: 0x22d3ee, opacity: 1 },
+  stator_slot: { color: 0x1e293b, opacity: 0.42 },
+  rotor_core: { color: 0x64748b, opacity: 1 },
+  airgap_band: { color: 0x38bdf8, opacity: 0.32 },
+  magnet: { color: 0xf59e0b, opacity: 1 },
+  acim_bar: { color: 0xea580c, opacity: 1 },
+  stator_disk: { color: 0x2dd4bf, opacity: 1 },
+  rotor_disk: { color: 0x94a3b8, opacity: 1 },
+  stator_slot_mark: { color: 0x67e8f9, opacity: 0.58 },
+  magnet_sector: { color: 0xfbbf24, opacity: 1 },
+}
+
+/** role 优先；没有 role 时退回 name 前缀。槽腔 / 气隙环用半透明，避免整圈实心样例感。 */
+export function styleForPrimitive(prim: { name: string; role?: string }): {
+  color: number
+  opacity: number
+} {
+  if (prim.role && STYLE_BY_ROLE[prim.role]) {
+    return STYLE_BY_ROLE[prim.role] as { color: number; opacity: number }
+  }
+  return { color: colorForPrimitiveName(prim.name), opacity: 1 }
 }
 
 function scaleLen(mm: number, unitsLength: string): number {
@@ -90,14 +116,19 @@ export function meshDescriptorToGroup(descriptor: MeshDescriptor): THREE.Group {
 
   for (const prim of descriptor.primitives) {
     const geometry = geometryFromPrimitive(prim, unitsLength)
+    const style = styleForPrimitive(prim)
     const material = new THREE.MeshStandardMaterial({
-      color: colorForPrimitiveName(prim.name),
-      metalness: 0.35,
-      roughness: 0.55,
+      color: style.color,
+      metalness: style.opacity < 1 ? 0.05 : 0.35,
+      roughness: style.opacity < 1 ? 0.85 : 0.55,
       side: THREE.DoubleSide,
+      transparent: style.opacity < 1,
+      opacity: style.opacity,
+      depthWrite: style.opacity >= 1,
     })
     const mesh = new THREE.Mesh(geometry, material)
     mesh.name = prim.name
+    mesh.renderOrder = style.opacity < 1 ? 2 : 0
     const z = scaleLen(prim.z ?? 0, unitsLength)
     mesh.position.z = z
     group.add(mesh)

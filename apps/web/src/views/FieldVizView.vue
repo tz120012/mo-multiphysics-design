@@ -34,9 +34,16 @@
       <div v-if="jobError" class="error-box">{{ jobError }}</div>
       <div v-if="loadError" class="error-box">{{ loadError }}</div>
       <p v-if="loading" class="degrade-note">{{ loadingHint }}</p>
-      <p v-else :class="dataSource === 'job-artifacts' ? 'live-note' : 'degrade-note'">
-        {{ sourceHint }}
-      </p>
+      <template v-else>
+        <p
+          v-for="(line, i) in honestyLines"
+          :key="`honesty-${i}`"
+          :class="dataSource === 'job-artifacts' && !session.fieldStale ? 'live-note' : 'degrade-note'"
+          data-shell-honesty
+        >
+          {{ line }}
+        </p>
+      </template>
 
       <section
         v-if="postprocessView"
@@ -157,6 +164,8 @@ import {
 } from '@/types/fieldViz'
 import { buildFieldPostprocessView, assignManifestPostprocessFields } from '@/lib/fieldPostprocess'
 import { disposeObject3D } from '@/lib/meshToThree'
+import { shellHonestyLines } from '@/lib/shellHonesty'
+import { useProjectSession } from '@/stores/projectSession'
 import {
   getJob,
   getJobArtifact,
@@ -170,6 +179,7 @@ import {
 import { isJobTerminal, type Job } from '@/api/types'
 
 const route = useRoute()
+const session = useProjectSession()
 
 const queryJobId = computed(() =>
   typeof route.query.jobId === 'string' ? route.query.jobId.trim() : '',
@@ -238,18 +248,6 @@ const displayResultRef = computed(
 const loadingHint = computed(() =>
   forceFixture.value || !queryJobId.value ? '正在加载 dry-run fixture…' : '正在读取任务与精简产物…',
 )
-
-const sourceHint = computed(() => {
-  if (dataSource.value === 'job-artifacts') {
-    return '来源 job-artifacts：已请求 GET /jobs/{id}/artifacts 及单文件精简件。不宣称误差达标。'
-  }
-  if (dataSource.value === 'job-fixture') {
-    const why = degradeReason.value ? `（${degradeReason.value}）` : ''
-    return `已降级 public fixture${why}。当前场数据不是该 job 的精简产物。不宣称误差达标。`
-  }
-  const why = forceFixture.value ? '（显式 ?source=fixture）' : ''
-  return `dry-run：未带 jobId，使用 public fixture${why}。不宣称误差达标。`
-})
 
 let renderer: THREE.WebGLRenderer | null = null
 let scene: THREE.Scene | null = null
@@ -469,6 +467,19 @@ const artifactScalarRows = computed(() =>
 const postprocessView = computed(() =>
   buildFieldPostprocessView(manifest.value, scalarsArtifact.value),
 )
+
+const honestyLines = computed(() => {
+  const dry = postprocessView.value?.rows.some((row) => row.key === 'dryRun' && row.value === 'true') ?? false
+  return shellHonestyLines({
+    jobId: queryJobId.value,
+    forceFixture: forceFixture.value,
+    source: dataSource.value,
+    equationMode: postprocessView.value?.equationMode ?? null,
+    dryRun: dry,
+    fieldStale: session.fieldStale,
+    resultUpdated: session.fieldResultUpdated,
+  })
+})
 
 function clearMesh() {
   if (!scene || !meshRoot) return
@@ -877,7 +888,12 @@ async function resolveJobThenLoad() {
 
     const ok = await tryLoadJobArtifacts(id, signal)
     if (!stillCurrent(signal)) return
-    if (ok) return
+    if (ok) {
+      const refText = job.value?.resultRef || ''
+      session.noteFemJob(id, refText)
+      if (job.value?.status === 'succeeded') session.acknowledgeFemResult(id)
+      return
+    }
 
     const bits: string[] = []
     if (degradeReason.value) bits.push(degradeReason.value)
