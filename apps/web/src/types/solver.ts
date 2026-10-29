@@ -135,9 +135,9 @@ export const DEFAULT_RADIAL_PMSM_REQUEST: SolveRequest = {
     turns_per_phase: 48,
   },
   materials: {
-    steel_id: 'demo-steel',
-    magnet_id: 'demo-N35',
-    conductor_id: 'Cu',
+    steel_id: 'mat-steel-m19',
+    magnet_id: 'mat-ndfeb-n35',
+    conductor_id: 'mat-copper',
     br_t: 1.2,
   },
   operating_point: {
@@ -166,7 +166,7 @@ export const DEFAULT_RADIAL_ACIM_REQUEST: SolveRequest = {
   materials: {
     steel_id: 'mat-steel-m19',
     conductor_id: 'mat-copper',
-    bar_id: 'mat-al-bar',
+    bar_id: 'mat-acim-bar-al',
     sigma_copper: 5.8e7,
     sigma_bar: 3.5e7,
   },

@@ -121,8 +121,8 @@ export function defaultGeometryParams(topology: Topology, machineType: MachineTy
       barSlotShape: 'rectangular',
       barCrossSection: { width: 4, height: 12 },
       endRingSection: { width: 8, height: 10 },
-      barMaterialId: 'mat.acim.bar.aluminum-default',
-      endRingMaterialId: 'mat.acim.endring.aluminum-default',
+      barMaterialId: 'mat-acim-bar-al',
+      endRingMaterialId: 'mat-acim-endring-al',
       cagePolePairs: 2,
     }
     return params
@@ -131,23 +131,59 @@ export function defaultGeometryParams(topology: Topology, machineType: MachineTy
   return radialBase('PMSM', 18, 6)
 }
 
+/**
+ * 材料服务种子没有这些旧别名。求解前改写成目录 id，避免 GET /materials/{id} 404。
+ * 只含 Motor 确认的映射，不另造 id。
+ */
+const LEGACY_MATERIAL_IDS: Record<string, string> = {
+  'demo-steel': 'mat-steel-m19',
+  'demo-N35': 'mat-ndfeb-n35',
+  Cu: 'mat-copper',
+  'mat-al-bar': 'mat-acim-bar-al',
+}
+
+export function catalogMaterialId(id: string | undefined): string | undefined {
+  if (!id) return id
+  return LEGACY_MATERIAL_IDS[id] ?? id
+}
+
+const REGION_KEYS = ['steel', 'magnet', 'conductor', 'bar', 'endRing'] as const
+
+/** 把会话里残留的旧别名改成目录 id，便于材料表单和 GET 使用同一套种子。 */
+export function alignMaterialRegions(regions: UemMaterialRegions): {
+  regions: UemMaterialRegions
+  rewritten: string[]
+} {
+  const next: UemMaterialRegions = { ...regions }
+  const rewritten: string[] = []
+  for (const key of REGION_KEYS) {
+    const raw = next[key]
+    const mapped = catalogMaterialId(raw)
+    if (raw && mapped && mapped !== raw) {
+      next[key] = mapped
+      rewritten.push(`${raw} → ${mapped}`)
+    }
+  }
+  return { regions: next, rewritten }
+}
+
 export function defaultMaterials(machineType: MachineType): UemMaterialsState {
   if (machineType === 'ACIM') {
     return {
       regions: {
         steel: 'mat-steel-m19',
         conductor: 'mat-copper',
-        bar: 'mat-al-bar',
-        endRing: 'mat.acim.endring.aluminum-default',
+        bar: 'mat-acim-bar-al',
+        endRing: 'mat-acim-endring-al',
       },
       inline: { sigma_copper: 5.8e7, sigma_bar: 3.5e7 },
     }
   }
   return {
     regions: {
-      steel: 'demo-steel',
-      magnet: 'demo-N35',
-      conductor: 'Cu',
+      steel: 'mat-steel-m19',
+      magnet: 'mat-ndfeb-n35',
+      conductor: 'mat-copper',
     },
     inline: { br_t: machineType === 'BLDC' ? 1.1 : 1.2 },
   }

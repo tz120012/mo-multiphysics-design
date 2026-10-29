@@ -1,3 +1,5 @@
+import { toRaw } from 'vue'
+
 /** 读写 geometry params 点路径（如 `rotor.poleCount`）。 */
 
 export function getPath(root: unknown, path: string): unknown {
@@ -28,6 +30,13 @@ export function setPath(root: Record<string, unknown>, path: string, value: unkn
   cur[parts[parts.length - 1]] = value
 }
 
+/**
+ * 深拷贝成纯 JSON 数据。
+ * 先 `toRaw` 脱掉 Vue Proxy，再 JSON 往返。
+ * 不要 `structuredClone` 响应式对象：Proxy / 函数会抛 DataCloneError。
+ */
 export function cloneJson<T>(value: T): T {
-  return structuredClone(value)
+  if (value === undefined || value === null || typeof value !== 'object') return value
+  const raw = toRaw(value)
+  return JSON.parse(JSON.stringify(raw)) as T
 }

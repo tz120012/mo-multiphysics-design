@@ -132,6 +132,7 @@
 
     <div v-else-if="step === 'materials'" class="pane">
       <p class="note">P0 占位：区域 → materialId，写入本会话材料切片。完整材料库步骤不在本门。</p>
+      <p v-if="session.materialNote" class="hint">{{ session.materialNote }}</p>
       <el-form label-position="top" size="small" class="form">
         <el-form-item label="定子铁心 steel">
           <el-input :model-value="session.materials.regions.steel ?? ''" @change="onRegion('steel', $event)" />
@@ -231,6 +232,7 @@
           求解
         </el-button>
       </div>
+      <p v-if="session.materialNote" class="hint">{{ session.materialNote }}</p>
       <p v-if="session.solveError" class="warn">{{ session.solveError }}</p>
       <p v-if="session.analytic && session.analyticStale" class="hint">几何或工况已变，结果可能过期。请再次求解。</p>
       <template v-if="session.analytic">
