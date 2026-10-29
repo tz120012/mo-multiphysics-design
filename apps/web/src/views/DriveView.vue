@@ -252,17 +252,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { createJob, pollJob } from '@/api/jobs'
 import type { DriveJobPayload, DriveMode, MachineType } from '@/api/types'
+import { composeDrivePayloadFromUem } from '@/lib/composeDrivePayload'
+import { useProjectSession } from '@/stores/projectSession'
 import { useProjectsStore } from '@/stores/projects'
 
 const route = useRoute()
 const projects = useProjectsStore()
+const session = useProjectSession()
 
-const machineType = ref<MachineType>('PMSM')
-const driveMode = ref<DriveMode>('pmsm_foc')
+const machineType = ref<MachineType>(session.projectMeta.machineType || 'PMSM')
+const driveMode = ref<DriveMode>(
+  (session.excitation.driveDraft?.mode as DriveMode) || 'pmsm_foc',
+)
 const running = ref(false)
 const mapping = ref(false)
 const errorMsg = ref('')
@@ -296,7 +301,42 @@ const pwm = reactive({
   scheme: 'svpwm' as 'svpwm' | 'spwm',
 })
 
-const deadTime = reactive({ tdeadUs: 1.0 })
+const deadTime = reactive({
+  tdeadUs: session.excitation.driveDraft?.deadTime?.tdeadUs ?? 1.0,
+})
+
+const _seedPwm = session.excitation.driveDraft?.pwm
+if (_seedPwm?.carrierHz != null) pwm.carrierHz = _seedPwm.carrierHz
+if (_seedPwm?.modIndex != null) pwm.modIndex = _seedPwm.modIndex
+if (_seedPwm?.scheme === 'svpwm' || _seedPwm?.scheme === 'spwm') pwm.scheme = _seedPwm.scheme
+
+const _seedOp = session.excitation.operatingPoint
+if (typeof _seedOp.speed_rpm === 'number') op.speedRpm = _seedOp.speed_rpm
+if (typeof session.excitation.driveDraft?.iqA === 'number') op.iqA = session.excitation.driveDraft.iqA
+else if (typeof _seedOp.current_a_peak === 'number') op.iqA = _seedOp.current_a_peak
+if (typeof session.excitation.driveDraft?.idA === 'number') op.idA = session.excitation.driveDraft.idA
+if (typeof session.excitation.driveDraft?.torqueNm === 'number') op.torqueNm = session.excitation.driveDraft.torqueNm
+if (typeof session.excitation.driveDraft?.tempC === 'number') op.tempC = session.excitation.driveDraft.tempC
+if (typeof session.excitation.driveDraft?.slip === 'number') op.slip = session.excitation.driveDraft.slip
+else if (typeof _seedOp.slip === 'number') op.slip = _seedOp.slip
+
+function syncDraftToSession() {
+  session.setDriveDraft({
+    mode: driveMode.value,
+    pwm: { carrierHz: pwm.carrierHz, modIndex: pwm.modIndex, scheme: pwm.scheme },
+    deadTime: { tdeadUs: deadTime.tdeadUs },
+    iqA: op.iqA,
+    idA: op.idA,
+    torqueNm: op.torqueNm,
+    tempC: op.tempC,
+    slip: op.slip,
+  })
+  session.commitOperatingPoint({ speed_rpm: op.speedRpm })
+}
+
+watch([driveMode, () => pwm.carrierHz, () => pwm.modIndex, () => pwm.scheme, () => deadTime.tdeadUs], () => {
+  syncDraftToSession()
+})
 
 const mapGrid = reactive({
   nx: 20,
@@ -419,31 +459,34 @@ function cellTitle(i: number, j: number, cell: number | null): string {
 }
 
 function buildPayload(mode: DriveMode | 'efficiency_map'): DriveJobPayload {
-  const operatingPoint: Record<string, unknown> = {
-    speedRpm: op.speedRpm,
-    torqueNm: op.torqueNm,
-    tempC: op.tempC,
-  }
-  if (driveMode.value === 'pmsm_foc' || driveMode.value === 'acim_foc') {
-    operatingPoint.iqA = op.iqA
-    operatingPoint.idA = op.idA
-  }
-  if (driveMode.value === 'acim_vf') {
-    operatingPoint.slip = op.slip
-  }
-  const payload: DriveJobPayload = {
-    mode: mode === 'efficiency_map' ? 'efficiency_map' : driveMode.value,
+  syncDraftToSession()
+  const composed = composeDrivePayloadFromUem({
     machineType: machineType.value,
-    operatingPoint,
-    pwm: { ...pwm },
-    deadTime: { ...deadTime },
-    plant: { ...plant },
-  }
-  if (mode === 'efficiency_map') {
-    payload.mapMode = driveMode.value
-    payload.mapGrid = { ...mapGrid }
-  }
-  return payload
+    excitation: {
+      operatingPoint: {
+        speed_rpm: op.speedRpm,
+        current_a_peak: op.iqA,
+        slip: op.slip,
+      },
+      driveDraft: {
+        mode: driveMode.value,
+        pwm: { ...pwm },
+        deadTime: { ...deadTime },
+        iqA: op.iqA,
+        idA: op.idA,
+        torqueNm: op.torqueNm,
+        tempC: op.tempC,
+        slip: op.slip,
+      },
+    },
+    map:
+      mode === 'efficiency_map'
+        ? { mapGrid: { ...mapGrid }, mapMode: driveMode.value }
+        : undefined,
+  })
+  // plant 仍由本页本地参数补齐（UEM 草稿不承载 plant）
+  composed.plant = { ...plant }
+  return composed
 }
 
 async function ensureProjectId(): Promise<string> {

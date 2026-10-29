@@ -159,7 +159,7 @@
     </div>
 
     <div v-else-if="step === 'excitation'" class="pane">
-      <p class="note">P0：工况写入本会话。可选驱动草稿不在此提交 Jobs。</p>
+      <p class="note">激励：OP/工况写入 UEM；可选 drive 草稿。本步可不强制跑 Jobs。</p>
       <el-form label-position="top" size="small" class="form">
         <el-form-item label="转速 speed_rpm">
           <el-input-number :model-value="session.excitation.operatingPoint.speed_rpm" :min="0" :step="50" controls-position="right" @change="onOp('speed_rpm', $event)" />
@@ -181,6 +181,7 @@
             <el-input-number :model-value="session.excitation.operatingPoint.slip" :min="0.001" :max="0.5" :step="0.01" :precision="3" controls-position="right" @change="onOp('slip', $event)" />
           </el-form-item>
         </template>
+        <h3 class="sub">drive 草稿（可选）</h3>
         <el-form-item label="驱动草稿 mode">
           <el-select :model-value="session.excitation.driveDraft?.mode ?? ''" clearable style="width: 100%" @change="session.setDriveMode(String($event ?? ''))">
             <el-option label="bldc_square" value="bldc_square" />
@@ -189,7 +190,42 @@
             <el-option label="acim_foc" value="acim_foc" />
           </el-select>
         </el-form-item>
+        <div class="pair">
+          <el-form-item label="PWM carrierHz">
+            <el-input-number :model-value="session.excitation.driveDraft?.pwm?.carrierHz" :min="1000" :step="1000" controls-position="right" @change="onDrivePwm('carrierHz', $event)" />
+          </el-form-item>
+          <el-form-item label="modIndex">
+            <el-input-number :model-value="session.excitation.driveDraft?.pwm?.modIndex" :min="0" :max="1.15" :step="0.05" :precision="2" controls-position="right" @change="onDrivePwm('modIndex', $event)" />
+          </el-form-item>
+        </div>
+        <div class="pair">
+          <el-form-item label="scheme">
+            <el-select :model-value="session.excitation.driveDraft?.pwm?.scheme ?? ''" clearable style="width: 100%" @change="onDriveScheme($event)">
+              <el-option label="svpwm" value="svpwm" />
+              <el-option label="spwm" value="spwm" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="死区 tdeadUs">
+            <el-input-number :model-value="session.excitation.driveDraft?.deadTime?.tdeadUs" :min="0" :step="0.5" :precision="2" controls-position="right" @change="onDriveDead($event)" />
+          </el-form-item>
+        </div>
       </el-form>
+      <div class="actions">
+        <el-button type="primary" :loading="drivePreviewing" :disabled="drivePreviewing" @click="previewDriveJob">
+          用现有 drive Job 预览
+        </el-button>
+      </div>
+      <p v-if="drivePreviewError" class="warn">{{ drivePreviewError }}</p>
+      <p v-if="drivePreviewStatus" class="hint">Job {{ drivePreviewStatus }}{{ drivePreviewJobId ? ` · ${drivePreviewJobId}` : '' }}</p>
+      <details v-if="drivePreviewSummary" class="drive-preview">
+        <summary>预览摘要（Tavg / η / lossesW · 非精度宣称）</summary>
+        <dl class="meta">
+          <div><dt>Tavg N·m</dt><dd>{{ drivePreviewSummary.tavg }}</dd></div>
+          <div><dt>η</dt><dd>{{ drivePreviewSummary.eta }}</dd></div>
+          <div><dt>lossesW.copper</dt><dd>{{ drivePreviewSummary.copper }}</dd></div>
+          <div><dt>lossesW.iron</dt><dd>{{ drivePreviewSummary.iron }}</dd></div>
+        </dl>
+      </details>
     </div>
 
     <div v-else-if="step === 'mesh'" class="pane">
@@ -271,10 +307,13 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { createJob, pollJob } from '@/api/jobs'
 import { descriptorSignals } from '@/lib/descriptorSignals'
+import { composeDrivePayloadFromUem } from '@/lib/composeDrivePayload'
 import { REBUILD_DEBOUNCE_MS } from '@/lib/geometryRebuild'
 import { getPath } from '@/lib/paramPath'
 import { useProjectSession } from '@/stores/projectSession'
+import { useProjectsStore } from '@/stores/projects'
 import type { UemMaterialRegions } from '@/lib/geometryDefaults'
 import type { OperatingPoint } from '@/types/solver'
 
@@ -287,8 +326,14 @@ const emit = defineEmits<{
 }>()
 
 const session = useProjectSession()
+const projects = useProjectsStore()
 const debounceMs = REBUILD_DEBOUNCE_MS
 const jobDraft = ref(session.resultsRefs.lastJobId)
+const drivePreviewing = ref(false)
+const drivePreviewError = ref('')
+const drivePreviewStatus = ref('')
+const drivePreviewJobId = ref('')
+const drivePreviewSummary = ref<{ tavg: string; eta: string; copper: string; iron: string } | null>(null)
 
 watch(
   () => session.resultsRefs.lastJobId,
@@ -366,6 +411,96 @@ function onInline(key: 'br_t' | 'sigma_bar', value: number | undefined) {
 function onOp(key: keyof OperatingPoint, value: number | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return
   session.commitOperatingPoint({ [key]: value })
+}
+
+function onDrivePwm(key: 'carrierHz' | 'modIndex', value: number | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return
+  session.setDriveDraft({ pwm: { [key]: value } })
+}
+
+function onDriveScheme(value: unknown) {
+  const scheme = value === 'svpwm' || value === 'spwm' ? value : undefined
+  session.setDriveDraft({ pwm: { scheme } })
+}
+
+function onDriveDead(value: number | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return
+  session.setDriveDraft({ deadTime: { tdeadUs: value } })
+}
+
+function fmtDriveNum(value: unknown, digits = 3): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '—'
+  return value.toFixed(digits)
+}
+
+async function ensureDriveProjectId(): Promise<string> {
+  const id = session.projectMeta.projectId
+  if (id) return id
+  if (!projects.items.length) {
+    try {
+      await projects.fetchProjects()
+    } catch {
+      /* may create below */
+    }
+  }
+  if (projects.items[0]?.id) return projects.items[0].id
+  const created = await projects.addProject({
+    name: 'Drive preview',
+    topology: session.projectMeta.topology,
+    machineType: session.projectMeta.machineType,
+  })
+  return created.id
+}
+
+async function previewDriveJob() {
+  drivePreviewing.value = true
+  drivePreviewError.value = ''
+  drivePreviewSummary.value = null
+  drivePreviewStatus.value = 'queued'
+  drivePreviewJobId.value = ''
+  try {
+    const projectId = await ensureDriveProjectId()
+    const payload = composeDrivePayloadFromUem({
+      machineType: session.projectMeta.machineType,
+      excitation: {
+        operatingPoint: { ...session.excitation.operatingPoint },
+        driveDraft: session.excitation.driveDraft
+          ? { ...session.excitation.driveDraft }
+          : undefined,
+      },
+    })
+    const created = await createJob({ projectId, jobType: 'drive', payload })
+    drivePreviewJobId.value = created.id
+    drivePreviewStatus.value = created.status
+    const final = await pollJob(created.id, {
+      intervalMs: 400,
+      timeoutMs: 60_000,
+      onUpdate: (j) => {
+        drivePreviewStatus.value = j.status
+      },
+    })
+    if (final.status !== 'succeeded') {
+      throw new Error(final.error?.message || `job ${final.status}`)
+    }
+    const result = (final.payload as { result?: Record<string, unknown> } | null)?.result
+    if (!result) throw new Error('Job succeeded but payload.result missing')
+    const metrics = (result.metrics as Record<string, unknown> | undefined) ?? {}
+    const losses = (result.lossesW as Record<string, unknown> | undefined) ?? {}
+    const etaRaw = metrics.efficiency
+    drivePreviewSummary.value = {
+      tavg: fmtDriveNum(metrics.torqueAvgNm),
+      eta:
+        typeof etaRaw === 'number' && Number.isFinite(etaRaw)
+          ? `${(etaRaw * 100).toFixed(1)}%`
+          : '—',
+      copper: fmtDriveNum(losses.copper),
+      iron: fmtDriveNum(losses.iron),
+    }
+  } catch (err) {
+    drivePreviewError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    drivePreviewing.value = false
+  }
 }
 
 function fmt(value: number | null | undefined, digits = 2): string {
@@ -460,5 +595,16 @@ function fmt(value: number | null | undefined, digits = 2): string {
 
 .actions {
   margin: 8px 0;
+}
+
+.drive-preview {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--mo-text-muted);
+}
+
+.drive-preview summary {
+  cursor: pointer;
+  margin-bottom: 6px;
 }
 </style>

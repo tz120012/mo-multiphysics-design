@@ -54,10 +54,23 @@ export interface UemMaterialsState {
   inline: Pick<Materials, 'br_t' | 'mur_pm' | 'sigma_copper' | 'sigma_bar'>
 }
 
+/** 可选驱动草稿（Q7-2）。写入 UEM；预览复用 Jobs jobType=drive。 */
+export interface UemDriveDraft {
+  mode?: 'bldc_square' | 'pmsm_foc' | 'acim_vf' | 'acim_foc' | string
+  pwm?: { carrierHz?: number; modIndex?: number; scheme?: 'svpwm' | 'spwm' }
+  deadTime?: { tdeadUs?: number }
+  /** 可选：驱动工况覆盖（优先于 operatingPoint 启发） */
+  iqA?: number
+  idA?: number
+  torqueNm?: number
+  tempC?: number
+  slip?: number
+}
+
 export interface UemExcitationState {
   operatingPoint: OperatingPoint
-  /** 可选驱动草稿。不在本步提交 Jobs。 */
-  driveDraft?: { mode?: string }
+  /** 可选驱动草稿。本步可不强制跑 Jobs；预览走既有 drive Job。 */
+  driveDraft?: UemDriveDraft
 }
 
 function mmUnits(): { length: string; angle: string } {

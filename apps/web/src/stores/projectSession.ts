@@ -13,6 +13,7 @@ import {
   machineKey,
   normalizeMachine,
   type GeometryParams,
+  type UemDriveDraft,
   type UemExcitationState,
   type UemMaterialRegions,
   type UemMaterialsState,
@@ -380,11 +381,28 @@ export const useProjectSession = defineStore('projectSession', () => {
     markAnalyticStale()
   }
 
-  function setDriveMode(mode: string) {
-    excitation.value = {
-      ...excitation.value,
-      driveDraft: mode ? { mode } : undefined,
+  function setDriveDraft(partial: UemDriveDraft | undefined) {
+    if (partial === undefined) {
+      excitation.value = { ...excitation.value, driveDraft: undefined }
+      return
     }
+    const prev = excitation.value.driveDraft
+    const next: UemDriveDraft = { ...prev, ...partial }
+    if (partial.pwm !== undefined) {
+      next.pwm = { ...prev?.pwm, ...partial.pwm }
+    }
+    if (partial.deadTime !== undefined) {
+      next.deadTime = { ...prev?.deadTime, ...partial.deadTime }
+    }
+    excitation.value = { ...excitation.value, driveDraft: next }
+  }
+
+  function setDriveMode(mode: string) {
+    if (!mode) {
+      setDriveDraft(undefined)
+      return
+    }
+    setDriveDraft({ mode })
   }
 
   function noteFemJob(jobId: string) {
@@ -571,6 +589,7 @@ export const useProjectSession = defineStore('projectSession', () => {
     commitRegion,
     commitInline,
     commitOperatingPoint,
+    setDriveDraft,
     setDriveMode,
     noteFemJob,
     solveExplicit,
