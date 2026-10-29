@@ -14,7 +14,7 @@
 
 ## A. Maxwell 经典链缺口对照表
 
-摸底来源（只读，2026-10-29）：`docs/01`/`02`/`03`；`docs/qa/` Q4+/Q5 冒烟与 [v1.0.0-发布说明](v1.0.0-发布说明.md)；前端 `apps/web/src/router/index.ts` 与 `views/*`；public `mesh`/`fem` fixture。**未核实能力不编造**；不确定标「待前端确认」。
+摸底来源（只读，2026-10-29）：`docs/01`/`02`/`03`；`docs/qa/` Q4+/Q5 冒烟与 [v1.0.0-发布说明](v1.0.0-发布说明.md)；前端 `apps/web/src/router/index.ts` 与 `views/*`；public `mesh`/`fem` fixture。**材料/激励/网格「待前端确认」已由 Mo-前端复核回写**（产品 2026-10-29）。
 
 硬事实（写入备注，不可外推）：
 
@@ -26,12 +26,12 @@
 | 环节 | Maxwell 期望体感 | Mo 现状（基于仓库核实） | 缺口等级 | 备注 |
 | --- | --- | --- | --- | --- |
 | **几何** | 参数化建模；改参驱动 3D 更新；几何步骤为工程主路径一部分 | `/workspace` 标题「工作区 · 几何预览」；从 `public/mesh/*.json` **样例**加载 MeshDescriptor；Undo/Redo 覆盖部分本地参数；ACIM 面板注明「mesh 为样例快照，改字段仅更新本地 params 显示」。`/axial` 调参后本地重算 summary/hint，**mesh 保持静态 snapshot**（源码注释）。Q4+ live 几何有降级说明（mesh descriptor + GeometrySummary，非 CadQuery/OCC 捆绑） | **P0** | **fixture / 样例快照 ≠ 真参数化建模完成**；与 Maxwell「改参即几何」体感差距大 |
-| **材料** | 材料库选择/绑定到区域，进入求解前可检视 | 有 `materials` 类型与 API 客户端；`AnalyticView` / `AxialWorkflowView` 有材料字段（如 steel/magnet/Br）；**无**独立「材料」步骤页或经典链内嵌步骤（待确认是否后续有隐藏入口） | **P1** | 能力碎片在解析/轴向页；非 Maxwell 材料步骤体感 |
-| **激励** | 电流/电压/运动等激励定义，与工况绑定 | 解析/轴向页有工况 / operating point 类字段；驱动页 `/drive`、`/compare` 偏驱动对比。**无**名为「激励」的经典链步骤（待前端确认边界命名） | **P1** | 激励散落在解析/驱动；缺统一激励步骤 |
-| **网格** | 网格设置/生成/检查，再进求解 | FE 侧有 meshProfile（如 `af_pmsm_3d_min`）；前端 mesh 多为 **public 静态 JSON**；轴向「静态 mesh」明示。用户可见「网格」独立配置 UI：**待前端确认**（当前更像 descriptor 展示，非 Maxwell 网格向导） | **P0** | 网格与几何样例耦合；难称「网格步骤完成」 |
+| **材料** | 材料库选择/绑定到区域，进入求解前可检视 | Analytic/Axial 材料字段 + `GET /materials`；Workspace 仅 ACIM `barMaterialId` 手填；**无**独立材料步骤页（**Mo-前端已复核**） | **P1** | **FE 复核**：工作台内嵌「材料」步骤（区域→materialId，复用材料库）；P0 可占位读/写 UEM.materials；不造完整材料编辑器 |
+| **激励** | 电流/电压/运动等激励定义，与工况绑定 | 散落解析 OP + `/drive`；无「激励」命名步骤（**Mo-前端已复核**） | **P1**（命名）/ **P0**（薄做） | **FE 复核**：步骤名「激励」= 工况/OP（+可选 drive 草稿）进 UEM；不另起完整激励向导 |
+| **网格** | 网格设置/生成/检查，再进求解 | 前端 mesh=descriptor/fixture 展示；无 Maxwell 网格设置/生成向导；FEM `meshProfile` 在后端侧（**Mo-前端已复核**） | **P0（降级口径）** | **FE 复核**：链上保留「网格」步，只读展示 rebuild descriptor meta / profile；**明示非网格生成完成**；完整网格向导后置 |
 | **求解** | 求解设置 → 提交 → 进度 → 结果回填工程 | 解析：Wasm→sync→**fixture/mock** 降级序；FEM：Jobs submit+poll（Q3 已测）；真磁静力学路径 Q5-2 可冒烟。分散在 `/analytic`、`/axial`、Jobs，**非**同一工作台连续链 | **P1**（链路存在）/ **P0**（一站式缺失） | 求解能力有；体感割裂；fixture 降级仍常见 |
 | **后处理** | 场图/力/能/报告在同工程内查看 | `/field`：磁静力学后处理（job-artifacts）**或** fixture / heat-proxy 降级；浏览器目视曾对 fixture 场景 PASS，magnetostatic job 控件曾停测。结果与工程参数改动**未**形成统一「改参→再求解→后处理刷新」主路径 | **P1** | 真路径存在但依赖 jobId；fixture 易被误当成完成态 |
-| **横切：一站式工作台** | 同一工程内连续走完经典链 | 多路由分散页；布局导航并列入口；**无** Stepper/向导把几何→…→后处理串成一条 | **P0** | 见 US-085；本迭代 IN #1 |
+| **横切：一站式工作台** | 同一工程内连续走完经典链 | 多路由分散页；**无** 单壳向导（开闸前摸底） | **P0** | Motor 验收=**C2 单壳**（`be6ed88`）；FE：P0 Workspace 步骤条串链 + 共享 UEM；深链须同 `projectId`；禁止分散页拼凑=走通 |
 | **横切：参数驱动 3D** | 改参更新几何/场视图 | workspace 以样例 mesh 为主；轴向 mesh 静态；场视图多依赖已有 artifacts/fixture | **P0** | 验收红线：不可再宣称「建模完成」仅靠 fixture |
 | **横切：改参→求解闭环** | 改参后可再求解并看到更新状态/结果 | 各页可局部求解；**缺少**跨经典链的统一闭环演示口径（待 FE 联调确认最小可演示路径） | **P0** | 本迭代 IN #3；非仅静态展示 |
 | **横切：fixture vs 真建模** | fixture 仅演示/降级，明示非建模完成 | public `mesh`/`fem` fixture 广泛；`/field?source=fixture` 合法降级路径；冒烟多次以 fixture PASS 不否决链 | **P0** | **验收红线**：workspace/fixture **不可**再当「建模完成」 |
@@ -96,3 +96,4 @@
 | 2026-10-29 | **Motor 开闸**：正式阶段名 **Q6 / Maxwell 对齐**；采纳 IN#1–3；材料/激励/网格独立步骤 UI 开闸后由 FE 复核升降级 |
 | 2026-10-29 | **产品对齐**：§B 正式名 Q6；链 [Q6-验收跟踪](Q6-验收跟踪.md) |
 | 2026-10-29 | Motor 拍板架构分叉 **A1+B1+C2+D1**（见 [Q6-架构分叉-Motor拍板](Q6-架构分叉-Motor拍板.md)）；一站式验收=单壳非多页粘合 |
+| 2026-10-29 | **产品回写** Mo-前端材料/激励/网格升降级；清「待前端确认」；网格 P0 降级口径；激励 P0 薄做+P1 命名；材料 P1 内嵌步骤 |
