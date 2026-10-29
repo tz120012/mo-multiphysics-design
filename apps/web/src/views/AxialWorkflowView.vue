@@ -249,9 +249,9 @@ const op = reactive<OperatingPoint>({
   gamma_deg: 0,
 })
 const materials = reactive<Materials>({
-  steel_id: 'demo-steel',
-  magnet_id: 'demo-N35',
-  conductor_id: 'Cu',
+  steel_id: 'mat-steel-m19',
+  magnet_id: 'mat-ndfeb-n35',
+  conductor_id: 'mat-copper',
   br_t: 1.2,
 })
 

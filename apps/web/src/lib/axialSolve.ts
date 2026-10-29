@@ -11,6 +11,7 @@
  */
 import { isAxiosError } from 'axios'
 import { postAnalyticSolve } from '@/api/solver'
+import { cloneJson } from '@/lib/paramPath'
 import type { SolveBackend, SolveRequest, SolveResult } from '@/types/solver'
 import { SOLVE_SCHEMA_VERSION } from '@/types/solver'
 
@@ -70,14 +71,14 @@ export async function loadAxialSampleRequest(): Promise<SolveRequest> {
 }
 
 async function loadFixtureResult(): Promise<SolveResult> {
-  if (cachedFixture) return structuredClone(cachedFixture)
+  if (cachedFixture) return cloneJson(cachedFixture)
   for (const url of [AF_RESULT_URL, AF_STUB_RESULT_URL]) {
     try {
       const res = await fetch(url)
       if (!res.ok) continue
       const data = (await res.json()) as SolveResult
       cachedFixture = data
-      return structuredClone(data)
+      return cloneJson(data)
     } catch {
       /* try next */
     }

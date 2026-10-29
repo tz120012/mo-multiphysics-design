@@ -5,6 +5,7 @@ import type { MachineType, Topology } from '@/api/types'
 import { readMemsMemberText } from '@/lib/memsPackageVersion'
 import { composeSolveRequest } from '@/lib/composeSolveRequest'
 import {
+  alignMaterialRegions,
   defaultExcitation,
   defaultGeometryParams,
   defaultMaterials,
@@ -121,6 +122,8 @@ export const useProjectSession = defineStore('projectSession', () => {
   const viewportRev = ref(0)
   const solving = ref(false)
   const solveError = ref('')
+  /** 材料目录读取结果。404 不阻断求解，也不把占位写成材料库已闭合。 */
+  const materialNote = ref('')
   const analyticStale = ref(false)
   const analytic = ref<AnalyticSlice | null>(null)
   const resultsRefs = ref<ResultsRefsState>({
@@ -404,8 +407,18 @@ export const useProjectSession = defineStore('projectSession', () => {
     }
     solving.value = true
     try {
+      const aligned = alignMaterialRegions(materials.value.regions)
+      if (aligned.rewritten.length) {
+        materials.value = { ...materials.value, regions: aligned.regions }
+      }
       const inline = toSolveMaterials(materials.value)
       const resolved = await resolveMaterials(inline)
+      const rewriteText = aligned.rewritten.length
+        ? `旧别名已改为目录 id：${aligned.rewritten.join('，')}。`
+        : ''
+      materialNote.value = resolved.missing.length
+        ? `${rewriteText}材料目录未命中 ${resolved.missing.join('、')}。求解继续使用会话内联字段，不表示材料库已闭合。`
+        : `${rewriteText}材料 id 已向目录读取。本步仍是区域占位，不是完整材料库。`
       const request = composeSolveRequest({
         topology: projectMeta.value.topology,
         machineType: projectMeta.value.machineType,
@@ -447,6 +460,7 @@ export const useProjectSession = defineStore('projectSession', () => {
     paramsHash.value = ''
     rebuildError.value = ''
     solveError.value = ''
+    materialNote.value = ''
     analytic.value = null
     analyticStale.value = false
     history.clear()
@@ -540,6 +554,7 @@ export const useProjectSession = defineStore('projectSession', () => {
     viewportRev,
     solving,
     solveError,
+    materialNote,
     analyticStale,
     analytic,
     resultsRefs,

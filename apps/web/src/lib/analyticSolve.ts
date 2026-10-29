@@ -12,6 +12,7 @@
  */
 import { isAxiosError } from 'axios'
 import { postAnalyticSolve } from '@/api/solver'
+import { cloneJson } from '@/lib/paramPath'
 import { solveWithWasm } from '@/lib/solverWasm'
 import type {
   MachineType,
@@ -86,7 +87,7 @@ function tagSource(result: SolveResult, source: SolveBackend, elapsedMs?: number
 }
 
 async function loadPmsmFixture(): Promise<SolveResult> {
-  if (cachedPmsmFixture) return structuredClone(cachedPmsmFixture)
+  if (cachedPmsmFixture) return cloneJson(cachedPmsmFixture)
   const res = await fetch(PMSM_FIXTURE_URL)
   if (!res.ok) {
     throw new Error(`无法加载 PMSM MEC fixture（${res.status}）：${PMSM_FIXTURE_URL}`)
@@ -98,11 +99,11 @@ async function loadPmsmFixture(): Promise<SolveResult> {
     )
   }
   cachedPmsmFixture = data
-  return structuredClone(data)
+  return cloneJson(data)
 }
 
 async function loadAcimFixture(): Promise<SolveResult> {
-  if (cachedAcimFixture) return structuredClone(cachedAcimFixture)
+  if (cachedAcimFixture) return cloneJson(cachedAcimFixture)
   const res = await fetch(ACIM_FIXTURE_URL)
   if (!res.ok) {
     throw new Error(`无法加载 ACIM fixture（${res.status}）：${ACIM_FIXTURE_URL}`)
@@ -114,7 +115,7 @@ async function loadAcimFixture(): Promise<SolveResult> {
     )
   }
   cachedAcimFixture = data
-  return structuredClone(data)
+  return cloneJson(data)
 }
 
 /**

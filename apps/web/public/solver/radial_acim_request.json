@@ -16,7 +16,7 @@
   "materials": {
     "steel_id": "mat-steel-m19",
     "conductor_id": "mat-copper",
-    "bar_id": "mat-al-bar",
+    "bar_id": "mat-acim-bar-al",
     "sigma_copper": 5.8e7,
     "sigma_bar": 3.5e7
   },

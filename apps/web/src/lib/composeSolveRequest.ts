@@ -1,3 +1,4 @@
+import { cloneJson } from '@/lib/paramPath'
 import type { Materials, OperatingPoint, SolveRequest } from '@/types/solver'
 import { SOLVE_SCHEMA_VERSION } from '@/types/solver'
 
@@ -49,8 +50,8 @@ export function composeSolveRequest(input: {
     schema_version: SOLVE_SCHEMA_VERSION,
     topology,
     machine_type: machineType,
-    geometry: structuredClone(geometry) as unknown as SolveRequest['geometry'],
-    materials: structuredClone(materials),
-    operating_point: structuredClone(operatingPoint),
+    geometry: cloneJson(geometry) as unknown as SolveRequest['geometry'],
+    materials: cloneJson(materials),
+    operating_point: cloneJson(operatingPoint),
   }
 }

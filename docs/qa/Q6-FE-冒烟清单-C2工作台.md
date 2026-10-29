@@ -27,7 +27,7 @@
 ## 求解
 
 1. 材料步只写区域 → materialId。激励步只写工况和可选驱动草稿。两步都不触发 rebuild，也不提交 Jobs。
-2. 求解步按钮「求解」用当前 `geometrySummary` + 材料 + 工况，走既有 `solveRadial` / `solveAxial`（Wasm → sync → fixture）。
+2. 求解步按钮「求解」用当前 `geometrySummary` + 材料 + 工况，走既有 `solveRadial` / `solveAxial`（Wasm → sync → fixture）。默认材料 id 用目录种子（`mat-steel-m19`、`mat-ndfeb-n35`、`mat-copper`；ACIM 导条 `mat-acim-bar-al` / 端环 `mat-acim-endring-al`）。`GET /materials/{id}` 404 不阻断求解，面板写明目录未命中并回退内联字段；这不是材料库闭合，也不是建模完成。
 3. 结果进会话，面板能看到转矩和路径。fixture / mock 要标成解析降级。
 4. 改几何并等 rebuild 成功后，再点一次求解，结果或状态应更新。重建进行中按钮不可用。
 5. 没有 live `geometrySummary` 时不能把 fixture 网格拿去求解。
