@@ -1,9 +1,13 @@
 # Box / iptables-stub smoke overlay — DO NOT use as default.
 # Default path: `make up` (service DNS postgres/redis).
-# Box path:     `make up-box` (api/web → host.docker.internal published ports).
+# Box path:     `make up-box` / `make up-fem-box`（或 scripts/up-box.sh / up-fem-box.sh）.
 #
 # Why: some Bot/box Docker setups lack real iptables; mo-net DNS/east-west fails.
-# Postgres/Redis stay on mo-net with host publish 5433/6380; api talks via host gateway.
+# Postgres/Redis stay on mo-net with host publish 5433/6380; api/worker talk via host gateway.
+#
+# 防漂：一旦选用本 overlay，之后每次 recreate 都必须同时 -f docker-compose.yml -f 本文件。
+# 禁止裸 `docker compose up` / `scripts/start-deps.sh`（会丢掉本文件 → :5174 超时、worker DNS 失败）。
+# 覆盖服务：api、web、worker、worker-fem（缺任一都会漂）。自检：make assert-box。
 #
 # Mo-运维 owns compose; SOLVER_ANALYTIC_PATH kept so sync solve still finds the packaged solver.
 

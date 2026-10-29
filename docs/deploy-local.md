@@ -119,6 +119,37 @@ make health-box    # 期望 db.ok=true redis.ok=true
 make up && make health
 ```
 
+### 防漂（Q7-C4 / box overlay 必守）
+
+Bot/box 上 **必须始终双文件** recreate：`docker-compose.yml` **+** `docker-compose.box.yml`。  
+`docker-compose.box.yml` 覆盖 **api / web / worker / worker-fem**（`extra_hosts` + `DATABASE_URL`/`REDIS_URL` → `host.docker.internal:5433/6380`；web 挂载 `nginx.box.conf`）。
+
+| 禁止 | 后果 |
+| --- | --- |
+| 裸 `docker compose up` / `scripts/start-deps.sh` | 丢掉 overlay：nginx 回镜像内 IP/`api` DNS；api/worker 回 `postgres`/`redis` 服务名 → `:5174/api` 超时、Celery 连不上 broker |
+| 只 recreate api/web、忘掉 worker | Jobs 入队后 worker 仍解析不了 Redis（`Temporary failure in name resolution`） |
+| 单文件 `make up-worker` / `make up-fem` 叠在已起的 box 栈上 | 同漂 |
+
+推荐入口：
+
+```bash
+make up-box          # 或 ./scripts/up-box.sh
+make up-fem-box      # 或 ./scripts/up-fem-box.sh（保留 FEM；默认 MO_FEM_DRY_RUN=1）
+make assert-box      # 或 ./scripts/assert-box-overlay.sh
+```
+
+已漂时（**不要**先裸 `up` 再指望自动修好），按需双文件 `--no-deps`：
+
+```bash
+# 例：只修 api+web（Motor 现场路径）
+sudo docker compose -f docker-compose.yml -f docker-compose.box.yml --env-file .env   up -d --force-recreate --no-deps api web
+
+# 例：worker 也漂了（ExtraHosts=[] / DATABASE_URL=postgres:5432）
+CELERY_ENABLED=1 sudo docker compose -f docker-compose.yml -f docker-compose.box.yml   --env-file .env --profile worker --profile fem   up -d --force-recreate --no-deps worker worker-fem
+```
+
+核对：`config_files` 含 `docker-compose.box.yml`；`ExtraHosts` 含 `host.docker.internal`；web nginx 字面量 `proxy_pass http://host.docker.internal:8000`（无 `resolver 127.0.0.11`）；`GET :8000/health` 与 `:5174/health` 均通。
+
 
 ## Q3-3 Celery 工人与 FEM 容器
 

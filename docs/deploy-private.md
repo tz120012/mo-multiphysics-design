@@ -18,7 +18,7 @@
 | 网络 | 内网即可；首次需能拉取/导入基础镜像（`postgres:16-alpine`、`redis:7-alpine`）及本地 build |
 | **禁止** | **禁止在宿主机安装 Elmer / GetDP / Gmsh**；FEM 仅容器内（profile `fem` / `worker-fem`） |
 
-正常 Docker 主机用 `make up`；Bot/box 缺真实 iptables 时用 `make up-box` / `make up-fem-box`（见 [deploy-local.md](./deploy-local.md)「Bot / box 冒烟兜底」）。
+正常 Docker 主机用 `make up`；Bot/box 缺真实 iptables 时用 `make up-box` / `make up-fem-box`（见 [deploy-local.md](./deploy-local.md)「Bot / box 冒烟兜底」与 **防漂**）。 **禁止**在 box 栈已起后再裸 `docker compose up` / `scripts/start-deps.sh`——会覆盖 overlay，导致 `:5174` 代理超时与 worker 漂回 `postgres`/`redis` DNS；用 `make assert-box` 自检。
 
 ## 端口表
 
@@ -112,6 +112,7 @@ make down-box
 - box overlay：`apps/web/nginx.box.conf` 用字面量 `proxy_pass http://host.docker.internal:8000`（依赖 `extra_hosts` → `/etc/hosts`）。  
 - **勿**在 box conf 使用 `resolver 127.0.0.11` + 变量 `proxy_pass` 指 `host.docker.internal`（Docker DNS 看不到 extra_hosts，会超时）。  
 - 默认 nginx（非 box）仍反代服务名 `api:8000`。  
+- box 下 **worker / worker-fem** 同样走 overlay（`host.docker.internal:5433/6380`）；只修 api/web 不够。  
 - 私有化验收：API `:8000/health` + compose Web（`WEB_HOST_PORT`，示例 5173）`/health` / `/api/...`；vite `:5173` 仍可用作开发冒烟。
 
 ## FEM
