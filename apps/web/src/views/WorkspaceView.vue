@@ -6,8 +6,10 @@
       <span v-if="session.fixtureReason"> · {{ session.fixtureReason }}</span>
       <span v-if="session.rebuilding"> · 重建中…</span>
     </div>
-    <div v-else class="banner banner-live" role="status">
-      live · POST /geometry/rebuild
+    <div v-else class="banner banner-live" role="status" data-modeling-complete="false">
+      live · POST /geometry/rebuild · 非建模完成
+      <span v-if="hud?.source"> · {{ hud.source }}</span>
+      <span v-if="hud?.fidelity"> · {{ hud.fidelity }}</span>
       <span v-if="session.paramsHash"> · paramsHash {{ shortHash }}</span>
       <span v-if="session.rebuilding"> · 重建中…</span>
     </div>
@@ -55,8 +57,11 @@
       </aside>
 
       <div v-if="showField" class="field-host">
-        <div class="field-bar">
+        <div class="field-bar" data-shell-post>
           <span>场图 · Jobs artifacts · {{ jobId }}</span>
+          <span v-if="session.resultsRefs.resultRef" class="field-ref">{{ session.resultsRefs.resultRef }}</span>
+          <span v-if="session.fieldStale" class="field-stale" data-shell-honesty>参数已变 · 不是当前参数结果 · 不得标结果已更新</span>
+          <span v-else-if="session.fieldResultUpdated" data-shell-honesty>结果已更新 · 新 jobId</span>
           <el-button size="small" @click="clearJob">收起场图</el-button>
         </div>
         <FieldVizView />
@@ -64,13 +69,20 @@
 
       <template v-else>
         <section class="viewport">
-          <div class="hud">
+          <div class="hud" data-viewport-hud>
             <span>{{ hudSource }}</span>
+            <span v-if="session.paramsHash">hash {{ shortHash }}</span>
             <span v-if="signals">prims {{ signals.primitives }}</span>
-            <span v-if="signals">slots {{ signals.slotCount ?? '—' }}</span>
-            <span v-if="signals">poles {{ signals.poleCount ?? '—' }}</span>
-            <span v-if="signals?.magnetBandMm != null">mag {{ signals.magnetBandMm.toFixed(2) }} mm</span>
-            <span v-if="signals?.maxRingHeightMm != null">ring {{ signals.maxRingHeightMm.toFixed(2) }} mm</span>
+            <span>槽 {{ hud?.slotCount ?? '—' }}</span>
+            <span>极 {{ hud?.poleCount ?? '—' }}</span>
+            <span>气隙 {{ fmtMm(hud?.airgapMm) }}</span>
+            <span>磁钢 {{ fmtMm(hud?.magnetThicknessMm) }}</span>
+            <span v-if="hud?.diskThicknessMm != null">盘厚 {{ fmtMm(hud.diskThicknessMm) }}</span>
+            <span v-if="hud?.slotCavities">槽腔 {{ hud.slotCavities }}</span>
+            <span v-if="hud?.airgapBands">气隙环 {{ hud.airgapBands }}</span>
+            <span v-if="hud?.fromHudDims">hudDims</span>
+            <span>非建模完成</span>
+            <span v-if="summaryLine" class="hud-summary">{{ summaryLine }}</span>
           </div>
           <Viewport3D :key="session.viewportRev" :descriptor="session.meshDescriptor" />
         </section>
@@ -86,7 +98,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Viewport3D from '@/components/Viewport3D.vue'
 import WorkbenchInspector from '@/components/workbench/WorkbenchInspector.vue'
 import FieldVizView from '@/views/FieldVizView.vue'
-import { descriptorSignals } from '@/lib/descriptorSignals'
+import { descriptorSignals, viewportHud } from '@/lib/descriptorSignals'
 import { SESSION_MACHINES } from '@/lib/geometryDefaults'
 import { useProjectSession } from '@/stores/projectSession'
 import type { MachineType, Topology } from '@/api/types'
@@ -121,12 +133,28 @@ const step = computed(() => parseStep(route.query.step))
 const jobId = computed(() => queryText(route.query.jobId))
 const showField = computed(() => step.value === 'post' && jobId.value.length > 0)
 const signals = computed(() => descriptorSignals(session.meshDescriptor))
+const hud = computed(() => viewportHud(session.meshDescriptor))
 const shortHash = computed(() =>
   session.paramsHash.length > 12 ? `${session.paramsHash.slice(0, 12)}…` : session.paramsHash,
 )
 const hudSource = computed(() =>
-  session.dataSource === 'live' ? 'live · rebuild' : '样例/fixture · 非建模完成',
+  session.dataSource === 'live' ? 'live · rebuild · 非建模完成' : '样例/fixture · 非建模完成',
 )
+const summaryLine = computed(() => {
+  const summary = session.geometrySummary
+  if (!summary || session.dataSource !== 'live') return ''
+  const bits = [`slots ${summary.slots}`, `poles ${summary.poles}`, `airgap_m ${summary.airgap_m}`]
+  const magnet = summary.magnet_thickness_m
+  const disk = summary.disk_thickness_m
+  if (typeof magnet === 'number') bits.push(`magnet_thickness_m ${magnet}`)
+  if (typeof disk === 'number') bits.push(`disk_thickness_m ${disk}`)
+  return `geometrySummary ${bits.join(' · ')}`
+})
+
+function fmtMm(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '—'
+  return `${value.toFixed(2)} mm`
+}
 
 function hydrateKey(): string {
   return [
@@ -355,15 +383,31 @@ onUnmounted(() => window.removeEventListener('keydown', onHistoryKeydown))
   flex-direction: column;
 }
 
+.hud-summary {
+  flex-basis: 100%;
+  color: var(--mo-text-muted);
+}
+
 .field-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid var(--mo-border);
   color: var(--mo-text-secondary);
   font-size: 12px;
+}
+
+.field-ref {
+  font-family: var(--mo-font-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.field-stale {
+  color: var(--mo-amber);
 }
 
 .field-host :deep(.field-viz) {

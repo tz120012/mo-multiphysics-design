@@ -130,24 +130,35 @@
       </el-form>
     </div>
 
-    <div v-else-if="step === 'materials'" class="pane">
-      <p class="note">P0 占位：区域 → materialId，写入本会话材料切片。完整材料库步骤不在本门。</p>
+    <div v-else-if="step === 'materials'" class="pane" data-material-step>
+      <p class="note">区域从材料目录种子 mat-* 选择并写入本会话。检视绑定后再进求解。不用 demo 别名。</p>
+      <p v-if="catalogNote" class="hint">{{ catalogNote }}</p>
       <p v-if="session.materialNote" class="hint">{{ session.materialNote }}</p>
       <el-form label-position="top" size="small" class="form">
         <el-form-item label="定子铁心 steel">
-          <el-input :model-value="session.materials.regions.steel ?? ''" @change="onRegion('steel', $event)" />
+          <el-select :model-value="session.materials.regions.steel ?? ''" filterable style="width: 100%" @change="onRegion('steel', String($event ?? ''))">
+            <el-option v-for="opt in regionOptions('steel')" :key="opt.id" :label="opt.label" :value="opt.id" />
+          </el-select>
         </el-form-item>
         <el-form-item v-if="session.projectMeta.machineType !== 'ACIM'" label="磁钢 magnet">
-          <el-input :model-value="session.materials.regions.magnet ?? ''" @change="onRegion('magnet', $event)" />
+          <el-select :model-value="session.materials.regions.magnet ?? ''" filterable style="width: 100%" @change="onRegion('magnet', String($event ?? ''))">
+            <el-option v-for="opt in regionOptions('magnet')" :key="opt.id" :label="opt.label" :value="opt.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="绕组 conductor">
-          <el-input :model-value="session.materials.regions.conductor ?? ''" @change="onRegion('conductor', $event)" />
+          <el-select :model-value="session.materials.regions.conductor ?? ''" filterable style="width: 100%" @change="onRegion('conductor', String($event ?? ''))">
+            <el-option v-for="opt in regionOptions('conductor')" :key="opt.id" :label="opt.label" :value="opt.id" />
+          </el-select>
         </el-form-item>
         <el-form-item v-if="session.projectMeta.machineType === 'ACIM'" label="导条 bar">
-          <el-input :model-value="session.materials.regions.bar ?? ''" @change="onRegion('bar', $event)" />
+          <el-select :model-value="session.materials.regions.bar ?? ''" filterable style="width: 100%" @change="onRegion('bar', String($event ?? ''))">
+            <el-option v-for="opt in regionOptions('bar')" :key="opt.id" :label="opt.label" :value="opt.id" />
+          </el-select>
         </el-form-item>
         <el-form-item v-if="session.projectMeta.machineType === 'ACIM'" label="端环 endRing">
-          <el-input :model-value="session.materials.regions.endRing ?? ''" @change="onRegion('endRing', $event)" />
+          <el-select :model-value="session.materials.regions.endRing ?? ''" filterable style="width: 100%" @change="onRegion('endRing', String($event ?? ''))">
+            <el-option v-for="opt in regionOptions('endRing')" :key="opt.id" :label="opt.label" :value="opt.id" />
+          </el-select>
         </el-form-item>
         <el-form-item v-if="session.projectMeta.machineType !== 'ACIM'" label="br_t 覆盖">
           <el-input-number :model-value="session.materials.inline.br_t" :min="0.1" :max="1.6" :step="0.05" :precision="2" controls-position="right" @change="onInline('br_t', $event)" />
@@ -156,6 +167,14 @@
           <el-input-number :model-value="session.materials.inline.sigma_bar" :min="1" :step="1e6" controls-position="right" @change="onInline('sigma_bar', $event)" />
         </el-form-item>
       </el-form>
+      <h3 class="sub">检视 · 再进求解</h3>
+      <dl class="meta" data-material-bind>
+        <div v-for="row in boundRegionRows" :key="row.key">
+          <dt>{{ row.key }}</dt>
+          <dd>{{ row.id }}<template v-if="row.name"> · {{ row.name }}</template></dd>
+        </div>
+      </dl>
+      <p v-if="!boundRegionRows.length" class="hint">尚未绑定区域。</p>
     </div>
 
     <div v-else-if="step === 'excitation'" class="pane">
@@ -164,23 +183,33 @@
         <el-form-item label="转速 speed_rpm">
           <el-input-number :model-value="session.excitation.operatingPoint.speed_rpm" :min="0" :step="50" controls-position="right" @change="onOp('speed_rpm', $event)" />
         </el-form-item>
-        <el-form-item v-if="session.projectMeta.machineType !== 'ACIM'" label="电流峰值 A">
+        <el-form-item v-if="session.projectMeta.machineType !== 'ACIM'" label="电流峰值 current_a_peak">
           <el-input-number :model-value="session.excitation.operatingPoint.current_a_peak" :min="0" :step="1" controls-position="right" @change="onOp('current_a_peak', $event)" />
         </el-form-item>
         <el-form-item v-if="session.projectMeta.machineType === 'PMSM'" label="电流角 gamma_deg">
           <el-input-number :model-value="session.excitation.operatingPoint.gamma_deg" :min="-90" :max="90" :step="5" controls-position="right" @change="onOp('gamma_deg', $event)" />
         </el-form-item>
         <template v-if="session.projectMeta.machineType === 'ACIM'">
-          <el-form-item label="电压峰值 V">
+          <el-form-item label="电压峰值 voltage_v_peak">
             <el-input-number :model-value="session.excitation.operatingPoint.voltage_v_peak" :min="0" :step="10" controls-position="right" @change="onOp('voltage_v_peak', $event)" />
           </el-form-item>
-          <el-form-item label="频率 Hz">
+          <el-form-item label="频率 freq_hz">
             <el-input-number :model-value="session.excitation.operatingPoint.freq_hz" :min="1" :step="1" controls-position="right" @change="onOp('freq_hz', $event)" />
           </el-form-item>
           <el-form-item label="转差 slip（可选）">
             <el-input-number :model-value="session.excitation.operatingPoint.slip" :min="0.001" :max="0.5" :step="0.01" :precision="3" controls-position="right" @change="onOp('slip', $event)" />
           </el-form-item>
         </template>
+        <dl class="meta" data-uem-operating-point>
+          <div><dt>speed_rpm</dt><dd>{{ opText('speed_rpm') }}</dd></div>
+          <div v-if="session.projectMeta.machineType !== 'ACIM'"><dt>current_a_peak</dt><dd>{{ opText('current_a_peak') }}</dd></div>
+          <div v-if="session.projectMeta.machineType === 'PMSM'"><dt>gamma_deg</dt><dd>{{ opText('gamma_deg') }}</dd></div>
+          <template v-if="session.projectMeta.machineType === 'ACIM'">
+            <div><dt>voltage_v_peak</dt><dd>{{ opText('voltage_v_peak') }}</dd></div>
+            <div><dt>freq_hz</dt><dd>{{ opText('freq_hz') }}</dd></div>
+            <div><dt>slip</dt><dd>{{ opText('slip') }}</dd></div>
+          </template>
+        </dl>
         <h3 class="sub">drive 草稿（可选）</h3>
         <el-form-item label="驱动草稿 mode">
           <el-select :model-value="session.excitation.driveDraft?.mode ?? ''" clearable style="width: 100%" @change="session.setDriveMode(String($event ?? ''))">
@@ -243,6 +272,14 @@
         <div><dt>磁钢径向厚 mm</dt><dd>{{ fmt(signals?.magnetBandMm) }}</dd></div>
         <div><dt>环高最大 mm</dt><dd>{{ fmt(signals?.maxRingHeightMm) }}</dd></div>
         <div><dt>paramsHash</dt><dd class="break">{{ session.paramsHash || '—' }}</dd></div>
+        <div><dt>source</dt><dd>{{ hud?.source ?? '—' }}</dd></div>
+        <div><dt>fidelity</dt><dd>{{ hud?.fidelity ?? '—' }}</dd></div>
+        <div><dt>modelingComplete</dt><dd>{{ modelingLabel }}</dd></div>
+        <div><dt>hudDims.airgapMm</dt><dd>{{ fmt(hud?.airgapMm) }}</dd></div>
+        <div><dt>hudDims.magnetThicknessMm</dt><dd>{{ fmt(hud?.magnetThicknessMm) }}</dd></div>
+        <div><dt>hudDims.diskThicknessMm</dt><dd>{{ fmt(hud?.diskThicknessMm) }}</dd></div>
+        <div><dt>槽腔 stator_slot</dt><dd>{{ hud?.slotCavities ?? '—' }}</dd></div>
+        <div><dt>气隙环 airgap_band</dt><dd>{{ hud?.airgapBands ?? '—' }}</dd></div>
         <div><dt>pipelineEntry</dt><dd>{{ session.pipelineEntry ? '有' : '无' }}</dd></div>
       </dl>
       <p v-if="session.rebuildError" class="warn">{{ session.rebuildError }}</p>
@@ -263,6 +300,13 @@
         </div>
       </dl>
       <p v-else class="warn">当前没有 live geometrySummary，不能把 fixture 当作求解几何。</p>
+      <h3 class="sub">已绑定材料</h3>
+      <dl class="meta" data-material-bind>
+        <div v-for="row in boundRegionRows" :key="`solve-${row.key}`">
+          <dt>{{ row.key }}</dt>
+          <dd>{{ row.id }}</dd>
+        </div>
+      </dl>
       <div class="actions">
         <el-button type="primary" :loading="session.solving" :disabled="!canSolve" @click="session.solveExplicit()">
           求解
@@ -284,8 +328,21 @@
       </template>
     </div>
 
-    <div v-else class="pane">
-      <p class="note">场图主路径仍是 Jobs artifacts。无 jobId 时不在本壳加载场图 fixture 当作结果。</p>
+    <div v-else class="pane" data-shell-post>
+      <p v-if="!session.resultsRefs.lastJobId" class="mesh-warn" data-shell-honesty>
+        未绑定 FEM job；当前为 public fixture / 演示数据。不宣称误差达标。
+      </p>
+      <p v-if="session.fieldStale" class="warn" data-shell-honesty>
+        参数已变。当前场图仍绑定旧 job，不是当前参数结果。不得标「结果已更新」。
+      </p>
+      <p v-else-if="session.fieldResultUpdated" class="hint" data-shell-honesty>
+        结果已更新（新 jobId）。不宣称误差达标。
+      </p>
+      <p class="note">同壳后处理读 lastFemJobId，再 GET /jobs/{id}/artifacts（scalars → preview → slice/surface）。不走 mems/files。改参后须换新 jobId。</p>
+      <dl class="meta">
+        <div><dt>lastFemJobId</dt><dd class="break">{{ session.resultsRefs.lastJobId || '—' }}</dd></div>
+        <div><dt>resultRef</dt><dd class="break">{{ session.resultsRefs.resultRef || '—' }}</dd></div>
+      </dl>
       <el-form label-position="top" size="small" class="form">
         <el-form-item label="lastFemJobId">
           <el-input v-model="jobDraft" placeholder="FEM job id" />
@@ -296,25 +353,34 @@
           在本壳查看场图
         </el-button>
       </div>
-      <p v-if="session.analytic" class="hint">
-        解析指针 {{ session.resultsRefs.analyticSource || '—' }}
-        <span v-if="session.analyticStale"> · 结果可能过期</span>
-      </p>
-      <p v-else class="hint">尚无本会话解析结果。</p>
+      <p v-if="jobDraft.trim()" class="hint">深链 /field?jobId={{ jobDraft.trim() }} 回到本壳同一步。</p>
+      <template v-if="session.analytic">
+        <h3 class="sub">解析结果（本会话 · 非 FEM 场）</h3>
+        <p v-if="session.analyticStale" class="warn">几何或工况已变，解析结果可能过期。请再次求解。</p>
+        <p v-else class="hint">解析结果已写入本会话。这不是磁静力学整机关闭，也不宣称精度。</p>
+        <dl class="meta">
+          <div><dt>转矩 N·m</dt><dd>{{ fmt(session.analytic.result.torque_nm, 3) }}</dd></div>
+          <div><dt>路径</dt><dd>{{ session.analytic.source || session.resultsRefs.analyticSource || '—' }}</dd></div>
+        </dl>
+      </template>
+      <p v-else class="hint">尚无本会话解析结果。场图需另填 FEM jobId。</p>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { createJob, pollJob } from '@/api/jobs'
-import { descriptorSignals } from '@/lib/descriptorSignals'
+import { listMaterials } from '@/api/materials'
+import { descriptorSignals, viewportHud } from '@/lib/descriptorSignals'
 import { composeDrivePayloadFromUem } from '@/lib/composeDrivePayload'
 import { REBUILD_DEBOUNCE_MS } from '@/lib/geometryRebuild'
+import { catalogName, optionsForRegion } from '@/lib/materialCatalog'
 import { getPath } from '@/lib/paramPath'
 import { useProjectSession } from '@/stores/projectSession'
 import { useProjectsStore } from '@/stores/projects'
 import type { UemMaterialRegions } from '@/lib/geometryDefaults'
+import type { Material } from '@/types/materials'
 import type { OperatingPoint } from '@/types/solver'
 
 const props = defineProps<{
@@ -329,6 +395,8 @@ const session = useProjectSession()
 const projects = useProjectsStore()
 const debounceMs = REBUILD_DEBOUNCE_MS
 const jobDraft = ref(session.resultsRefs.lastJobId)
+const catalogItems = ref<Material[] | null>(null)
+const catalogNote = ref('')
 const drivePreviewing = ref(false)
 const drivePreviewError = ref('')
 const drivePreviewStatus = ref('')
@@ -357,6 +425,49 @@ const title = computed(() => {
 })
 
 const signals = computed(() => descriptorSignals(session.meshDescriptor))
+const hud = computed(() => viewportHud(session.meshDescriptor))
+const modelingLabel = computed(() => {
+  if (hud.value?.modelingComplete === false) return 'false · 非建模完成'
+  return '未标 true · 非建模完成'
+})
+
+const boundRegionRows = computed(() => {
+  const regions = session.materials.regions
+  const keys = ['steel', 'magnet', 'conductor', 'bar', 'endRing'] as const
+  return keys
+    .filter((key) => !!regions[key])
+    .map((key) => {
+      const id = regions[key] as string
+      return { key, id, name: catalogName(id, catalogItems.value) }
+    })
+})
+
+function regionOptions(region: keyof UemMaterialRegions) {
+  return optionsForRegion(region, catalogItems.value)
+}
+
+function opText(key: keyof OperatingPoint): string {
+  const value = session.excitation.operatingPoint[key]
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '—'
+}
+
+async function loadMaterialCatalog() {
+  try {
+    const res = await listMaterials()
+    catalogItems.value = Array.isArray(res.items) ? res.items : []
+    const seeds = catalogItems.value.filter((item) => item.id.startsWith('mat-'))
+    catalogNote.value = seeds.length
+      ? `目录已返回 ${seeds.length} 条 mat-*。下拉只提供种子 id。`
+      : '目录可达，但没有种子 id。下拉仍使用种子清单。'
+  } catch {
+    catalogItems.value = null
+    catalogNote.value = '材料目录暂不可达。下拉使用种子清单，不回退 demo 别名。'
+  }
+}
+
+onMounted(() => {
+  void loadMaterialCatalog()
+})
 
 const profile = computed(() => {
   const d = session.meshDescriptor

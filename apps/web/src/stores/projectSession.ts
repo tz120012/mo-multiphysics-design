@@ -6,6 +6,7 @@ import { readMemsMemberText } from '@/lib/memsPackageVersion'
 import { composeSolveRequest } from '@/lib/composeSolveRequest'
 import {
   alignMaterialRegions,
+  catalogMaterialId,
   defaultExcitation,
   defaultGeometryParams,
   defaultMaterials,
@@ -25,8 +26,10 @@ import {
   requestGeometryRebuild,
   type GeometrySummarySlice,
 } from '@/lib/geometryRebuild'
+import { isSeedMaterialId } from '@/lib/materialCatalog'
 import { cloneJson, getPath, setPath } from '@/lib/paramPath'
 import { resolveMaterials } from '@/lib/resolveMaterials'
+import { femManifestRef } from '@/lib/shellHonesty'
 import { getAxialSolveBackend, solveAxial } from '@/lib/axialSolve'
 import { solveRadial } from '@/lib/analyticSolve'
 import { useHistoryStore } from '@/stores/history'
@@ -58,8 +61,11 @@ export interface AnalyticSlice {
 export interface ResultsRefsState {
   /** FEM / 场图作业指针。解析 sync 不伪造 job id。 */
   lastJobId: string
+  /** 缺省 solver/fem/jobs/{jobId}/manifest.json。 */
   resultRef: string
   analyticSource: SolveBackend | null
+  /** 上次以 succeeded 的新 job 收下的指针。同一 job 不得再标「结果已更新」。 */
+  acknowledgedJobId: string
 }
 
 export interface HydrateInput {
@@ -131,7 +137,14 @@ export const useProjectSession = defineStore('projectSession', () => {
     lastJobId: '',
     resultRef: '',
     analyticSource: null,
+    acknowledgedJobId: '',
   })
+  /** 几何 / 材料 / 工况变了，旧 FEM 场图不能当成当前参数结果。 */
+  const fieldStale = ref(false)
+  /** 标脏时记下的 job。同一 id 再次加载不得标「结果已更新」。 */
+  const staleAgainstJobId = ref('')
+  /** 仅当指针切到另一个 succeeded job 后为真。 */
+  const fieldResultUpdated = ref(false)
 
   let rebuildSeq = 0
   let hydrateEpoch = 0
@@ -153,6 +166,14 @@ export const useProjectSession = defineStore('projectSession', () => {
 
   function markAnalyticStale() {
     if (analytic.value) analyticStale.value = true
+  }
+
+  function markFieldStale() {
+    const current = resultsRefs.value.lastJobId || resultsRefs.value.acknowledgedJobId
+    if (!current) return
+    fieldStale.value = true
+    fieldResultUpdated.value = false
+    if (!staleAgainstJobId.value) staleAgainstJobId.value = current
   }
 
   function applyMachineTemplates(topology: Topology, machineType: MachineType) {
@@ -299,6 +320,7 @@ export const useProjectSession = defineStore('projectSession', () => {
     geometryParams.value = next
     geometryDirty.value = true
     markAnalyticStale()
+    markFieldStale()
     scheduleRebuild()
   }
 
@@ -353,15 +375,35 @@ export const useProjectSession = defineStore('projectSession', () => {
     analyticStale.value = false
     solveError.value = ''
     geometryDirty.value = true
+    markFieldStale()
     void rebuildNow()
   }
 
   function commitRegion(key: keyof UemMaterialRegions, value: string) {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      const regions = { ...materials.value.regions }
+      delete regions[key]
+      materials.value = { ...materials.value, regions }
+      markAnalyticStale()
+      markFieldStale()
+      return
+    }
+    const mapped = catalogMaterialId(trimmed) ?? trimmed
+    if (!isSeedMaterialId(mapped)) {
+      materialNote.value = `已拒绝「${trimmed}」。区域只绑定种子目录 id。`
+      return
+    }
     materials.value = {
       ...materials.value,
-      regions: { ...materials.value.regions, [key]: value },
+      regions: { ...materials.value.regions, [key]: mapped },
     }
+    materialNote.value =
+      mapped === trimmed
+        ? `已绑定 ${key} → ${mapped}。`
+        : `旧别名 ${trimmed} 已改为 ${mapped}。`
     markAnalyticStale()
+    markFieldStale()
   }
 
   function commitInline(key: keyof UemMaterialsState['inline'], value: number | undefined) {
@@ -371,6 +413,7 @@ export const useProjectSession = defineStore('projectSession', () => {
       inline: { ...materials.value.inline, [key]: value },
     }
     markAnalyticStale()
+    markFieldStale()
   }
 
   function commitOperatingPoint(patch: Partial<OperatingPoint>) {
@@ -379,6 +422,7 @@ export const useProjectSession = defineStore('projectSession', () => {
       operatingPoint: { ...excitation.value.operatingPoint, ...patch },
     }
     markAnalyticStale()
+    markFieldStale()
   }
 
   function setDriveDraft(partial: UemDriveDraft | undefined) {
@@ -405,8 +449,36 @@ export const useProjectSession = defineStore('projectSession', () => {
     setDriveDraft({ mode })
   }
 
-  function noteFemJob(jobId: string) {
-    resultsRefs.value = { ...resultsRefs.value, lastJobId: jobId }
+  function noteFemJob(jobId: string, resultRef?: string) {
+    const id = jobId.trim()
+    if (!id) return
+    const prev = resultsRefs.value.lastJobId
+    const explicit = resultRef?.trim()
+    const nextRef =
+      explicit ||
+      (prev === id && resultsRefs.value.resultRef) ||
+      femManifestRef(id)
+    if (prev && prev !== id) fieldResultUpdated.value = false
+    resultsRefs.value = {
+      ...resultsRefs.value,
+      lastJobId: id,
+      resultRef: nextRef,
+    }
+  }
+
+  /** succeeded 且 jobId 不同于标脏时的旧指针时，才允许「结果已更新」。 */
+  function acknowledgeFemResult(jobId: string) {
+    const id = jobId.trim()
+    if (!id || resultsRefs.value.lastJobId !== id) return
+    if (fieldStale.value && staleAgainstJobId.value === id) return
+    const prevAck = resultsRefs.value.acknowledgedJobId
+    if (prevAck === id) return
+    const replacedAck = prevAck.length > 0 && prevAck !== id
+    const replacedStale = staleAgainstJobId.value.length > 0 && staleAgainstJobId.value !== id
+    resultsRefs.value = { ...resultsRefs.value, acknowledgedJobId: id }
+    fieldStale.value = false
+    staleAgainstJobId.value = ''
+    fieldResultUpdated.value = replacedAck || replacedStale
   }
 
   async function solveExplicit() {
@@ -435,8 +507,8 @@ export const useProjectSession = defineStore('projectSession', () => {
         ? `旧别名已改为目录 id：${aligned.rewritten.join('，')}。`
         : ''
       materialNote.value = resolved.missing.length
-        ? `${rewriteText}材料目录未命中 ${resolved.missing.join('、')}。求解继续使用会话内联字段，不表示材料库已闭合。`
-        : `${rewriteText}材料 id 已向目录读取。本步仍是区域占位，不是完整材料库。`
+        ? `${rewriteText}材料目录未命中 ${resolved.missing.join('、')}。求解继续使用会话内联字段。`
+        : `${rewriteText}材料 id 已向目录读取并绑定到区域。`
       const request = composeSolveRequest({
         topology: projectMeta.value.topology,
         machineType: projectMeta.value.machineType,
@@ -481,6 +553,15 @@ export const useProjectSession = defineStore('projectSession', () => {
     materialNote.value = ''
     analytic.value = null
     analyticStale.value = false
+    resultsRefs.value = {
+      lastJobId: '',
+      resultRef: '',
+      analyticSource: null,
+      acknowledgedJobId: '',
+    }
+    fieldStale.value = false
+    staleAgainstJobId.value = ''
+    fieldResultUpdated.value = false
     history.clear()
     const still = () => epoch === hydrateEpoch
 
@@ -576,6 +657,8 @@ export const useProjectSession = defineStore('projectSession', () => {
     analyticStale,
     analytic,
     resultsRefs,
+    fieldStale,
+    fieldResultUpdated,
     machineLabel,
     canUndo,
     canRedo,
@@ -592,6 +675,7 @@ export const useProjectSession = defineStore('projectSession', () => {
     setDriveDraft,
     setDriveMode,
     noteFemJob,
+    acknowledgeFemResult,
     solveExplicit,
   }
 })
