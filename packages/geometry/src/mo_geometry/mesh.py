@@ -119,16 +119,40 @@ def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
         )
     )
 
-    # 磁钢扇区占位（极数驱动）；内转子贴外径、外转子贴内径
+    # 磁钢扇区（极数驱动）；内转子贴外径、外转子贴内径
+    # magnetThickness：优先 rotor.magnetThickness / params.magnetThickness；
+    # 缺省时用气隙·转子径向厚度估算，并写入 meta.magnetThicknessSource。
     pole_pitch = 360.0 / pole_count
-    mag_sweep = pole_pitch * 0.7
-    mag_thickness = max(airgap * 2.0, (r_or - r_ir) * 0.15)
+    span_deg = rotor.get("magnetSpanDeg")
+    if span_deg is None:
+        span_deg = params.get("magnetSpanDeg")
+    if isinstance(span_deg, (int, float)) and not isinstance(span_deg, bool) and span_deg > 0:
+        mag_sweep = min(float(span_deg), pole_pitch * 0.95)
+        mag_span_source = (
+            "rotor.magnetSpanDeg" if "magnetSpanDeg" in rotor else "params.magnetSpanDeg"
+        )
+    else:
+        mag_sweep = pole_pitch * 0.7
+        mag_span_source = "estimated_pole_pitch_0.7"
+
+    explicit_mag = rotor.get("magnetThickness")
+    mag_th_source = "rotor.magnetThickness"
+    if explicit_mag is None:
+        explicit_mag = params.get("magnetThickness")
+        mag_th_source = "params.magnetThickness"
+    if isinstance(explicit_mag, (int, float)) and not isinstance(explicit_mag, bool):
+        mag_thickness = float(explicit_mag)
+    else:
+        mag_thickness = max(airgap * 2.0, (r_or - r_ir) * 0.15)
+        mag_th_source = "estimated_from_airgap_rotor"
+
     if rotor_topo == "inner":
         mag_or = r_or
         mag_ir = max(r_ir, r_or - mag_thickness)
     else:
         mag_ir = r_ir
         mag_or = min(r_or, r_ir + mag_thickness)
+    # IPM 仍为径向贴边近似；厚度变化须可测（descriptor 半径差随 mag_thickness）
     for i in range(pole_count):
         start = i * pole_pitch + (pole_pitch - mag_sweep) / 2.0
         primitives.append(
@@ -174,6 +198,12 @@ def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
             "slotCount": slot_count,
             "poleCount": pole_count,
             "airgap": airgap,
+            "magnetThickness": mag_thickness,
+            "magnetThicknessSource": mag_th_source,
+            "magnetSweepDeg": mag_sweep,
+            "magnetSpanSource": mag_span_source,
+            "magnetInnerRadius": mag_ir,
+            "magnetOuterRadius": mag_or,
         },
         "primitives": primitives,
     }
@@ -207,6 +237,15 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
     mag_sector = float(pmsm["magnetSectorAngle"])
     slot_count = int(pmsm["slotCount"])
     pole_count = int(pmsm["poleCount"])
+
+    # 磁钢轴向厚度：优先 pmsm.magnetThickness；否则用盘厚比例估算
+    explicit_af_mag = pmsm.get("magnetThickness")
+    if isinstance(explicit_af_mag, (int, float)) and not isinstance(explicit_af_mag, bool):
+        mag_axial_h = float(explicit_af_mag)
+        af_mag_source = "pmsm.magnetThickness"
+    else:
+        mag_axial_h = thickness * 0.3
+        af_mag_source = "estimated_0.3_diskThickness"
 
     primitives: list[dict[str, Any]] = []
     # 沿 z 堆叠：disk + airgap 交替
@@ -260,10 +299,10 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
                         name=f"magnet_sector_{d}_{i}",
                         inner_radius=ir,
                         outer_radius=or_,
-                        height=thickness * 0.3,
+                        height=mag_axial_h,
                         start_angle_deg=start,
                         sweep_angle_deg=sweep,
-                        z=z + thickness * 0.35,
+                        z=z + max(0.0, (thickness - mag_axial_h) * 0.5),
                         segments=8,
                     )
                 )
@@ -281,6 +320,9 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
             "slotCount": slot_count,
             "poleCount": pole_count,
             "airgap": airgap,
+            "diskThickness": thickness,
+            "magnetThickness": mag_axial_h,
+            "magnetThicknessSource": af_mag_source,
         },
         "primitives": primitives,
     }

@@ -10,7 +10,13 @@
     "machineType": "PMSM",
     "slotCount": 6,
     "poleCount": 4,
-    "airgap": 0.4
+    "airgap": 0.4,
+    "magnetThickness": 4.35,
+    "magnetThicknessSource": "rotor.magnetThickness",
+    "magnetSweepDeg": 45.0,
+    "magnetSpanSource": "rotor.magnetSpanDeg",
+    "magnetInnerRadius": 19.15,
+    "magnetOuterRadius": 23.5
   },
   "primitives": [
     {
@@ -102,44 +108,44 @@
     {
       "type": "sector",
       "name": "magnet_0",
-      "innerRadius": 21.175,
+      "innerRadius": 19.15,
       "outerRadius": 23.5,
       "height": 28.595,
-      "startAngleDeg": 13.500000000000004,
-      "sweepAngleDeg": 62.99999999999999,
+      "startAngleDeg": 22.5,
+      "sweepAngleDeg": 45.0,
       "z": 0.0,
       "segments": 6
     },
     {
       "type": "sector",
       "name": "magnet_1",
-      "innerRadius": 21.175,
+      "innerRadius": 19.15,
       "outerRadius": 23.5,
       "height": 28.595,
-      "startAngleDeg": 103.5,
-      "sweepAngleDeg": 62.99999999999999,
+      "startAngleDeg": 112.5,
+      "sweepAngleDeg": 45.0,
       "z": 0.0,
       "segments": 6
     },
     {
       "type": "sector",
       "name": "magnet_2",
-      "innerRadius": 21.175,
+      "innerRadius": 19.15,
       "outerRadius": 23.5,
       "height": 28.595,
-      "startAngleDeg": 193.5,
-      "sweepAngleDeg": 62.99999999999999,
+      "startAngleDeg": 202.5,
+      "sweepAngleDeg": 45.0,
       "z": 0.0,
       "segments": 6
     },
     {
       "type": "sector",
       "name": "magnet_3",
-      "innerRadius": 21.175,
+      "innerRadius": 19.15,
       "outerRadius": 23.5,
       "height": 28.595,
-      "startAngleDeg": 283.5,
-      "sweepAngleDeg": 62.99999999999999,
+      "startAngleDeg": 292.5,
+      "sweepAngleDeg": 45.0,
       "z": 0.0,
       "segments": 6
     }

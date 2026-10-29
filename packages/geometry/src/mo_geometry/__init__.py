@@ -1,4 +1,4 @@
-"""Mo-几何：参数化电机几何 + Three.js 协作网格描述 + 解析/FEM 入口导出 + live 重建。
+"""Mo-几何：参数化电机几何 + Three.js 协作网格描述 + 解析/FEM 入口导出 + live 重建 + Q6 视口 envelope。
 
 不含 STEP/DXF（本阶段降级，见 docs/drafts/几何-Q4plus-live与降级.md）、
 不含 Wasm / 解析求解 / FEM 求解。参数以 JSON 供 FE/BE/.mems 消费。
@@ -36,6 +36,11 @@ from mo_geometry.summary import (
     export_geometry_summary,
     rebuild_live_geometry,
 )
+from mo_geometry.viewport import (
+    params_hash,
+    rebuild_viewport_payload,
+    unwrap_rebuild_params,
+)
 
 __all__ = [
     "GEOMETRY_SCHEMA_VERSION",
@@ -60,6 +65,9 @@ __all__ = [
     "export_geometry_summary",
     "export_axial_pipeline_entry",
     "rebuild_live_geometry",
+    "rebuild_viewport_payload",
+    "params_hash",
+    "unwrap_rebuild_params",
 ]
 
 __version__ = "0.1.0"

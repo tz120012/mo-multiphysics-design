@@ -1,0 +1,929 @@
+{
+  "params": {
+    "schemaVersion": "0.1.0-q1",
+    "topology": "AF",
+    "machineType": "PMSM",
+    "config": "RFMR",
+    "units": {
+      "length": "mm",
+      "angle": "deg"
+    },
+    "pmsm": {
+      "innerDiameter": 40.0,
+      "outerDiameter": 120.0,
+      "diskCount": 3,
+      "airgap": 1.0,
+      "diskThickness": 8.0,
+      "magnetSectorAngle": 150.0,
+      "slotCount": 12,
+      "poleCount": 10
+    }
+  },
+  "meshDescriptor": {
+    "schemaVersion": "0.1.0-q1",
+    "kind": "axial",
+    "units": {
+      "length": "mm",
+      "angle": "deg"
+    },
+    "meta": {
+      "config": "RFMR",
+      "machineType": "PMSM",
+      "diskCount": 3,
+      "slotCount": 12,
+      "poleCount": 10,
+      "airgap": 1.0,
+      "diskThickness": 8.0,
+      "magnetThickness": 2.4,
+      "magnetThicknessSource": "estimated_0.3_diskThickness"
+    },
+    "primitives": [
+      {
+        "type": "ring",
+        "name": "rotor_disk_0",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 8.0,
+        "z": 0.0,
+        "radialSegments": 48,
+        "thetaSegments": 48
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_0",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 1.8000000000000007,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_1",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 37.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_2",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 73.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_3",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 109.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_4",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 145.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_5",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 181.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_6",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 217.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_7",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 253.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_8",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 289.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_0_9",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 325.8,
+        "sweepAngleDeg": 32.4,
+        "z": 2.8,
+        "segments": 8
+      },
+      {
+        "type": "ring",
+        "name": "stator_disk_1",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 8.0,
+        "z": 9.0,
+        "radialSegments": 48,
+        "thetaSegments": 48
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_0",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 0.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_1",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 30.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_2",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 60.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_3",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 90.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_4",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 120.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_5",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 150.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_6",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 180.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_7",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 210.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_8",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 240.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_9",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 270.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_10",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 300.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "sector",
+        "name": "stator_slot_mark_1_11",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 1.6,
+        "startAngleDeg": 330.0,
+        "sweepAngleDeg": 13.5,
+        "z": 12.2,
+        "segments": 6
+      },
+      {
+        "type": "ring",
+        "name": "rotor_disk_2",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 8.0,
+        "z": 18.0,
+        "radialSegments": 48,
+        "thetaSegments": 48
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_0",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 1.8000000000000007,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_1",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 37.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_2",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 73.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_3",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 109.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_4",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 145.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_5",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 181.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_6",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 217.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_7",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 253.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_8",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 289.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      },
+      {
+        "type": "sector",
+        "name": "magnet_sector_2_9",
+        "innerRadius": 20.0,
+        "outerRadius": 60.0,
+        "height": 2.4,
+        "startAngleDeg": 325.8,
+        "sweepAngleDeg": 32.4,
+        "z": 20.8,
+        "segments": 8
+      }
+    ]
+  },
+  "geometrySummary": {
+    "poles": 10,
+    "slots": 12,
+    "stack_length_m": 0.008,
+    "airgap_m": 0.001,
+    "rotor_od_m": 0.12,
+    "stator_id_m": 0.04,
+    "outer_radius_m": 0.06,
+    "inner_radius_m": 0.02,
+    "disk_thickness_m": 0.008,
+    "disk_count": 3,
+    "n_planes": 4,
+    "magnet_arc_ratio": 0.8333333333333334
+  },
+  "pipelineEntry": {
+    "geometryParams": {
+      "schemaVersion": "0.1.0-q1",
+      "topology": "AF",
+      "machineType": "PMSM",
+      "config": "RFMR",
+      "units": {
+        "length": "mm",
+        "angle": "deg"
+      },
+      "pmsm": {
+        "innerDiameter": 40.0,
+        "outerDiameter": 120.0,
+        "diskCount": 3,
+        "airgap": 1.0,
+        "diskThickness": 8.0,
+        "magnetSectorAngle": 150.0,
+        "slotCount": 12,
+        "poleCount": 10
+      }
+    },
+    "geometrySummary": {
+      "poles": 10,
+      "slots": 12,
+      "stack_length_m": 0.008,
+      "airgap_m": 0.001,
+      "rotor_od_m": 0.12,
+      "stator_id_m": 0.04,
+      "outer_radius_m": 0.06,
+      "inner_radius_m": 0.02,
+      "disk_thickness_m": 0.008,
+      "disk_count": 3,
+      "n_planes": 4,
+      "magnet_arc_ratio": 0.8333333333333334
+    },
+    "meshDescriptor": {
+      "schemaVersion": "0.1.0-q1",
+      "kind": "axial",
+      "units": {
+        "length": "mm",
+        "angle": "deg"
+      },
+      "meta": {
+        "config": "RFMR",
+        "machineType": "PMSM",
+        "diskCount": 3,
+        "slotCount": 12,
+        "poleCount": 10,
+        "airgap": 1.0,
+        "diskThickness": 8.0,
+        "magnetThickness": 2.4,
+        "magnetThicknessSource": "estimated_0.3_diskThickness"
+      },
+      "primitives": [
+        {
+          "type": "ring",
+          "name": "rotor_disk_0",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 8.0,
+          "z": 0.0,
+          "radialSegments": 48,
+          "thetaSegments": 48
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_0",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 1.8000000000000007,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_1",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 37.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_2",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 73.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_3",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 109.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_4",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 145.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_5",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 181.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_6",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 217.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_7",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 253.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_8",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 289.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_0_9",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 325.8,
+          "sweepAngleDeg": 32.4,
+          "z": 2.8,
+          "segments": 8
+        },
+        {
+          "type": "ring",
+          "name": "stator_disk_1",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 8.0,
+          "z": 9.0,
+          "radialSegments": 48,
+          "thetaSegments": 48
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_0",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 0.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_1",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 30.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_2",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 60.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_3",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 90.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_4",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 120.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_5",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 150.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_6",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 180.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_7",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 210.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_8",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 240.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_9",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 270.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_10",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 300.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "sector",
+          "name": "stator_slot_mark_1_11",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 1.6,
+          "startAngleDeg": 330.0,
+          "sweepAngleDeg": 13.5,
+          "z": 12.2,
+          "segments": 6
+        },
+        {
+          "type": "ring",
+          "name": "rotor_disk_2",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 8.0,
+          "z": 18.0,
+          "radialSegments": 48,
+          "thetaSegments": 48
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_0",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 1.8000000000000007,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_1",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 37.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_2",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 73.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_3",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 109.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_4",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 145.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_5",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 181.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_6",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 217.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_7",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 253.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_8",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 289.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        },
+        {
+          "type": "sector",
+          "name": "magnet_sector_2_9",
+          "innerRadius": 20.0,
+          "outerRadius": 60.0,
+          "height": 2.4,
+          "startAngleDeg": 325.8,
+          "sweepAngleDeg": 32.4,
+          "z": 20.8,
+          "segments": 8
+        }
+      ]
+    },
+    "analyticSolveStub": {
+      "schema_version": "0.0.0-gate0",
+      "topology": "AF",
+      "machine_type": "PMSM",
+      "geometry": {
+        "poles": 10,
+        "slots": 12,
+        "stack_length_m": 0.008,
+        "airgap_m": 0.001,
+        "rotor_od_m": 0.12,
+        "stator_id_m": 0.04,
+        "outer_radius_m": 0.06,
+        "inner_radius_m": 0.02,
+        "disk_thickness_m": 0.008,
+        "disk_count": 3,
+        "n_planes": 4,
+        "magnet_arc_ratio": 0.8333333333333334
+      },
+      "materials": {},
+      "operating_point": {
+        "speed_rpm": 0.0
+      }
+    },
+    "femEntryHint": {
+      "schemaVersion": "0.1.0-q3-hint",
+      "topology": "AF",
+      "machineType": "PMSM",
+      "config": "RFMR",
+      "units": {
+        "length": "mm",
+        "angle": "deg"
+      },
+      "innerDiameter": 40.0,
+      "outerDiameter": 120.0,
+      "diskCount": 3,
+      "airgap": 1.0,
+      "diskThickness": 8.0,
+      "slotCount": 12,
+      "poleCount": 10,
+      "note": "Q3 geometry hint for Mo-FEM; no mesh generation in mo_geometry"
+    }
+  },
+  "schemaVersion": "0.1.0-q1",
+  "topology": "AF",
+  "machineType": "PMSM",
+  "paramsHash": "3c3f80d6002f26b5",
+  "meta": {
+    "rebuildPolicy": "full",
+    "geometryApi": "rebuild_viewport_payload",
+    "liveApi": "rebuild_live_geometry",
+    "httpMinSet": "rebuild_live_geometry"
+  }
+}

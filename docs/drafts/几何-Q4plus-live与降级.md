@@ -13,6 +13,7 @@
 | `export_geometry_summary(params)` | → 解析 `GeometrySummary`（snake_case + SI 米；AF 含半径/盘厚/盘数/`n_planes` 等） |
 | `export_axial_pipeline_entry(params)` | AF-PMSM 串联包（含 `analyticSolveStub.geometry` = summary） |
 | `rebuild_live_geometry(params)` | 一次返回 `{params, meshDescriptor, geometrySummary[, pipelineEntry]}` |
+| `rebuild_viewport_payload(params)` | **Q6** 视口 envelope（`paramsHash` + `meta.rebuildPolicy=full`）；见 `几何-Q6-rebuild-视口契约.md`（对齐架构 tip `55b1255`） |
 | `python -m mo_geometry.rebuild_examples` | 从 `default_*` 重写 `packages/geometry/examples/` |
 
 **与 FE 静态拷贝的关系：** `apps/web/public/geometry/*pipeline_entry.json` 等仍可由 FE 维护为联调快照；浏览器内 remesh **不**由本包改 `apps/web`——FE 可调后端调用上述 API，或照抄 descriptor / 用本包 examples 同步。几何侧 live = Python 可重生成样例 + 导出 API。
@@ -31,7 +32,7 @@
 ## 4. 消费要点（跨角色）
 
 - **Mo-解析**：AF SolveRequest 可优先吃 `outer_radius_m`+`inner_radius_m`（不必再走直径 stub）；`n_planes`/`disk_thickness_m` 与 axial_planes 一致。
-- **Mo-前端**：静态 `public/geometry` ≠ live；联调可 POST/调后端用 `rebuild_live_geometry` 或拷贝 examples。
+- **Mo-前端**：静态 `public/geometry` ≠ live；P0 主路径经后端薄 HTTP 调 `rebuild_viewport_payload`（见 Q6 契约）；禁止静态 mesh 冒充建模。
 - **Motor / QA**：D1 = live API + examples 可重建 **或** 本文降级说明；D2 = 几何契约对齐 + Wasm AF 未交付书面说明（本节 §3）。
 
 ---

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mo-platform.local/schemas/geometry-q6-rebuild-viewport.json",
+  "title": "Mo-geometry Q6 rebuild_viewport_payload (superset)",
+  "description": "Package-side SUPERSET of arch tip 55b1255 §2.3 (rebuild_live_geometry). HTTP P0 minimum required keys: params, meshDescriptor, geometrySummary; pipelineEntry optional for AF-PMSM. Extensions (schemaVersion, paramsHash, meta, topology, machineType) must not remove or rename the minimum set. Authoritative HTTP request is {topology, machineType?, params} per Q6-UEM与几何rebuild契约.md.",
+  "type": "object",
+  "required": [
+    "params",
+    "meshDescriptor",
+    "geometrySummary"
+  ],
+  "properties": {
+    "params": {
+      "type": "object",
+      "description": "Normalized mems geometry/params.json fragment (§2.3)"
+    },
+    "meshDescriptor": {
+      "type": "object",
+      "description": "Three.js collaboration mesh descriptor (§2.3)"
+    },
+    "geometrySummary": {
+      "type": "object",
+      "description": "Analytic GeometrySummary snake_case SI (§2.3)"
+    },
+    "pipelineEntry": {
+      "type": "object",
+      "description": "AF-PMSM only (§2.3 optional)"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "0.1.0-q1",
+      "description": "Extension: geometry sub-schema"
+    },
+    "topology": {
+      "type": "string",
+      "enum": ["RF", "AF"],
+      "description": "Extension: redundant with params.topology"
+    },
+    "machineType": {
+      "type": "string",
+      "enum": ["BLDC", "PMSM", "ACIM"],
+      "description": "Extension"
+    },
+    "paramsHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$",
+      "description": "Extension: sha256(canonical params) hex prefix 16; top-level meta excluded"
+    },
+    "meta": {
+      "type": "object",
+      "description": "Extension",
+      "properties": {
+        "rebuildPolicy": { "const": "full" },
+        "geometryApi": { "type": "string" },
+        "liveApi": { "type": "string" },
+        "httpMinSet": { "type": "string" }
+      }
+    }
+  },
+  "additionalProperties": true
+}

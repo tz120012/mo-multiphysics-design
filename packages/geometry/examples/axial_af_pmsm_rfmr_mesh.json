@@ -11,7 +11,10 @@
     "diskCount": 3,
     "slotCount": 12,
     "poleCount": 10,
-    "airgap": 1.0
+    "airgap": 1.0,
+    "diskThickness": 8.0,
+    "magnetThickness": 2.4,
+    "magnetThicknessSource": "estimated_0.3_diskThickness"
   },
   "primitives": [
     {

@@ -10,7 +10,13 @@
     "machineType": "ACIM",
     "slotCount": 36,
     "poleCount": 4,
-    "airgap": 0.5
+    "airgap": 0.5,
+    "magnetThickness": 2.625,
+    "magnetThicknessSource": "estimated_from_airgap_rotor",
+    "magnetSweepDeg": 62.99999999999999,
+    "magnetSpanSource": "estimated_pole_pitch_0.7",
+    "magnetInnerRadius": 22.375,
+    "magnetOuterRadius": 25.0
   },
   "primitives": [
     {

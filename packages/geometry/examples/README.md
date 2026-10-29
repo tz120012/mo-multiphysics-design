@@ -49,3 +49,8 @@ python -m mo_geometry.rebuild_examples
 - `poles` = `poleCount`（极数，正偶数）；勿双写 polePairs
 - Pipeline `femEntryHint.schemaVersion` = `0.1.0-q3-hint`
 - `analyticSolveStub.schema_version` = `0.0.0-gate0`；`geometry` 与 `geometrySummary` 同内容
+
+## Q6 viewport envelope
+
+- `radial_pmsm_viewport_payload.json` / `axial_af_pmsm_rfmr_viewport_payload.json`：`rebuild_viewport_payload` 样例响应。
+- 契约：`docs/drafts/几何-Q6-rebuild-视口契约.md`。

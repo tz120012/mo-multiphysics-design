@@ -1,6 +1,6 @@
 # packages/geometry — Mo-几何（Q1 + Q3 入口 + Q4+ live）
 
-参数化电机几何（径向 RF / 轴向 AF-PMSM）与 **Three.js 协作网格描述**，以及 **解析 GeometrySummary / AF 全流程入口 / live 重建**。  
+参数化电机几何（径向 RF / 轴向 AF-PMSM）与 **Three.js 协作网格描述**，以及 **解析 GeometrySummary / AF 全流程入口 / live 重建 / Q6 视口 envelope**。  
 维护：Mo-几何 · 仅 `/workspace/mo-platform`。
 
 | Schema | 值 |
@@ -22,6 +22,7 @@
 | `export_geometry_summary` | — | 契约钉表 | ✅ |
 | `export_axial_pipeline_entry` | — | — | ✅ AF 串联 |
 | `rebuild_live_geometry` | — | — | ✅ Q4+ live |
+| `rebuild_viewport_payload` | — | — | ✅ Q6 视口 envelope |
 | STEP / DXF（CadQuery/OCC） | ❌ | 曾要求可演示 | **Q4+ 明确降级**（见降级短文） |
 | Wasm / FEM 求解 | ❌ | 分属解析 / 有限元 | ❌ 仅 hint；AF Wasm 未交付 |
 
@@ -62,6 +63,8 @@ from mo_geometry import (
     export_geometry_summary,
     export_axial_pipeline_entry,
     rebuild_live_geometry,
+    rebuild_viewport_payload,
+    params_hash,
 )
 ```
 
@@ -70,7 +73,8 @@ from mo_geometry import (
 - `build_*_mesh_descriptor` → 前端可转 Three.js `BufferGeometry` 的图元 JSON
 - `export_geometry_summary(params)` → 解析 `GeometrySummary`（snake_case + SI 米）；非法则 `ValueError`
 - `export_axial_pipeline_entry(params)` → AF-PMSM 串联包：`geometryParams` / `geometrySummary` / `meshDescriptor` / `analyticSolveStub` / `femEntryHint`
-- `rebuild_live_geometry(params)` → `{params, meshDescriptor, geometrySummary[, pipelineEntry]}`（AF-PMSM 附 pipeline）
+- `rebuild_live_geometry(params)` → `{params, meshDescriptor, geometrySummary[, pipelineEntry]}`（AF-PMSM 附 pipeline；**金标**）
+- `rebuild_viewport_payload(body)` → Q6 **超集**（§2.3 最小集 + `paramsHash` / `meta.rebuildPolicy=full`）；HTTP 权威见 tip `55b1255`；补充契约 `docs/drafts/几何-Q6-rebuild-视口契约.md`
 
 ### AF `stack_length_m` / 扩展字段约定
 
@@ -148,3 +152,11 @@ params (AF-PMSM)
 | Q4+-4 | AF summary 对齐 axial_planes；`rebuild_live_geometry`；STEP/DXF 降级短文 |
 
 范围草案：`docs/drafts/几何范围.md`；降级：`docs/drafts/几何-Q4plus-live与降级.md`。
+
+## Q6 视口 rebuild
+
+- **权威 HTTP 契约**：[`docs/drafts/Q6-UEM与几何rebuild契约.md`](../../docs/drafts/Q6-UEM与几何rebuild契约.md)（架构 tip **`55b1255`**）
+  - Request：`{ topology, machineType?, params }`（`params` = geometry/params.json）
+  - Response 最小集：`rebuild_live_geometry` → `{ params, meshDescriptor, geometrySummary[, pipelineEntry] }`
+- 几何补充（驱动字段 / paramsHash / 测试）：[`docs/drafts/几何-Q6-rebuild-视口契约.md`](../../docs/drafts/几何-Q6-rebuild-视口契约.md)
+- 薄 HTTP 由**后端**包装；金标函数 `rebuild_live_geometry`；包内超集 `rebuild_viewport_payload`

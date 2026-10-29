@@ -22,6 +22,7 @@ from mo_geometry import (
     export_axial_pipeline_entry,
     export_geometry_summary,
     rebuild_live_geometry,
+    rebuild_viewport_payload,
 )
 from mo_geometry.axial import build_axial_mesh_descriptor, to_mems_geometry_fragment as to_mems_axial
 from mo_geometry.radial import (
@@ -57,6 +58,7 @@ def rebuild(examples_dir: Path | None = None) -> list[Path]:
     # sanity: live 与单独 export 一致
     assert live_rf["geometrySummary"] == paths[out / "radial_pmsm_geometry_summary.json"]
     assert live_rf["meshDescriptor"] == paths[out / "radial_pmsm_mesh.json"]
+    paths[out / "radial_pmsm_viewport_payload.json"] = rebuild_viewport_payload(rf)
 
     # --- RF ACIM ---
     acim = default_radial_acim()
@@ -73,6 +75,7 @@ def rebuild(examples_dir: Path | None = None) -> list[Path]:
     paths[out / "axial_af_pmsm_rfmr_pipeline_entry.json"] = entry
     assert live_af["geometrySummary"] == entry["geometrySummary"]
     assert live_af["pipelineEntry"]["analyticSolveStub"]["geometry"] == entry["geometrySummary"]
+    paths[out / "axial_af_pmsm_rfmr_viewport_payload.json"] = rebuild_viewport_payload(af)
 
     # --- RF PMSM CREATOR 4p/6s（独立样例；不覆盖 radial_pmsm_* demo）---
     creator = creator_radial_pmsm_4p6s()
