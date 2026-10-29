@@ -27,8 +27,12 @@ info:
 
     配套：`docs/drafts/Q3-轴向与FEM边界.md`；`docs/drafts/Q2-材料与解析边界.md`；`docs/drafts/mems-schema-v1.md`；
     `docs/drafts/history-契约-q1-6.md`；`docs/drafts/Q5-1-mems-files边界.md`；`docs/drafts/Q5-5-契约1.0.0钉死.md`；
+    `docs/drafts/Q6-UEM与几何rebuild契约.md`；
     `packages/solver-analytic/api/solve.schema.json`；`packages/solver-fem/api/*.schema.json`。
     真理源：`docs/01-任务书-v2.md`、`docs/02-阶段任务拆解与门禁.md`（本草案不修改二者）。
+
+    **Q6：** `POST /geometry/rebuild` 同步几何重建（封装 `mo_geometry.rebuild_live_geometry`；非 Celery）；
+    契约见 `docs/drafts/Q6-UEM与几何rebuild契约.md`（Motor 拍板 A1+B1+C2+D1 @ `be6ed88`）。
 
 servers:
   - url: /api/v1
@@ -50,6 +54,10 @@ tags:
     description: 可选同步解析；径向交互主路径=Wasm；轴向 AF 可用本端直至 Wasm AF
   - name: Drive
     description: Q4-1…4 驱动单工况 sync 预览；Map 走 Jobs
+  - name: Geometry
+    description: |
+      Q6 同步几何 rebuild（D1）；封装 packages/geometry `rebuild_live_geometry`；
+      **非** Celery Job。见 docs/drafts/Q6-UEM与几何rebuild契约.md
   - name: Jobs
     description: analytic=Q2-6 可选批处理；fem=Q3 主路径（Celery FEM worker）；drive=Q4；optimize=Q4-9（异步 NSGA；Celery optimize / in-process）
 
@@ -708,6 +716,83 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+
+  /geometry/rebuild:
+    post:
+      tags: [Geometry]
+      summary: "Sync live geometry rebuild (Q6 / D1)"
+      description: |
+        **Q6 P0 权威路径（D1）**：同步重建几何，返回与 `mo_geometry.rebuild_live_geometry` 同形的
+        `{params, meshDescriptor, geometrySummary[, pipelineEntry]}`。
+        **非** Celery Job；目标秒级。apps/api 须调用几何包权威实现。
+        **禁止**用 `public/mesh` fixture 冒充成功响应。
+        单位：`params.units.length` 默认 mm（亦接受 m）；`angle` 默认 deg（亦接受 rad）；
+        `geometrySummary` 为 SI 米 / snake_case（几何包既有导出）。
+        P1+：浏览器本地重建为主（A1）；本 API 留作金标/降级；响应形不变。
+        契约：`docs/drafts/Q6-UEM与几何rebuild契约.md`（Motor tip `be6ed88` A1+B1+C2+D1；开闸 `cc3b2d1`）。
+      operationId: postGeometryRebuild
+      x-status: planned-q6
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeometryRebuildRequest"
+            examples:
+              radialPmsm:
+                summary: RF PMSM params (mm)
+                value:
+                  topology: RF
+                  machineType: PMSM
+                  params:
+                    schemaVersion: "0.1.0-q1"
+                    topology: RF
+                    machineType: PMSM
+                    units:
+                      length: mm
+                      angle: deg
+                    rotorTopology: inner
+                    stator:
+                      innerDiameter: 51.0
+                      outerDiameter: 80.0
+                      stackLength: 25.0
+                      slotCount: 18
+                      slotShape: straight
+                      toothWidth: 4.5
+                      yokeHeight: 5.0
+                      skewAngle: null
+                    rotor:
+                      innerDiameter: 15.0
+                      outerDiameter: 50.0
+                      magnetTopology: SPM
+                      poleCount: 6
+                    airgap: 0.5
+                    axialActiveLength: 25.0
+      responses:
+        "200":
+          description: |
+            Live rebuild result (= rebuild_live_geometry shape).
+            Write into UEM.meshDescriptor / geometrySummary; clear geometryDirty.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeometryRebuildResponse"
+        "400":
+          description: Validation failed (invalid params / topology mismatch / poleCount etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "501":
+          description: |
+            Topology/machineType not supported for live rebuild yet, or route not implemented
+            (`x-status: planned-q6`). Client may fall back to fixture with explicit UI label
+            (must NOT claim 建模完成).
+
   /solver/analytic/solve:
     post:
       tags: [Solver]
@@ -797,6 +882,9 @@ paths:
         - `jobType=drive`：Q4-1…4（BLDC 方波 / PMSM FOC / ACIM V/f+FOC / Map）；见 DriveJobPayload。
         - `optimize`：Q4-9 异步；校验 OptimizeJobPayload；resultRef=`solver/optimize/jobs/{jobId}/manifest.json`；cancel 幂等。
         交互 FEM：**fire → poll/subscribe → 进度**；不得以阻塞长轮询为唯一 UX。
+        **Q6/D1：** FE UEM 视口应 `POST /geometry/rebuild`（同步秒级）；重建 **不是** Job、
+        不自动入队 FEM。FEM payload 可携带 rebuild 导出的 `geometrySummary`（额外键 ignore）；
+        `/field` 仍为 artifacts。Motor `be6ed88`；架构 `6dafa91`。
       operationId: createJob
       security:
         - bearerAuth: []
@@ -1046,6 +1134,53 @@ components:
         time:
           type: string
           format: date-time
+
+
+    GeometryRebuildRequest:
+      type: object
+      description: |
+        Q6 sync rebuild request. `params` mirrors mems `geometry/params.json`
+        (camelCase; default length=mm). See docs/drafts/Q6-UEM与几何rebuild契约.md
+      required: [topology, params]
+      properties:
+        topology:
+          type: string
+          enum: [RF, AF]
+          description: Must match params.topology
+        machineType:
+          type: string
+          description: Optional; e.g. PMSM, ACIM
+          examples: [PMSM, ACIM]
+        params:
+          type: object
+          description: |
+            Full geometry params object (RF or AF fragment).
+            units.length default mm; units.angle default deg.
+            poleCount = pole count (positive even); pole-pairs derived.
+          additionalProperties: true
+
+    GeometryRebuildResponse:
+      type: object
+      description: |
+        Same shape as mo_geometry.rebuild_live_geometry return value.
+      required: [params, meshDescriptor, geometrySummary]
+      properties:
+        params:
+          type: object
+          description: Normalized mems geometry fragment
+          additionalProperties: true
+        meshDescriptor:
+          type: object
+          description: Viewport / Three MeshDescriptor
+          additionalProperties: true
+        geometrySummary:
+          type: object
+          description: SI meters + snake_case summary for analytic/FEM assembly
+          additionalProperties: true
+        pipelineEntry:
+          type: object
+          description: Optional; AF-PMSM pipeline entry when applicable
+          additionalProperties: true
 
     Error:
       type: object
@@ -1456,6 +1591,12 @@ components:
             magnetostaticPathReady=true、postprocess=maxwell、axialForceN、
             magneticEnergyJ、elmerExit（仍 pending_calibration）。
             **heat-proxy ≠ magnetostatic**；禁止宣称 FEM ≤3%（待 Q5-4）。
+        geometrySummary:
+          type: object
+          additionalProperties: true
+          description: |
+            Optional UEM export from POST /geometry/rebuild (Q6/D1).
+            Workers may ignore today; extra keys allowed for forward assembly.
         dryRun:
           type: boolean
           description: |

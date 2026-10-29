@@ -4,13 +4,13 @@
 | --- | --- |
 | 维护 | Mo-架构 |
 | 日期 | 2026-10-29 Asia/Shanghai |
-| 状态 | 架构建议稿（待 Motor 拍板分叉） |
-| 依据 | Motor·用户硬口径 **Maxwell-first（教学后置）**；开闸/基线 tip 自查：`b71b355`（FE 钉 `1.0.0`）、`8d9fc3b` / `4b553f5`（Q5-1/Q5-5）、`d054fb5`（产品确认 Q5-1/Q5-5）、几何 live `docs/drafts/几何-Q4plus-live与降级.md`、`mems-schema-v1.md`、`Q5-1-mems-files边界.md`、`Q2-材料与解析边界.md` |
+| 状态 | **Q6 基线已采纳**（Motor tip `be6ed88`：A1+B1+**C2**+D1；开闸 tip `cc3b2d1`） |
+| 依据 | Motor·用户硬口径 **Maxwell-first（教学后置）**；开闸 tip `cc3b2d1`；架构分叉拍板 tip `be6ed88`；建议原稿 tip `6dafa91`；锁定契约见 `docs/drafts/Q6-UEM与几何rebuild契约.md`；几何 live `docs/drafts/几何-Q4plus-live与降级.md`、`mems-schema-v1.md`、`Q5-1-mems-files边界.md`、`Q2-材料与解析边界.md` |
 | 仓库 | 仅 `/workspace/mo-platform` |
 | 约束 | **不改** `docs/01`、`docs/02` 正文；禁宣称 MVP；禁勾 ≤5%/≤3%；Web / Three.js **可保留**；重大分叉报 Motor |
 
-> 本文是**架构路径建议**，不是实现承诺、不是误差门禁、不是 MVP 声明。  
-> 教学/向导 UI **后置**（可保留路由），主路径对齐商用 Maxwell 链：几何→材料→激励→网格→求解→后处理。
+> 本文原为架构路径建议；**Motor 已拍**（`be6ed88`）默认组合改为 **A1+B1+C2+D1**（**C2 非 C1**）。  
+> 可执行锁定稿见 [Q6-UEM与几何rebuild契约](./Q6-UEM与几何rebuild契约.md)。教学/向导 UI **后置**；主路径对齐 Maxwell 链：几何→材料→激励→网格→求解→后处理（**同一 Workspace 壳**）。
 
 ---
 
@@ -82,10 +82,11 @@
 - FEM：**显式提交**；payload 从 UEM 组装；结果经 Jobs artifacts → `/field` 主路径；可选把精简标量/refs 投影进 UEM 结果切片；持久成员走 mems（非 `/field` 替代）。  
 - **禁止** analytic/FEM 页面另维护一套与 UEM 冲突的 geometry 源（可保留「高级覆盖」但须标脏并写回 UEM）。
 
-### 1.4 教学后置
+### 1.4 教学后置 + C2 壳
 
 - 向导/逐步讲解路由**可保留**，不删文档、不删样例。  
-- 主入口 = 工程 Workspace（Maxwell 链工具壳），教学为辅线。
+- **主入口 = 单 Workspace 壳**（树+属性+视口；Maxwell 链步骤内嵌），教学为辅线。  
+- 旧 `/analytic` `/field` `/drive` 等：**深链或重定向进壳内对应步骤**；场图仍走 Jobs artifacts（Q5-1），只是 UI 嵌在壳内后处理步骤。
 
 ---
 
@@ -122,7 +123,7 @@
 | FEM submit | `femEntryHint` + geometry/materials/OP 从 UEM 组装 `jobType=fem` |
 | 成员拉齐 | 需要包内其它文件时走 mems/files（非 field） |
 | 持久化 | 显式「保存工程」→ 把 UEM 脏切片写回 `geometry/params` 等，再 `PUT mems`（或未来 member PUT；**本阶段非目标**强上 member 写） |
-| 路由壳 | 见分叉 F-C：默认可先多路由 + 共享 UEM，再收单壳 |
+| 路由壳 | **C2（已拍）**：单 Workspace 壳 + 内嵌步骤；旧多路由深链/重定向/嵌入；**不以**多页粘合验收 |
 
 ---
 
@@ -131,7 +132,7 @@
 | 主题 | 钉法 |
 | --- | --- |
 | 权威 | `.mems` + OpenAPI；UEM = 会话投影，可丢可重建 |
-| 实时视口 | **默认前端本地**（或薄 rebuild API）几何重建；**禁止**拖拽/滑条与 FEM 耦合 |
+| 实时视口 | **P0=D1 薄后端 rebuild**；P1+=A1 浏览器本地为主（后端金标/降级）；**禁止**拖拽/滑条与 FEM 耦合 |
 | analytic / FEM Jobs | **显式动作**（按钮 / 菜单）；可与「自动解析预览」开关分开，默认关 |
 | `/field` | 继续 Jobs artifacts；**不要**改成 mems/files 主路径（Q5-1 已锁定） |
 | 版本 | 整包 `memsSchemaVersion` 钉展示/写入 `1.0.0`；读双接受 `1.0.0` / `1.0.0-draft`（FE `b71b355`）；几何子 schema 仍 `0.1.0-q1` 双轨 |
@@ -153,41 +154,44 @@
 
 ## 4. 重大分叉（报 Motor 拍板）
 
-### F-A — 几何真相重建落点
+### F-A — 几何真相重建落点（**Q6 基线 = A1**）
 
-| 选项 | 含义 |
-| --- | --- |
-| **A1（默认推荐）** | **浏览器本地**（TS 移植关键图元子集 **或** geometry Wasm）为主；后端 `rebuild_live_geometry` 作金标/降级/无 Wasm 时 |
-| A2 | **始终**打后端几何服务（每参数变更 HTTP） |
+| 选项 | 含义 | Q6 |
+| --- | --- | --- |
+| **A1** | **浏览器本地**（TS 移植关键图元子集 **或** geometry Wasm）为主；后端 `rebuild_live_geometry` 作金标/降级/无 Wasm 时 | **已采纳** |
+| A2 | **始终**打后端几何服务（每参数变更 HTTP） | 未选 |
 
-**默认 A1 · 为何 Maxwell-first：** 参数拖动要**视口实时**；秒级体感不能绑 Celery/FEM。Python 包已是权威生成器——浏览器实现须与 `MeshDescriptor` / examples **对拍**，后端保留金标与无 Wasm 降级。
+**为何 Maxwell-first：** 参数拖动要**视口实时**；秒级体感不能绑 Celery/FEM。Python 包已是权威生成器——浏览器实现须与 `MeshDescriptor` / examples **对拍**，后端保留金标与无 Wasm 降级。
 
-### F-B — UEM schema
+### F-B — UEM schema（**Q6 基线 = B1**）
 
-| 选项 | 含义 |
-| --- | --- |
-| **B1（默认推荐）** | UEM = **纯 mems 子集投影** + 派生字段（meshDescriptor、results）；**不**另起独立 schemaVersion |
-| B2 | 引入 `uemSchemaVersion` 独立轨 |
+| 选项 | 含义 | Q6 |
+| --- | --- | --- |
+| **B1** | UEM = **纯 mems 子集投影** + 派生字段（meshDescriptor、results）；**不**另起独立 schemaVersion | **已采纳** |
+| B2 | 引入 `uemSchemaVersion` 独立轨 | 未选 |
 
-**默认 B1：** 少分叉、少双写；与 Q5-5 / geometry 双轨已够用。若日后离线草稿强需求再开 B2。
+少分叉、少双写；与 Q5-5 / geometry 双轨已够用。若日后离线草稿强需求再开 B2（须报 Motor）。
 
-### F-C — 路由形态
+### F-C — 路由形态（**Q6 基线 = C2**；**非 C1**）
 
-| 选项 | 含义 |
-| --- | --- |
-| **C1（默认推荐）** | **多路由保留**（`/workspace` `/analytic` `/field` `/drive`…），共享同一 Pinia UEM；教学路由后置 |
-| C2 | 单 Workspace 壳 + 内嵌面板，弱化多页 |
+| 选项 | 含义 | Q6 |
+| --- | --- | --- |
+| C1 | 多路由保留（`/workspace` `/analytic` `/field` `/drive`…）+ 共享 Pinia UEM | **未选为验收主路径** |
+| **C2** | **单 Workspace 壳 + 内嵌面板**（树+属性+视口）；经典链步骤在同一壳内切换 | **已采纳（验收口径）** |
 
-**默认 C1：** 改动面小、符合「不重写整个前端」；Maxwell 链靠 UEM 粘合，而非一次性 IA 重做。C2 可作后续 UX 收敛。
+**C2 钉死（Motor `be6ed88`）：**
+- Q6 一站式验收 = **单 Workspace 壳**走 Maxwell 经典链（几何→材料→激励→网格→求解→后处理）。
+- 旧多路由（`/analytic` `/field` `/drive` 等）可暂作**深链 / 重定向 / 嵌入壳内步骤**；**不得**以「多页 + 共享 Pinia」作为 Q6 验收达标口径。
+- 教学路由后置（可保留，不挡主路径）。
 
-### F-D（可选拍板）— P0 rebuild 过渡
+### F-D — P0 rebuild 过渡（**Q6 基线 = D1**）
 
-| 选项 | 含义 |
-| --- | --- |
-| **D1（默认推荐）** | P0 先 **薄后端 rebuild** 打通「参数→descriptor→Three」，并行开浏览器移植；P1 切本地为主 |
-| D2 | P0 直接只做浏览器移植，后端仅金标测试 |
+| 选项 | 含义 | Q6 |
+| --- | --- | --- |
+| **D1** | P0 先 **薄后端 rebuild**（`POST /api/v1/geometry/rebuild` 同步）打通「参数→descriptor→Three」，并行开浏览器移植；P1+ 切本地为主（A1） | **已采纳** |
+| D2 | P0 直接只做浏览器移植，后端仅金标测试 | 未选 |
 
-**默认 D1：** 风险更低，先证明 UEM 粘合与视口订阅，再优化延迟。
+风险更低：先证明 UEM 粘合与视口订阅，再优化延迟。契约响应形不变（见 Q6 锁定稿）。
 
 ---
 
@@ -207,12 +211,12 @@
 
 | 角色 | 一句话 |
 | --- | --- |
-| **Motor** | 请拍板 F-A/B/C（及可选 F-D）；本建议默认 **A1+B1+C1+D1**，Maxwell-first、教学后置。 |
-| **Mo-前端** | 落地 `ProjectSession`；Workspace 主路径脱离「只读 static mesh」；Three 订阅 UEM；fixture 仅降级。 |
-| **Mo-几何** | 保持 `rebuild_live_geometry` / descriptor 为金标；协助 FE 对拍或薄 HTTP/Wasm 边界；不进求解内核。 |
-| **Mo-解析** | 只消费 UEM 导出的 `GeometrySummary`+材料+OP；禁止页面私有几何第二真相。 |
-| **Mo-后端** | 权威仍在 mems + OpenAPI；可加薄 geometry rebuild 路由（若 Motor 选 D1）；`/field` 继续 artifacts。 |
-| **产品** | 主路径讲 Maxwell 链；教学向导后置保留；对外不把「实时视口」说成 FEM 实时。 |
+| **Motor** | 已拍 **A1+B1+C2+D1**（tip `be6ed88`）；改口须明示。一站式验收=单壳非多页粘合。 |
+| **Mo-前端** | **C2** 工作台壳（树+属性+视口）+ 步骤内嵌；落地 `useProjectSession`；Three 订阅 UEM.meshDescriptor；fixture 仅降级且**不得**标「建模完成」。 |
+| **Mo-几何** | 保持 `rebuild_live_geometry` / descriptor 为金标；保证 live 与 descriptor 稳定；协助 FE 对拍；不进求解内核。 |
+| **Mo-解析** | 只消费 UEM 导出的 `GeometrySummary`+材料+OP；禁止页面私有几何第二真相；显式求解按钮。 |
+| **Mo-后端** | 实现薄同步 `POST /api/v1/geometry/rebuild`（调几何包；**非** Celery）；权威仍 mems + OpenAPI；场图继续 artifacts。 |
+| **产品** | 主路径讲 Maxwell 链（单壳）；教学向导后置；对外不把「实时视口」说成 FEM 实时。 |
 
 ---
 
@@ -242,4 +246,13 @@
 
 ---
 
-*架构建议稿结束。待 Motor 拍板分叉后，再拆前端/几何/后端可执行任务；仍不改 01/02 正文。*
+## 修订记录
+
+| 日期 | tip / 说明 |
+| --- | --- |
+| 2026-10-29 | 初稿架构建议（tip `6dafa91`）；默认推荐 A1+B1+C1+D1 |
+| 2026-10-29 | **Motor/Q6 采纳**：开闸 `cc3b2d1`；分叉拍板 `be6ed88` → **A1+B1+C2+D1**（C2 非 C1）；状态改为 Q6 基线已采纳；路由章按 C2 重写；锁定契约见 `Q6-UEM与几何rebuild契约.md` |
+
+---
+
+*Q6 基线已采纳。可执行细节以 [Q6-UEM与几何rebuild契约](./Q6-UEM与几何rebuild契约.md) 为准；仍不改 01/02 正文。*

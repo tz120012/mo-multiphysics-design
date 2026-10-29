@@ -32,5 +32,6 @@
 Q2 解析开放项（Rust 偏好）已在 [解析范围.md](./解析范围.md) §6 勾选关闭，细节以 Q2 边界草案为准。
 Q3 FEM / 轴向细节以 [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) 为准；[FEM范围.md](./FEM范围.md) 为有限元侧笔记并已指针升级。
 
-| [Maxwell-first统一工程模型与实时视口.md](./Maxwell-first统一工程模型与实时视口.md) | **架构建议稿**：UEM + 参数驱动 Three 视口；Maxwell-first / 教学后置；Motor 已拍 A1+B1+C2+D1 |
+| [Maxwell-first统一工程模型与实时视口.md](./Maxwell-first统一工程模型与实时视口.md) | **Q6 基线已采纳**（Motor `be6ed88`：A1+B1+**C2**+D1）；UEM + 实时视口建议稿 |
+| [Q6-UEM与几何rebuild契约.md](./Q6-UEM与几何rebuild契约.md) | **Q6 锁定**：UEM（B1）+ **C2 单壳** + `POST /geometry/rebuild`（D1→A1）；开闸 `cc3b2d1` |
 | [Q6-FEM-改参再触发.md](./Q6-FEM-改参再触发.md) | **Q6**：改参→显式再 submit FEM；组装在 FE/API；heat-proxy≠MS；不扩 F2 |
