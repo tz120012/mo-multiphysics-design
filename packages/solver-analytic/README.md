@@ -19,6 +19,7 @@ Gate0 / Q1 / Q2 / Q3 **已签字**。Q4 进行中：退磁 / 导条温升 / LPTN
 | LPTN 温漂闭环 | **Q4-7 MVP** | `thermal/lptn.py`；`schemaVersion=thermal-loop-iter-v0`；对齐 FEM tip `864ec20` |
 | Wasm | **Q2** | `packages/solver-analytic-wasm/`（`solve_json`）；见该包 README |
 | Sync HTTP | **Q2 可选** | `POST /api/v1/solver/analytic/solve`（Bearer）薄包装本包 `solve()` |
+| Q6 再求解组装 | **Q6-3** | `api/compose_request.py`：`GeometrySummary`+材料+OP → `SolveRequest`；冒烟 `smoke/run_q6_rerun_closed_loop.py`；契约 `docs/drafts/Q6-解析-改参再求解闭环.md` |
 
 **不做**：FEM 网格/求解、几何参数化本体、电调后处理 UI。
 
@@ -29,7 +30,7 @@ packages/solver-analytic/
   README.md
   solve.py                 # 统一入口 solver=mec|mock（默认 mec）
   materials_adapter.py     # 材料 id / 内联 / 默认
-  api/                     # JSON schema + 样例
+  api/                     # JSON schema + compose_request + 样例
   radial_mec/              # 径向非线性 MEC（PMSM/BLDC）
   machines/acim_equiv.py   # ACIM 稳态等效电路
   axial_planes/            # Q3 AF+PMSM 多平面展开
