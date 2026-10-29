@@ -30,27 +30,35 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'analytic',
         name: 'analytic',
-        component: () => import('@/views/AnalyticView.vue'),
+        redirect: (to) => ({ name: 'workspace', query: { ...to.query, step: 'solve' } }),
       },
       {
         path: 'axial',
         name: 'axial',
-        component: () => import('@/views/AxialWorkflowView.vue'),
+        redirect: (to) => ({
+          name: 'workspace',
+          query: {
+            ...to.query,
+            step: 'geometry',
+            topology: typeof to.query.topology === 'string' ? to.query.topology : 'AF',
+            machineType: typeof to.query.machineType === 'string' ? to.query.machineType : 'PMSM',
+          },
+        }),
       },
       {
         path: 'field',
         name: 'field',
-        component: () => import('@/views/FieldVizView.vue'),
+        redirect: (to) => ({ name: 'workspace', query: { ...to.query, step: 'post' } }),
       },
       {
         path: 'drive',
         name: 'drive',
-        component: () => import('@/views/DriveView.vue'),
+        redirect: (to) => ({ name: 'workspace', query: { ...to.query, step: 'excitation' } }),
       },
       {
         path: 'compare',
         name: 'compare',
-        component: () => import('@/views/DriveCompareView.vue'),
+        redirect: (to) => ({ name: 'workspace', query: { ...to.query, step: 'post' } }),
       },
     ],
   },
