@@ -16,7 +16,16 @@
     "magnetSweepDeg": 42.0,
     "magnetSpanSource": "estimated_pole_pitch_0.7",
     "magnetInnerRadius": 22.375,
-    "magnetOuterRadius": 25.0
+    "magnetOuterRadius": 25.0,
+    "source": "parametric-rebuild",
+    "modelingComplete": false,
+    "fidelity": "constructive-descriptor",
+    "hudDims": {
+      "slotCount": 18,
+      "poleCount": 6,
+      "airgapMm": 0.5,
+      "magnetThicknessMm": 2.625
+    }
   },
   "primitives": [
     {
@@ -27,7 +36,8 @@
       "height": 25.0,
       "z": 0.0,
       "radialSegments": 72,
-      "thetaSegments": 72
+      "thetaSegments": 72,
+      "role": "stator_yoke"
     },
     {
       "type": "sector",
@@ -38,7 +48,20 @@
       "startAngleDeg": 5.7383304494401575,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_0",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 14.261669550559843,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -49,7 +72,20 @@
       "startAngleDeg": 25.738330449440156,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_1",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 34.261669550559844,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -60,7 +96,20 @@
       "startAngleDeg": 45.738330449440156,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_2",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 54.261669550559844,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -71,7 +120,20 @@
       "startAngleDeg": 65.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_3",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 74.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -82,7 +144,20 @@
       "startAngleDeg": 85.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_4",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 94.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -93,7 +168,20 @@
       "startAngleDeg": 105.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_5",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 114.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -104,7 +192,20 @@
       "startAngleDeg": 125.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_6",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 134.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -115,7 +216,20 @@
       "startAngleDeg": 145.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_7",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 154.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -126,7 +240,20 @@
       "startAngleDeg": 165.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_8",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 174.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -137,7 +264,20 @@
       "startAngleDeg": 185.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_9",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 194.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -148,7 +288,20 @@
       "startAngleDeg": 205.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_10",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 214.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -159,7 +312,20 @@
       "startAngleDeg": 225.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_11",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 234.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -170,7 +336,20 @@
       "startAngleDeg": 245.73833044944016,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_12",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 254.26166955055984,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -181,7 +360,20 @@
       "startAngleDeg": 265.7383304494402,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_13",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 274.2616695505599,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -192,7 +384,20 @@
       "startAngleDeg": 285.7383304494402,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_14",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 294.2616695505599,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -203,7 +408,20 @@
       "startAngleDeg": 305.7383304494402,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_15",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 314.2616695505599,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -214,7 +432,20 @@
       "startAngleDeg": 325.7383304494402,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_16",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 334.2616695505599,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -225,7 +456,20 @@
       "startAngleDeg": 345.7383304494402,
       "sweepAngleDeg": 8.523339101119685,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_17",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 354.2616695505599,
+      "sweepAngleDeg": 11.476660898880315,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "ring",
@@ -235,7 +479,19 @@
       "height": 25.0,
       "z": 0.0,
       "radialSegments": 48,
-      "thetaSegments": 48
+      "thetaSegments": 48,
+      "role": "rotor_core"
+    },
+    {
+      "type": "ring",
+      "name": "airgap_band",
+      "innerRadius": 25.0,
+      "outerRadius": 25.5,
+      "height": 25.0,
+      "z": 0.0,
+      "radialSegments": 72,
+      "thetaSegments": 72,
+      "role": "airgap_band"
     },
     {
       "type": "sector",
@@ -246,7 +502,8 @@
       "startAngleDeg": 9.0,
       "sweepAngleDeg": 42.0,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -257,7 +514,8 @@
       "startAngleDeg": 69.0,
       "sweepAngleDeg": 42.0,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -268,7 +526,8 @@
       "startAngleDeg": 129.0,
       "sweepAngleDeg": 42.0,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -279,7 +538,8 @@
       "startAngleDeg": 189.0,
       "sweepAngleDeg": 42.0,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -290,7 +550,8 @@
       "startAngleDeg": 249.0,
       "sweepAngleDeg": 42.0,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -301,7 +562,8 @@
       "startAngleDeg": 309.0,
       "sweepAngleDeg": 42.0,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     }
   ]
 }

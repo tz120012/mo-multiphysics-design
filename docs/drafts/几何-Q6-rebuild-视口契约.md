@@ -199,3 +199,5 @@ live = rebuild_live_geometry(unwrap_rebuild_params(request_json))
 ---
 
 *补充短文结束。权威锁定稿：`Q6-UEM与几何rebuild契约.md` @ tip `55b1255`。*
+
+> **Q7-4 超集**见 [`几何-Q7-rebuild-体感超集.md`](./几何-Q7-rebuild-体感超集.md)（role / hudDims / modelingComplete=false；不 bump HTTP 最小集）。

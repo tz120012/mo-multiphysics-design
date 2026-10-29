@@ -159,6 +159,10 @@ def rebuild_viewport_payload(body: dict[str, Any]) -> dict[str, Any]:
         "geometryApi": "rebuild_viewport_payload",
         "liveApi": "rebuild_live_geometry",
         "httpMinSet": "rebuild_live_geometry",  # 架构 §2.3
+        # Q7-4 体感超集（不 bump HTTP 最小集；FE 可忽略）
+        "modelingComplete": False,
+        "source": "parametric-rebuild",
+        "q7Feel": "descriptor-superset",
     }
     return out
 

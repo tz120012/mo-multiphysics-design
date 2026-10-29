@@ -20,8 +20,9 @@ def _ring(
     z: float = 0.0,
     radial_segments: int = 64,
     theta_segments: int | None = None,
+    role: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    out: dict[str, Any] = {
         "type": "ring",
         "name": name,
         "innerRadius": inner_radius,
@@ -31,6 +32,9 @@ def _ring(
         "radialSegments": radial_segments,
         "thetaSegments": theta_segments or max(16, radial_segments),
     }
+    if role is not None:
+        out["role"] = role
+    return out
 
 
 def _sector(
@@ -43,8 +47,9 @@ def _sector(
     sweep_angle_deg: float,
     z: float = 0.0,
     segments: int = 16,
+    role: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    out: dict[str, Any] = {
         "type": "sector",
         "name": name,
         "innerRadius": inner_radius,
@@ -55,6 +60,9 @@ def _sector(
         "z": z,
         "segments": segments,
     }
+    if role is not None:
+        out["role"] = role
+    return out
 
 
 def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
@@ -86,27 +94,44 @@ def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
             outer_radius=s_or,
             height=length,
             radial_segments=max(48, slot_count * 4),
+            role="stator_yoke",
         )
     )
 
-    # 定子齿扇区（数量 = slotCount）
+    # 定子齿扇区（数量 = slotCount）+ 槽空腔扇区（体感）
     slot_pitch = 360.0 / slot_count
     # 齿宽角近似：arc ≈ toothWidth / mean radius
     mean_r = (s_ir + yoke_inner) / 2.0
     tooth_angle = min(slot_pitch * 0.6, math.degrees(tooth_w / max(mean_r, 1e-6)))
+    slot_cavity_sweep = max(0.0, slot_pitch - tooth_angle)
     for i in range(slot_count):
-        start = i * slot_pitch + (slot_pitch - tooth_angle) / 2.0
+        tooth_start = i * slot_pitch + (slot_pitch - tooth_angle) / 2.0
         primitives.append(
             _sector(
                 name=f"stator_tooth_{i}",
                 inner_radius=s_ir,
                 outer_radius=yoke_inner,
                 height=length,
-                start_angle_deg=start,
+                start_angle_deg=tooth_start,
                 sweep_angle_deg=tooth_angle,
                 segments=8,
+                role="stator_tooth",
             )
         )
+        if slot_cavity_sweep > 1e-9:
+            cavity_start = tooth_start + tooth_angle
+            primitives.append(
+                _sector(
+                    name=f"stator_slot_{i}",
+                    inner_radius=s_ir,
+                    outer_radius=yoke_inner,
+                    height=length,
+                    start_angle_deg=cavity_start,
+                    sweep_angle_deg=slot_cavity_sweep,
+                    segments=6,
+                    role="stator_slot",
+                )
+            )
 
     # 转子本体
     primitives.append(
@@ -116,8 +141,28 @@ def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
             outer_radius=r_or,
             height=length,
             radial_segments=max(48, pole_count * 4),
+            role="rotor_core",
         )
     )
+
+    # 气隙环（真实气隙尺寸的薄视觉环）
+    if rotor_topo == "inner":
+        ag_ir = min(r_or, s_ir)
+        ag_or = max(r_or, s_ir)
+    else:
+        ag_ir = min(s_or, r_ir)
+        ag_or = max(s_or, r_ir)
+    if ag_or - ag_ir > 1e-12:
+        primitives.append(
+            _ring(
+                name="airgap_band",
+                inner_radius=ag_ir,
+                outer_radius=ag_or,
+                height=length,
+                radial_segments=max(48, slot_count * 4),
+                role="airgap_band",
+            )
+        )
 
     # 磁钢扇区（极数驱动）；内转子贴外径、外转子贴内径
     # magnetThickness：优先 rotor.magnetThickness / params.magnetThickness；
@@ -164,6 +209,7 @@ def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
                 start_angle_deg=start,
                 sweep_angle_deg=mag_sweep,
                 segments=6,
+                role="magnet",
             )
         )
 
@@ -185,8 +231,17 @@ def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
                     start_angle_deg=start,
                     sweep_angle_deg=bar_angle,
                     segments=4,
+                    role="acim_bar",
                 )
             )
+
+    # FE 约定 hudDims 稳定键（Mm = 毫米数值；缺则省略）
+    hud_dims: dict[str, Any] = {
+        "slotCount": slot_count,
+        "poleCount": pole_count,
+        "airgapMm": airgap,
+        "magnetThicknessMm": mag_thickness,
+    }
 
     return {
         "schemaVersion": MESH_SCHEMA_VERSION,
@@ -204,6 +259,10 @@ def build_radial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
             "magnetSpanSource": mag_span_source,
             "magnetInnerRadius": mag_ir,
             "magnetOuterRadius": mag_or,
+            "source": "parametric-rebuild",
+            "modelingComplete": False,
+            "fidelity": "constructive-descriptor",
+            "hudDims": hud_dims,
         },
         "primitives": primitives,
     }
@@ -215,6 +274,12 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
     config = params.get("config", "RFMR")
     machine_type = params.get("machineType")
 
+    honesty = {
+        "source": "parametric-rebuild",
+        "modelingComplete": False,
+        "fidelity": "constructive-descriptor",
+    }
+
     if machine_type != "PMSM" or not isinstance(params.get("pmsm"), dict):
         return {
             "schemaVersion": MESH_SCHEMA_VERSION,
@@ -224,6 +289,7 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
                 "config": config,
                 "machineType": machine_type,
                 "note": "Q1 mesh only for AF-PMSM; enum-reserved types return empty primitives",
+                **honesty,
             },
             "primitives": [],
         }
@@ -269,6 +335,7 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
                 height=thickness,
                 z=z,
                 radial_segments=max(48, slot_count * 4),
+                role=role,
             )
         )
 
@@ -287,6 +354,7 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
                         sweep_angle_deg=tooth_sweep,
                         z=z + thickness * 0.4,
                         segments=6,
+                        role="stator_slot_mark",
                     )
                 )
         else:
@@ -304,10 +372,19 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
                         sweep_angle_deg=sweep,
                         z=z + max(0.0, (thickness - mag_axial_h) * 0.5),
                         segments=8,
+                        role="magnet_sector",
                     )
                 )
 
         z += thickness + airgap
+
+    hud_dims: dict[str, Any] = {
+        "slotCount": slot_count,
+        "poleCount": pole_count,
+        "airgapMm": airgap,
+        "magnetThicknessMm": mag_axial_h,
+        "diskThicknessMm": thickness,
+    }
 
     return {
         "schemaVersion": MESH_SCHEMA_VERSION,
@@ -323,6 +400,8 @@ def build_axial_mesh_descriptor(params: dict[str, Any]) -> dict[str, Any]:
             "diskThickness": thickness,
             "magnetThickness": mag_axial_h,
             "magnetThicknessSource": af_mag_source,
+            **honesty,
+            "hudDims": hud_dims,
         },
         "primitives": primitives,
     }

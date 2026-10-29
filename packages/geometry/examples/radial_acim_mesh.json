@@ -16,7 +16,16 @@
     "magnetSweepDeg": 62.99999999999999,
     "magnetSpanSource": "estimated_pole_pitch_0.7",
     "magnetInnerRadius": 22.375,
-    "magnetOuterRadius": 25.0
+    "magnetOuterRadius": 25.0,
+    "source": "parametric-rebuild",
+    "modelingComplete": false,
+    "fidelity": "constructive-descriptor",
+    "hudDims": {
+      "slotCount": 36,
+      "poleCount": 4,
+      "airgapMm": 0.5,
+      "magnetThicknessMm": 2.625
+    }
   },
   "primitives": [
     {
@@ -27,7 +36,8 @@
       "height": 25.0,
       "z": 0.0,
       "radialSegments": 144,
-      "thetaSegments": 144
+      "thetaSegments": 144,
+      "role": "stator_yoke"
     },
     {
       "type": "sector",
@@ -38,7 +48,20 @@
       "startAngleDeg": 2.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_0",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 8.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -49,7 +72,20 @@
       "startAngleDeg": 12.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_1",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 18.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -60,7 +96,20 @@
       "startAngleDeg": 22.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_2",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 28.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -71,7 +120,20 @@
       "startAngleDeg": 32.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_3",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 38.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -82,7 +144,20 @@
       "startAngleDeg": 42.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_4",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 48.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -93,7 +168,20 @@
       "startAngleDeg": 52.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_5",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 58.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -104,7 +192,20 @@
       "startAngleDeg": 62.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_6",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 68.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -115,7 +216,20 @@
       "startAngleDeg": 72.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_7",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 78.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -126,7 +240,20 @@
       "startAngleDeg": 82.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_8",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 88.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -137,7 +264,20 @@
       "startAngleDeg": 92.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_9",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 98.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -148,7 +288,20 @@
       "startAngleDeg": 102.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_10",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 108.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -159,7 +312,20 @@
       "startAngleDeg": 112.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_11",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 118.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -170,7 +336,20 @@
       "startAngleDeg": 122.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_12",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 128.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -181,7 +360,20 @@
       "startAngleDeg": 132.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_13",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 138.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -192,7 +384,20 @@
       "startAngleDeg": 142.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_14",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 148.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -203,7 +408,20 @@
       "startAngleDeg": 152.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_15",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 158.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -214,7 +432,20 @@
       "startAngleDeg": 162.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_16",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 168.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -225,7 +456,20 @@
       "startAngleDeg": 172.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_17",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 178.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -236,7 +480,20 @@
       "startAngleDeg": 182.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_18",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 188.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -247,7 +504,20 @@
       "startAngleDeg": 192.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_19",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 198.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -258,7 +528,20 @@
       "startAngleDeg": 202.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_20",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 208.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -269,7 +552,20 @@
       "startAngleDeg": 212.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_21",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 218.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -280,7 +576,20 @@
       "startAngleDeg": 222.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_22",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 228.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -291,7 +600,20 @@
       "startAngleDeg": 232.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_23",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 238.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -302,7 +624,20 @@
       "startAngleDeg": 242.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_24",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 248.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -313,7 +648,20 @@
       "startAngleDeg": 252.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_25",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 258.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -324,7 +672,20 @@
       "startAngleDeg": 262.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_26",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 268.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -335,7 +696,20 @@
       "startAngleDeg": 272.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_27",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 278.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -346,7 +720,20 @@
       "startAngleDeg": 282.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_28",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 288.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -357,7 +744,20 @@
       "startAngleDeg": 292.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_29",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 298.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -368,7 +768,20 @@
       "startAngleDeg": 302.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_30",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 308.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -379,7 +792,20 @@
       "startAngleDeg": 312.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_31",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 318.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -390,7 +816,20 @@
       "startAngleDeg": 322.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_32",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 328.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -401,7 +840,20 @@
       "startAngleDeg": 332.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_33",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 338.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -412,7 +864,20 @@
       "startAngleDeg": 342.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_34",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 348.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "sector",
@@ -423,7 +888,20 @@
       "startAngleDeg": 352.0,
       "sweepAngleDeg": 6.0,
       "z": 0.0,
-      "segments": 8
+      "segments": 8,
+      "role": "stator_tooth"
+    },
+    {
+      "type": "sector",
+      "name": "stator_slot_35",
+      "innerRadius": 25.5,
+      "outerRadius": 35.0,
+      "height": 25.0,
+      "startAngleDeg": 358.0,
+      "sweepAngleDeg": 4.0,
+      "z": 0.0,
+      "segments": 6,
+      "role": "stator_slot"
     },
     {
       "type": "ring",
@@ -433,7 +911,19 @@
       "height": 25.0,
       "z": 0.0,
       "radialSegments": 48,
-      "thetaSegments": 48
+      "thetaSegments": 48,
+      "role": "rotor_core"
+    },
+    {
+      "type": "ring",
+      "name": "airgap_band",
+      "innerRadius": 25.0,
+      "outerRadius": 25.5,
+      "height": 25.0,
+      "z": 0.0,
+      "radialSegments": 144,
+      "thetaSegments": 144,
+      "role": "airgap_band"
     },
     {
       "type": "sector",
@@ -444,7 +934,8 @@
       "startAngleDeg": 13.500000000000004,
       "sweepAngleDeg": 62.99999999999999,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -455,7 +946,8 @@
       "startAngleDeg": 103.5,
       "sweepAngleDeg": 62.99999999999999,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -466,7 +958,8 @@
       "startAngleDeg": 193.5,
       "sweepAngleDeg": 62.99999999999999,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -477,7 +970,8 @@
       "startAngleDeg": 283.5,
       "sweepAngleDeg": 62.99999999999999,
       "z": 0.0,
-      "segments": 6
+      "segments": 6,
+      "role": "magnet"
     },
     {
       "type": "sector",
@@ -488,7 +982,8 @@
       "startAngleDeg": 0.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -499,7 +994,8 @@
       "startAngleDeg": 10.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -510,7 +1006,8 @@
       "startAngleDeg": 20.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -521,7 +1018,8 @@
       "startAngleDeg": 30.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -532,7 +1030,8 @@
       "startAngleDeg": 40.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -543,7 +1042,8 @@
       "startAngleDeg": 50.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -554,7 +1054,8 @@
       "startAngleDeg": 60.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -565,7 +1066,8 @@
       "startAngleDeg": 70.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -576,7 +1078,8 @@
       "startAngleDeg": 80.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -587,7 +1090,8 @@
       "startAngleDeg": 90.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -598,7 +1102,8 @@
       "startAngleDeg": 100.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -609,7 +1114,8 @@
       "startAngleDeg": 110.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -620,7 +1126,8 @@
       "startAngleDeg": 120.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -631,7 +1138,8 @@
       "startAngleDeg": 130.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -642,7 +1150,8 @@
       "startAngleDeg": 140.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -653,7 +1162,8 @@
       "startAngleDeg": 150.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -664,7 +1174,8 @@
       "startAngleDeg": 160.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -675,7 +1186,8 @@
       "startAngleDeg": 170.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -686,7 +1198,8 @@
       "startAngleDeg": 180.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -697,7 +1210,8 @@
       "startAngleDeg": 190.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -708,7 +1222,8 @@
       "startAngleDeg": 200.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -719,7 +1234,8 @@
       "startAngleDeg": 210.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -730,7 +1246,8 @@
       "startAngleDeg": 220.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -741,7 +1258,8 @@
       "startAngleDeg": 230.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -752,7 +1270,8 @@
       "startAngleDeg": 240.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -763,7 +1282,8 @@
       "startAngleDeg": 250.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -774,7 +1294,8 @@
       "startAngleDeg": 260.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -785,7 +1306,8 @@
       "startAngleDeg": 270.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -796,7 +1318,8 @@
       "startAngleDeg": 280.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -807,7 +1330,8 @@
       "startAngleDeg": 290.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -818,7 +1342,8 @@
       "startAngleDeg": 300.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -829,7 +1354,8 @@
       "startAngleDeg": 310.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -840,7 +1366,8 @@
       "startAngleDeg": 320.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -851,7 +1378,8 @@
       "startAngleDeg": 330.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -862,7 +1390,8 @@
       "startAngleDeg": 340.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     },
     {
       "type": "sector",
@@ -873,7 +1402,8 @@
       "startAngleDeg": 350.0,
       "sweepAngleDeg": 4.0,
       "z": 0.0,
-      "segments": 4
+      "segments": 4,
+      "role": "acim_bar"
     }
   ]
 }

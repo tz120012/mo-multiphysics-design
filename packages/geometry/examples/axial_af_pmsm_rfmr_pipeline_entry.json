@@ -49,7 +49,17 @@
       "airgap": 1.0,
       "diskThickness": 8.0,
       "magnetThickness": 2.4,
-      "magnetThicknessSource": "estimated_0.3_diskThickness"
+      "magnetThicknessSource": "estimated_0.3_diskThickness",
+      "source": "parametric-rebuild",
+      "modelingComplete": false,
+      "fidelity": "constructive-descriptor",
+      "hudDims": {
+        "slotCount": 12,
+        "poleCount": 10,
+        "airgapMm": 1.0,
+        "magnetThicknessMm": 2.4,
+        "diskThicknessMm": 8.0
+      }
     },
     "primitives": [
       {
@@ -60,7 +70,8 @@
         "height": 8.0,
         "z": 0.0,
         "radialSegments": 48,
-        "thetaSegments": 48
+        "thetaSegments": 48,
+        "role": "rotor_disk"
       },
       {
         "type": "sector",
@@ -71,7 +82,8 @@
         "startAngleDeg": 1.8000000000000007,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -82,7 +94,8 @@
         "startAngleDeg": 37.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -93,7 +106,8 @@
         "startAngleDeg": 73.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -104,7 +118,8 @@
         "startAngleDeg": 109.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -115,7 +130,8 @@
         "startAngleDeg": 145.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -126,7 +142,8 @@
         "startAngleDeg": 181.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -137,7 +154,8 @@
         "startAngleDeg": 217.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -148,7 +166,8 @@
         "startAngleDeg": 253.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -159,7 +178,8 @@
         "startAngleDeg": 289.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -170,7 +190,8 @@
         "startAngleDeg": 325.8,
         "sweepAngleDeg": 32.4,
         "z": 2.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "ring",
@@ -180,7 +201,8 @@
         "height": 8.0,
         "z": 9.0,
         "radialSegments": 48,
-        "thetaSegments": 48
+        "thetaSegments": 48,
+        "role": "stator_disk"
       },
       {
         "type": "sector",
@@ -191,7 +213,8 @@
         "startAngleDeg": 0.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -202,7 +225,8 @@
         "startAngleDeg": 30.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -213,7 +237,8 @@
         "startAngleDeg": 60.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -224,7 +249,8 @@
         "startAngleDeg": 90.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -235,7 +261,8 @@
         "startAngleDeg": 120.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -246,7 +273,8 @@
         "startAngleDeg": 150.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -257,7 +285,8 @@
         "startAngleDeg": 180.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -268,7 +297,8 @@
         "startAngleDeg": 210.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -279,7 +309,8 @@
         "startAngleDeg": 240.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -290,7 +321,8 @@
         "startAngleDeg": 270.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -301,7 +333,8 @@
         "startAngleDeg": 300.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "sector",
@@ -312,7 +345,8 @@
         "startAngleDeg": 330.0,
         "sweepAngleDeg": 13.5,
         "z": 12.2,
-        "segments": 6
+        "segments": 6,
+        "role": "stator_slot_mark"
       },
       {
         "type": "ring",
@@ -322,7 +356,8 @@
         "height": 8.0,
         "z": 18.0,
         "radialSegments": 48,
-        "thetaSegments": 48
+        "thetaSegments": 48,
+        "role": "rotor_disk"
       },
       {
         "type": "sector",
@@ -333,7 +368,8 @@
         "startAngleDeg": 1.8000000000000007,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -344,7 +380,8 @@
         "startAngleDeg": 37.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -355,7 +392,8 @@
         "startAngleDeg": 73.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -366,7 +404,8 @@
         "startAngleDeg": 109.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -377,7 +416,8 @@
         "startAngleDeg": 145.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -388,7 +428,8 @@
         "startAngleDeg": 181.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -399,7 +440,8 @@
         "startAngleDeg": 217.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -410,7 +452,8 @@
         "startAngleDeg": 253.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -421,7 +464,8 @@
         "startAngleDeg": 289.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       },
       {
         "type": "sector",
@@ -432,7 +476,8 @@
         "startAngleDeg": 325.8,
         "sweepAngleDeg": 32.4,
         "z": 20.8,
-        "segments": 8
+        "segments": 8,
+        "role": "magnet_sector"
       }
     ]
   },
