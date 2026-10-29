@@ -5,7 +5,7 @@
 | 范围 | `apps/web` 工作台壳。不改几何包、求解核心、`docs/01`、`docs/02` |
 | 架构 | A1+B1+C2+D1（`be6ed88`）。契约 `docs/drafts/Q6-UEM与几何rebuild契约.md`（`55b1255`） |
 | 解析闭环 | `docs/drafts/Q6-解析-改参再求解闭环.md`（`50dacc9`）：显式求解，不走 Jobs analytic |
-| 状态 | **待测**。本文件是前端自检步骤，不是放行结论 |
+| 状态 | **待测**（Motor 已合入 tip **`72a368f`** → **`f4acd73`**）。本文件是自检步骤，不是放行结论 |
 
 不把 workspace / public fixture 写成建模完成。不宣称整机误差门禁。heat-proxy 不是磁静力学。网格步不是 Maxwell 网格生成完成。
 
