@@ -50,3 +50,4 @@ Thumbs.db
 *.sql.gz
 pgdata/
 redisdata/
+tmp-ui-shots/
