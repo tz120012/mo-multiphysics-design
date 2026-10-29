@@ -283,6 +283,21 @@ async function rewriteManifest(text: string, projectBytes: Uint8Array): Promise<
   return new TextEncoder().encode(`${JSON.stringify(data, null, 2)}\n`)
 }
 
+/**
+ * 从整包 zip 读出一个成员的 UTF-8 文本。
+ * 成员不存在时返回 undefined；非 zip 抛错。
+ */
+export async function readMemsMemberText(
+  data: Uint8Array,
+  memberPath: string,
+): Promise<string | undefined> {
+  if (data.length < 4 || data[0] !== 0x50 || data[1] !== 0x4b) {
+    throw new Error('mems body is not a zip archive')
+  }
+  const entries = readZip(data)
+  return jsonText(entries, normZipName(memberPath))
+}
+
 /** 新写入：project.json / manifest.json 的 memsSchemaVersion 改为 `1.0.0`。 */
 export async function stampMemsPackageWriteVersion(data: Uint8Array): Promise<Uint8Array> {
   const entries = readZip(data)

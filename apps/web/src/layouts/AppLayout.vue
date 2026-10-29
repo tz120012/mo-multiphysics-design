@@ -11,22 +11,7 @@
           工程
         </router-link>
         <router-link to="/workspace" class="mo-nav-link" active-class="is-active">
-          工作区
-        </router-link>
-        <router-link to="/analytic" class="mo-nav-link" active-class="is-active">
-          解析
-        </router-link>
-        <router-link to="/axial" class="mo-nav-link" active-class="is-active">
-          轴向
-        </router-link>
-        <router-link to="/field" class="mo-nav-link" active-class="is-active">
-          场量
-        </router-link>
-        <router-link to="/drive" class="mo-nav-link" active-class="is-active">
-          驱动
-        </router-link>
-        <router-link to="/compare" class="mo-nav-link" active-class="is-active">
-          对比
+          工作台
         </router-link>
       </nav>
       <div class="mo-header-right">

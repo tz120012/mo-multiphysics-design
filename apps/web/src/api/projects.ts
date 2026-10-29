@@ -85,6 +85,18 @@ export async function deleteProject(projectId: string): Promise<void> {
   await apiClient.delete(`/projects/${projectId}`)
 }
 
+/**
+ * GET /projects/{projectId}/mems/files/{path}
+ * Q5-1 单成员读。path 为 zip 内相对路径（保留 `/`，不要整段 encode）。
+ */
+export async function getMemsFile(projectId: string, memberPath: string): Promise<Blob> {
+  const response = await apiClient.get<Blob>(
+    `/projects/${encodeURIComponent(projectId)}/mems/files/${memberPath}`,
+    { responseType: 'blob' },
+  )
+  return response.data
+}
+
 /** GET /projects/{projectId}/mems → zip blob（Q1 可未接线） */
 export async function getMems(projectId: string): Promise<Blob> {
   const response = await apiClient.get<Blob>(`/projects/${projectId}/mems`, {

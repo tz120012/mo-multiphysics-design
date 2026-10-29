@@ -145,6 +145,7 @@ onBeforeUnmount(() => teardown())
 watch(
   () => props.descriptor,
   (next) => applyDescriptor(next),
+  { deep: true },
 )
 </script>
 
