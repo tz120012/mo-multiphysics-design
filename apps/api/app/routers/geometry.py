@@ -1,8 +1,16 @@
-"""Q6/D1 thin geometry rebuild — sync wrap of mo_geometry.rebuild_live_geometry.
+"""Q6/D1 thin geometry rebuild — sync HTTP over mo_geometry (not a Celery Job).
 
-Not a Celery Job. Full recompute every request; never return FE public/mesh fixtures.
+Prefer ``rebuild_viewport_payload`` (geometry tip ``05180e2``) so the Response
+includes §2.3 min set **plus** ``paramsHash`` / ``schemaVersion`` / ``meta`` when
+the viewport helpers are available. Fallback: ``rebuild_live_geometry`` (tip
+``e659e0a``) when viewport import fails.
+
+Never return FE public/mesh fixtures. Full recompute every request.
 Motor tip be6ed88 / cc3b2d1; arch lock 55b1255 (A1+B1+C2+D1; from 6dafa91).
 Contract: docs/drafts/Q6-UEM与几何rebuild契约.md §2.
+OpenAPI primary request schema: ``GeometryRebuildRequest`` in
+``docs/drafts/openapi-v1.yaml`` (``{topology, machineType?, params}``).
+Handler accepts a JSON object so viewport unwrap / compat bare-params still work.
 """
 
 from __future__ import annotations
@@ -11,10 +19,9 @@ import os
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Callable, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
 
 from app.deps.auth import require_bearer
 
@@ -51,29 +58,46 @@ if _GEOMETRY_SRC is not None and str(_GEOMETRY_SRC) not in sys.path:
     sys.path.insert(0, str(_GEOMETRY_SRC))
 
 
-def _load_rebuild():
+def _geometry_unavailable(exc: BaseException) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "geometry_unavailable",
+            "message": (
+                "mo_geometry not importable "
+                "(pip install -e packages/geometry or set MO_GEOMETRY_PATH)"
+            ),
+            "details": {
+                "path": str(_GEOMETRY_SRC) if _GEOMETRY_SRC else None,
+                "tried": _GEOMETRY_TRIED,
+                "error": str(exc),
+            },
+        },
+    )
+
+
+def _load_rebuild_live() -> Callable[[dict[str, Any]], dict[str, Any]]:
     try:
         from mo_geometry import rebuild_live_geometry  # type: ignore
     except ImportError:
         try:
             from mo_geometry.summary import rebuild_live_geometry  # type: ignore
         except ImportError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail={
-                    "code": "geometry_unavailable",
-                    "message": (
-                        "mo_geometry not importable "
-                        "(pip install -e packages/geometry or set MO_GEOMETRY_PATH)"
-                    ),
-                    "details": {
-                        "path": str(_GEOMETRY_SRC) if _GEOMETRY_SRC else None,
-                        "tried": _GEOMETRY_TRIED,
-                        "error": str(exc),
-                    },
-                },
-            ) from exc
+            raise _geometry_unavailable(exc) from exc
     return rebuild_live_geometry
+
+
+def _load_rebuild_fn() -> tuple[
+    Literal["viewport", "live"],
+    Callable[[dict[str, Any]], dict[str, Any]],
+]:
+    """Prefer viewport supersets; ImportError → live min-set path (e659e0a)."""
+    try:
+        from mo_geometry.viewport import rebuild_viewport_payload  # type: ignore
+
+        return "viewport", rebuild_viewport_payload
+    except ImportError:
+        return "live", _load_rebuild_live()
 
 
 router = APIRouter(
@@ -83,27 +107,8 @@ router = APIRouter(
 )
 
 
-class GeometryRebuildRequest(BaseModel):
-    """Primary OpenAPI / FE envelope (arch 55b1255 §2.2).
-
-    ``{ topology, machineType?, params }`` where params = geometry/params.json.
-    """
-
-    model_config = ConfigDict(extra="allow")
-
-    topology: str = Field(..., description="RF | AF — must match params.topology")
-    machineType: str | None = Field(
-        default=None,
-        description="BLDC | PMSM | ACIM — optional; merged into params when set",
-    )
-    params: dict[str, Any] = Field(
-        ...,
-        description="geometry/params.json object (schemaVersion 0.1.0-q1)",
-    )
-
-
 def normalize_rebuild_params(body: dict[str, Any]) -> dict[str, Any]:
-    """Build the dict passed to ``rebuild_live_geometry``.
+    """Build the dict passed to ``rebuild_live_geometry`` (live fallback path).
 
     **Primary (FE / OpenAPI):** ``{ topology, machineType?, params }`` —
     merge envelope topology/machineType into a copy of ``params`` (envelope wins).
@@ -161,16 +166,54 @@ def normalize_rebuild_params(body: dict[str, Any]) -> dict[str, Any]:
     "/rebuild",
     summary="Sync live geometry rebuild (Q6/D1; not a Job)",
     response_model=None,
+    responses={
+        200: {
+            "description": (
+                "§2.3 min set: params, meshDescriptor, geometrySummary[, pipelineEntry]. "
+                "Optional extras (ignore-unknown for FE): paramsHash (16-char hex), "
+                "schemaVersion, meta — present when viewport helpers are available "
+                "(geometry tip 05180e2)."
+            ),
+        },
+        400: {"description": "Validation failed (invalid params / topology mismatch)."},
+        401: {"description": "Missing or invalid bearer token."},
+        503: {
+            "description": (
+                "mo_geometry package unavailable in this deployment "
+                "(set MO_GEOMETRY_PATH / pip install -e packages/geometry). "
+                "Package-missing is 503 (not 501); 501 remains reserved for future "
+                "unsupported topology/machineType."
+            ),
+        },
+    },
 )
 def post_geometry_rebuild(
     body: dict[str, Any],
     _: Annotated[str, Depends(require_bearer)],
 ) -> dict[str, Any]:
-    """Call ``mo_geometry.rebuild_live_geometry`` — full recompute; no cache/fixture.
+    """Sync full recompute; no cache/fixture. Not a Job.
 
-    Request (primary): ``{ topology, machineType?, params }`` per arch ``55b1255``.
-    200: ``{ params, meshDescriptor, geometrySummary[, pipelineEntry] }``.
+    Request (primary OpenAPI): ``{ topology, machineType?, params }`` per arch
+    ``55b1255`` / ``GeometryRebuildRequest`` in openapi-v1.yaml.
+
+    Prefer ``mo_geometry.viewport.rebuild_viewport_payload(body)`` so the 200 body
+    includes §2.3 min set **plus** ``paramsHash`` / ``schemaVersion`` / ``meta``
+    when present. On ``ImportError`` for viewport helpers, fall back to
+    ``normalize_rebuild_params`` + ``rebuild_live_geometry`` (min set only).
+    ``ValueError`` → 400. Package missing → 503.
     """
+    mode, rebuild_fn = _load_rebuild_fn()
+
+    if mode == "viewport":
+        try:
+            return rebuild_fn(body)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "bad_request", "message": str(exc)},
+            ) from exc
+
+    # Live fallback (pre-viewport / ImportError path — tip e659e0a)
     try:
         params = normalize_rebuild_params(body)
     except ValueError as exc:
@@ -188,9 +231,8 @@ def post_geometry_rebuild(
             },
         )
 
-    rebuild = _load_rebuild()
     try:
-        return rebuild(params)
+        return rebuild_fn(params)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

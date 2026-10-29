@@ -1,4 +1,4 @@
-"""Q6/D1: POST /api/v1/geometry/rebuild — thin wrap of rebuild_live_geometry."""
+"""Q6/D1: POST /api/v1/geometry/rebuild — viewport pass-through + live fallback."""
 
 from __future__ import annotations
 
@@ -43,6 +43,26 @@ def _load_example(name: str) -> dict:
     return json.loads(path.read_text())
 
 
+def _assert_min_set(body: dict) -> None:
+    assert "params" in body
+    assert "meshDescriptor" in body
+    assert "geometrySummary" in body
+    md = body["meshDescriptor"]
+    assert isinstance(md, dict)
+    for key in ("schemaVersion", "kind", "units", "primitives"):
+        assert key in md, f"meshDescriptor missing {key}"
+
+
+def _assert_viewport_extras(body: dict) -> None:
+    """When geometry tip 05180e2 viewport helpers are present (this checkout)."""
+    assert "paramsHash" in body, "expected paramsHash from rebuild_viewport_payload"
+    assert isinstance(body["paramsHash"], str)
+    assert len(body["paramsHash"]) == 16
+    assert all(c in "0123456789abcdef" for c in body["paramsHash"])
+    assert "schemaVersion" in body
+    assert "meta" in body and isinstance(body["meta"], dict)
+
+
 def test_rebuild_fe_envelope_rf_pmsm_200(client):
     """Primary FE shape: { topology, machineType, params }."""
     c = client
@@ -55,13 +75,8 @@ def test_rebuild_fe_envelope_rf_pmsm_200(client):
     )
     assert r.status_code == 200, r.text
     body = r.json()
-    assert "params" in body
-    assert "meshDescriptor" in body
-    assert "geometrySummary" in body
-    md = body["meshDescriptor"]
-    assert isinstance(md, dict)
-    for key in ("schemaVersion", "kind", "units", "primitives"):
-        assert key in md, f"meshDescriptor missing {key}"
+    _assert_min_set(body)
+    _assert_viewport_extras(body)
     gs = body["geometrySummary"]
     for key in ("poles", "slots", "stack_length_m", "airgap_m", "rotor_od_m", "stator_id_m"):
         assert key in gs
@@ -79,8 +94,8 @@ def test_rebuild_fe_envelope_af_pmsm_pipeline_entry(client):
     )
     assert r.status_code == 200, r.text
     body = r.json()
-    assert "meshDescriptor" in body and "primitives" in body["meshDescriptor"]
-    assert "geometrySummary" in body
+    _assert_min_set(body)
+    _assert_viewport_extras(body)
     assert "pipelineEntry" in body
     assert isinstance(body["pipelineEntry"], dict)
 
@@ -92,7 +107,8 @@ def test_rebuild_bare_params_root_alternate(client):
     r = c.post("/api/v1/geometry/rebuild", headers=headers, json=params)
     assert r.status_code == 200, r.text
     body = r.json()
-    assert "meshDescriptor" in body and "geometrySummary" in body
+    _assert_min_set(body)
+    _assert_viewport_extras(body)
 
 
 def test_rebuild_nested_params_only_unwrap(client):
@@ -105,7 +121,9 @@ def test_rebuild_nested_params_only_unwrap(client):
         json={"params": params},
     )
     assert r.status_code == 200, r.text
-    assert "meshDescriptor" in r.json()
+    body = r.json()
+    assert "meshDescriptor" in body
+    _assert_viewport_extras(body)
 
 
 def test_rebuild_bad_topology_400(client):

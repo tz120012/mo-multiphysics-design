@@ -722,15 +722,18 @@ paths:
       tags: [Geometry]
       summary: "Sync live geometry rebuild (Q6 / D1)"
       description: |
-        **Q6 P0 权威路径（D1）**：同步重建几何，返回与 `mo_geometry.rebuild_live_geometry` 同形的
-        `{params, meshDescriptor, geometrySummary[, pipelineEntry]}`。
-        **非** Celery Job；目标秒级。apps/api 须调用几何包权威实现。
+        **Q6 P0 权威路径（D1）**：同步重建几何。§2.3 最小集与 `mo_geometry.rebuild_live_geometry`
+        同形：`{params, meshDescriptor, geometrySummary[, pipelineEntry]}`。
+        当几何包 viewport 助手可用时，响应可额外附带 `paramsHash` / `schemaVersion` / `meta`
+        （`rebuild_viewport_payload`；FE **ignore-unknown**）。
+        **非** Celery Job；目标秒级。apps/api 优先 `rebuild_viewport_payload`，缺失则回退
+        `rebuild_live_geometry`。
         **禁止**用 `public/mesh` fixture 冒充成功响应。
         单位：`params.units.length` 默认 mm（亦接受 m）；`angle` 默认 deg（亦接受 rad）；
         `geometrySummary` 为 SI 米 / snake_case（几何包既有导出）。
-        P1+：浏览器本地重建为主（A1）；本 API 留作金标/降级；响应形不变。
+        P1+：浏览器本地重建为主（A1）；本 API 留作金标/降级；最小集响应形不变。
         契约：`docs/drafts/Q6-UEM与几何rebuild契约.md`（Motor tip `be6ed88` A1+B1+C2+D1；开闸 `cc3b2d1`；
-        架构锁定 tip `55b1255`）。**实现状态：apps/api 已接线** `mo_geometry.rebuild_live_geometry`；
+        架构锁定 tip `55b1255`；几何 viewport tip `05180e2`）。
         主请求形 `{topology, machineType?, params}`（params = geometry/params.json）。
       operationId: postGeometryRebuild
       x-status: implemented
@@ -775,8 +778,9 @@ paths:
       responses:
         "200":
           description: |
-            Live rebuild result (= rebuild_live_geometry shape).
-            Write into UEM.meshDescriptor / geometrySummary; clear geometryDirty.
+            Live rebuild result (§2.3 min set = rebuild_live_geometry shape).
+            Optional extras when viewport helpers present: paramsHash / schemaVersion / meta
+            (FE ignore-unknown). Write into UEM.meshDescriptor / geometrySummary; clear geometryDirty.
           content:
             application/json:
               schema:
@@ -792,7 +796,9 @@ paths:
         "503":
           description: |
             mo_geometry package unavailable in this deployment (set MO_GEOMETRY_PATH / image COPY).
+            Package-missing is **503** (not 501). Aligns apps/api implementation.
         # 501 reserved for future unsupported topology/machineType; P0 RF+AF-PMSM return 400 on bad params.
+        # Contract draft §2.4 historically listed 501 for "实现未齐"; package-missing → 503.
 
   /solver/analytic/solve:
     post:
@@ -1163,7 +1169,9 @@ components:
     GeometryRebuildResponse:
       type: object
       description: |
-        Same shape as mo_geometry.rebuild_live_geometry return value.
+        §2.3 min set = mo_geometry.rebuild_live_geometry shape.
+        Optional extras (ignore-unknown for FE) when viewport helpers available:
+        paramsHash / schemaVersion / meta (rebuild_viewport_payload; geometry tip 05180e2).
       required: [params, meshDescriptor, geometrySummary]
       properties:
         params:
@@ -1181,6 +1189,18 @@ components:
         pipelineEntry:
           type: object
           description: Optional; AF-PMSM pipeline entry when applicable
+          additionalProperties: true
+        paramsHash:
+          type: string
+          description: Optional; sha256 hex prefix (16 chars) of canonicalized params
+          minLength: 16
+          maxLength: 16
+        schemaVersion:
+          type: string
+          description: Optional; geometry package schemaVersion when viewport helpers present
+        meta:
+          type: object
+          description: Optional; e.g. rebuildPolicy=full (ignore-unknown for FE)
           additionalProperties: true
 
     Error:
