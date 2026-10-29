@@ -35,3 +35,4 @@ Q3 FEM / 轴向细节以 [Q3-轴向与FEM边界.md](./Q3-轴向与FEM边界.md) 
 | [Maxwell-first统一工程模型与实时视口.md](./Maxwell-first统一工程模型与实时视口.md) | **Q6 基线已采纳**（Motor `be6ed88`：A1+B1+**C2**+D1）；UEM + 实时视口建议稿 |
 | [Q6-UEM与几何rebuild契约.md](./Q6-UEM与几何rebuild契约.md) | **Q6 锁定**：UEM（B1）+ **C2 单壳** + `POST /geometry/rebuild`（D1→A1）；开闸 `cc3b2d1` |
 | [Q6-FEM-改参再触发.md](./Q6-FEM-改参再触发.md) | **Q6**：改参→显式再 submit FEM；组装在 FE/API；heat-proxy≠MS；不扩 F2 |
+| [Q7-3-同壳后处理-FEM协作.md](./Q7-3-同壳后处理-FEM协作.md) | **Q7-3**：同壳后处理接既有 jobs/artifacts；降级明示；零新 API；≠MS 整机关闭 |

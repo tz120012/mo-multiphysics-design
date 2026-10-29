@@ -40,3 +40,10 @@ results/fem/{jobId}/          # JSON scalars + glTF/GLB + PNG
 - heat-proxy（`rf_pmsm_2d` / `af_pmsm_3d`）**保留不动**
 - **禁宣称** FEM ≤3% / MVP（Q5-4 才出标定报告）
 
+## Q7-3 同壳后处理（协作）
+
+- 边界：`docs/drafts/Q7-3-同壳后处理-FEM协作.md`（开闸 `30a37a7`；**零新 API**）
+- 主路径：UEM `lastFemJobId` / `resultRef` → 既有 `GET /jobs/{id}/artifacts`
+- 契约 smoke：`python3 packages/solver-fem/smoke/run_q7_shell_postprocess_contract.py`（无 Elmer）
+- **不改** thinning / Elmer 核心；heat-proxy ≠ MS；禁勾精度
+
